@@ -10,67 +10,38 @@ enum LexicalType {
     SPACE
 };
 
+int _isdigit(int n) { return '0' <= n && n <= '9';}
 
-// 数字かどうかの判定
-int _isdigit(char c)
+int parse_one(int pre_val, int *val_type, int *val)
 {
 
-    if (c >= '0' && c <= '9'){
-        return 1;
-    }else{
-        return 0;
+    int ch;
+
+    if (pre_val == EOF){
+        ch = cl_getc();
+    } else{
+        ch = pre_val;
     }
-}
 
-// 複数桁の文字を数字の変換
-int _atoi(char *s)
-{
-    int i, n;
-    i = 0;
+    if (ch == EOF) return EOF;
 
-    for(n=0; _isdigit(s[i]); i++){
-        if(_isdigit(s[i])) {
-            n = 10 * n + (s[i] - '0');
+
+    if (_isdigit(ch)){
+        int num=0;
+        for (num; _isdigit(ch); ch=cl_getc()){
+            num = num * 10 + (ch - '0');
         }
-    }
-    return n;
-}
 
+        *val_type = NUMBER;
+        *val = num;
+        return ch;
 
-char space_check;
-char letter;
+    } else if (ch == ' ') {
+        while (ch == ' ') {ch = cl_getc();}
 
-int parse_one(int *out_val)
-{
-    int i = 0;
-    char word[100];
-
-    if (space_check == ' '){
-        space_check = -5;
-        return SPACE;
-    }
-
-
-    if (space_check != -5){
-        letter = cl_getc();
-    }
-
-
-    while (letter != ' ' && letter != EOF ){
-        word[i] = (char)letter;
-        i++;
-        letter = cl_getc();
-    }
-
-
-    while(letter == ' '){
-        space_check = (char)letter;
-        letter = cl_getc();
-    }
-
-    if (word[0] != ' ' && word[0] !=EOF){
-        *out_val = _atoi(word);
-        return NUMBER;
+        *val_type = SPACE;
+        *val = ' ';
+        return ch;
     }
 }
 
@@ -80,16 +51,18 @@ int main() {
 
 
     // write something here.
-    int out_val;
 
-    parse_one(&out_val);
+    int pre_val=EOF;
+    int val, val_type;
 
-    answer1 = out_val;
+    pre_val = parse_one(pre_val, &val_type, &val);
 
-    parse_one(&out_val);
-    parse_one(&out_val);
+    answer1 = val;
 
-    answer2 = out_val;
+    pre_val = parse_one(pre_val, &val_type, &val);
+    parse_one(pre_val, &val_type, &val);
+
+    answer2 = val;
 
 
 //    // sample for cl_getc() usage.
@@ -104,6 +77,5 @@ int main() {
     assert(answer2 == 456);
 
     return 1;
-
 
 }
