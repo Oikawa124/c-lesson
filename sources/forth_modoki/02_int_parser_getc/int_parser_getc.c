@@ -45,12 +45,37 @@ int parse_one(int pre_val, int *val_type, int *val)
     }
 }
 
+
+void test_parse_one_123()
+{
+    cl_getc_set_src("123");
+    int answer1 = 0;
+
+    int pre_val=EOF;
+    int val, val_type;
+
+    pre_val = parse_one(pre_val, &val_type, &val);
+
+    answer1 = val;
+
+    assert(answer1 == 123);
+
+}
+
+
+
 int main() {
     int answer1 = 0;
     int answer2 = 0;
 
 
     // write something here.
+
+    test_parse_one_123();
+
+    // 入力をもとに戻す
+    cl_getc_set_src("123 456")
+
 
     int pre_val=EOF;
     int val, val_type;
