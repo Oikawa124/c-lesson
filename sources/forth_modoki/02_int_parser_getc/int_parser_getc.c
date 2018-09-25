@@ -45,20 +45,19 @@ int parse_one(int pre_val, int *val_type, int *val)
     }
 }
 
-
 void test_parse_one_123()
 {
-    cl_getc_set_src("123");
-    int answer1 = 0;
+    char *input = "123";
+    int expect = 123;
+
+    cl_getc_set_src(input);
 
     int pre_val=EOF;
-    int val, val_type;
+    int actual, val_type;
 
-    pre_val = parse_one(pre_val, &val_type, &val);
+    parse_one(pre_val, &val_type, &actual);
 
-    answer1 = val;
-
-    assert(answer1 == 123);
+    assert(expect == actual);
 
 }
 
