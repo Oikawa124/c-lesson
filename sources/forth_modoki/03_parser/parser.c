@@ -48,7 +48,7 @@ int parse_one(int prev_ch, struct Token *out_token) {
 
     if (_isdigit(ch)){
         int num=0;
-        for (num; _isdigit(ch); ch=cl_getc()){
+        for (; _isdigit(ch); ch=cl_getc()){
             num = num * 10 + (ch - '0');
         }
 
