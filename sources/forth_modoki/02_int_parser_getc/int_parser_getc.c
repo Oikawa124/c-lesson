@@ -61,6 +61,28 @@ void test_parse_one_123()
 
 }
 
+void test_parse_one_123_456()
+{
+    char *input = "123 456";
+    int expect1 = 123;
+    int expect2 = ' ';
+    int expect3 = 456;
+
+    cl_getc_set_src(input);
+
+    int pre_val=EOF;
+    int actual1, actual2, actual3, val_type;
+
+    pre_val =parse_one(pre_val, &val_type, &actual1);
+    pre_val =parse_one(pre_val, &val_type, &actual2);
+    parse_one(pre_val, &val_type, &actual3);
+
+    assert(expect1 == actual1);
+    assert(expect2 == actual2);
+    assert(expect3 == actual3);
+}
+
+
 
 
 int main() {
@@ -71,6 +93,7 @@ int main() {
     // write something here.
 
     test_parse_one_123();
+    test_parse_one_123_456();
 
     // 入力をもとに戻す
     cl_getc_set_src("123 456")
