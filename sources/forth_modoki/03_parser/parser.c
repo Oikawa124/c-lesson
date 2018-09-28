@@ -76,14 +76,42 @@ int parse_one(int prev_ch, struct Token *out_token) {
         return ch;
 
     } else if (ch == '/') {
+        char *str;
+        int size = NAME_SIZE;
 
+        str = malloc(sizeof(char) * size);
+
+        int i = 0;
+        ch = cl_getc();
+        for (; _isLetter(ch) || _isdigit(ch); ch = cl_getc()) {
+            str[i] = (char) ch;
+            i++;
+        }
+        str[i] = '\0';
+
+        out_token->u.name = str;
+        out_token->ltype = LITERAL_NAME;
+        return ch;
 
     } else if (ch == ' ') {
-        while (ch == ' ') {ch = cl_getc();}
+        while (ch == ' ') { ch = cl_getc(); }
 
         out_token->ltype = SPACE;
         out_token->u.onechar = ' ';
         return ch;
+
+    } else if (ch == '{') {
+        out_token->ltype = OPEN_CURLY;
+        out_token->u.onechar = (char)ch;
+        ch = cl_getc();
+        return ch;
+
+    } else if (ch == '}'){
+        out_token->ltype = CLOSE_CURLY;
+        out_token->u.onechar = (char)ch;
+        ch = cl_getc();
+        return ch;
+
     } else if (ch == EOF) {
         out_token->ltype = END_OF_FILE;
         return EOF;
@@ -94,46 +122,43 @@ int parse_one(int prev_ch, struct Token *out_token) {
 }
 
 
-//void parser_print_all() {
-//    int ch = EOF;
-//    struct Token token = {
-//        UNKNOWN,
-//        {0}
-//    };
-//
-//    do {
-//        ch = parse_one(ch, &token);
-//        if(token.ltype != UNKNOWN) {
-//            switch(token.ltype) {
-//                case NUMBER:
-//                    printf("num: %d\n", token.u.number);
-//                    break;
-//                case SPACE:
-//                    printf("space!\n");
-//                    break;
-//                case OPEN_CURLY:
-//                    printf("Open curly brace '%c'\n", token.u.onechar);
-//                    break;
-//                case CLOSE_CURLY:
-//                    printf("Close curly brace '%c'\n", token.u.onechar);
-//                    break;
-//                case EXECUTABLE_NAME:
-//                    printf("EXECUTABLE_NAME: %s\n", token.u.name);
-//                    break;
-//                case LITERAL_NAME:
-//                    printf("LITERAL_NAME: %s\n", token.u.name);
-//                    break;
-//
-//                default:
-//                    printf("Unknown type %d\n", token.ltype);
-//                    break;
-//            }
-//        }
-//    }while(ch != EOF);
-//}
+void parser_print_all() {
+    int ch = EOF;
+    struct Token token = {
+            UNKNOWN,
+            {0}
+    };
 
+    do {
+        ch = parse_one(ch, &token);
+        if(token.ltype != UNKNOWN) {
+            switch(token.ltype) {
+                case NUMBER:
+                    printf("num: %d\n", token.u.number);
+                    break;
+                case SPACE:
+                    printf("space!\n");
+                    break;
+                case OPEN_CURLY:
+                    printf("Open curly brace '%c'\n", token.u.onechar);
+                    break;
+                case CLOSE_CURLY:
+                    printf("Close curly brace '%c'\n", token.u.onechar);
+                    break;
+                case EXECUTABLE_NAME:
+                    printf("EXECUTABLE_NAME: %s\n", token.u.name);
+                    break;
+                case LITERAL_NAME:
+                    printf("LITERAL_NAME: %s\n", token.u.name);
+                    break;
 
-
+                default:
+                    printf("Unknown type %d\n", token.ltype);
+                    break;
+            }
+        }
+    }while(ch != EOF);
+}
 
 
 static void test_parse_one_number() {
@@ -166,7 +191,6 @@ static void test_parse_one_empty_should_return_END_OF_FILE() {
     assert(token.ltype == expect);
 }
 
-
 int streq(char *s1, char *s2){ return 0==strcmp(s1, s2);}
 
 static void verify_execname_pares_one(char *expect_name, char *input){
@@ -182,7 +206,6 @@ static void verify_execname_pares_one(char *expect_name, char *input){
     assert(token.ltype == expect_type);
     assert(streq(_expect_name, token.u.name));
 }
-
 
 static void test_parse_one_executable_name(){
     verify_execname_pares_one("abc", "abc");
@@ -206,18 +229,48 @@ static void test_parse_one_literal_name(){
     assert(streq(expect_name, token.u.name));
 }
 
+static void test_parse_one_open_curly(){
+    char *input = "{";
+    int expect_type = OPEN_CURLY;
+    char expect_onechar = '{';
+
+    struct Token token = {UNKNOWN, {0}};
+
+    cl_getc_set_src(input);
+    parse_one(EOF, &token);
+
+    assert(token.ltype == expect_type);
+    assert(expect_onechar == token.u.onechar);
+}
+
+static void test_parse_one_close_curly(){
+    char *input = "}";
+    int expect_type = CLOSE_CURLY;
+    char expect_onechar = '}';
+
+    struct Token token = {UNKNOWN, {0}};
+
+    cl_getc_set_src(input);
+    parse_one(EOF, &token);
+
+    assert(token.ltype == expect_type);
+    assert(expect_onechar == token.u.onechar);
+}
+
 
 static void unit_tests() {
     test_parse_one_executable_name();
-    //test_parse_one_literal_name();
+    test_parse_one_literal_name();
     test_parse_one_empty_should_return_END_OF_FILE();
     test_parse_one_number();
+    test_parse_one_open_curly();
+    test_parse_one_close_curly();
 }
 
 int main() {
     unit_tests();
 
-//    cl_getc_set_src("123 45 add /some { 2 3 add } def");
-//    parser_print_all();
+    cl_getc_set_src("123 45 add /some { 2 3 add } def");
+    parser_print_all();
     return 1;
 }
