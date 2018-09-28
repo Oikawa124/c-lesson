@@ -31,6 +31,8 @@ struct Token {
 
 int _isdigit(int n) { return '0' <= n && n <= '9';}
 
+int _isLetter(int ch){ return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_';}
+
 int parse_one(int prev_ch, struct Token *out_token) {
     /****
      *
@@ -46,15 +48,35 @@ int parse_one(int prev_ch, struct Token *out_token) {
         ch = prev_ch;
     }
 
-    if (_isdigit(ch)){
-        int num=0;
-        for (; _isdigit(ch); ch=cl_getc()){
+    if (_isdigit(ch)) {
+        int num = 0;
+        for (; _isdigit(ch); ch = cl_getc()) {
             num = num * 10 + (ch - '0');
         }
 
         out_token->ltype = NUMBER;
         out_token->u.number = num;
         return ch;
+
+    } else if (_isLetter(ch)) {
+        char *str;
+        int size = NAME_SIZE;
+
+        str = malloc(sizeof(char) * size);
+
+        int i = 0;
+        for (; _isLetter(ch) || _isdigit(ch); ch = cl_getc()) {
+            str[i] = (char) ch;
+            i++;
+        }
+        str[i] = '\0';
+
+        out_token->u.name = str;
+        out_token->ltype = EXECUTABLE_NAME;
+        return ch;
+
+    } else if (ch == '/') {
+
 
     } else if (ch == ' ') {
         while (ch == ' ') {ch = cl_getc();}
@@ -145,7 +167,48 @@ static void test_parse_one_empty_should_return_END_OF_FILE() {
 }
 
 
+int streq(char *s1, char *s2){ return 0==strcmp(s1, s2);}
+
+static void verify_execname_pares_one(expect_name, input){
+    char *_input = input;
+    int expect_type = EXECUTABLE_NAME;
+    char *_expect_name = expect_name;
+
+    struct Token token = {UNKNOWN, {0}};
+
+    cl_getc_set_src(_input);
+    parse_one(EOF, &token);
+
+    assert(token.ltype == expect_type);
+    assert(streq(_expect_name, token.u.name));
+}
+
+
+static void test_parse_one_executable_name(){
+    verify_execname_pares_one("abc", "abc");
+    verify_execname_pares_one("abc123", "abc123");
+    verify_execname_pares_one("abc_def", "abc_def");
+    verify_execname_pares_one("abc", "abc def");
+}
+
+//static void test_parse_one_literal_name(){
+//    char *input = "/add";
+//    int expect_type = LITERAL_NAME;
+//    char *expect_name = "add";
+//
+//    struct Token token = {UNKNOWN, {0}};
+//
+//    cl_getc_set_src(input);
+//    parse_one(EOF, &token);
+//
+//    assert(token.ltype == expect_type);
+//    assert(streq(expect_name, token.u.name));
+//}
+
+
 static void unit_tests() {
+    test_parse_one_executable_name();
+    //test_parse_one_literal_name();
     test_parse_one_empty_should_return_END_OF_FILE();
     test_parse_one_number();
 }
