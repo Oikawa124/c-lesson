@@ -169,7 +169,7 @@ static void test_parse_one_empty_should_return_END_OF_FILE() {
 
 int streq(char *s1, char *s2){ return 0==strcmp(s1, s2);}
 
-static void verify_execname_pares_one(expect_name, input){
+static void verify_execname_pares_one(char *expect_name, char *input){
     char *_input = input;
     int expect_type = EXECUTABLE_NAME;
     char *_expect_name = expect_name;
@@ -191,19 +191,20 @@ static void test_parse_one_executable_name(){
     verify_execname_pares_one("abc", "abc def");
 }
 
-//static void test_parse_one_literal_name(){
-//    char *input = "/add";
-//    int expect_type = LITERAL_NAME;
-//    char *expect_name = "add";
-//
-//    struct Token token = {UNKNOWN, {0}};
-//
-//    cl_getc_set_src(input);
-//    parse_one(EOF, &token);
-//
-//    assert(token.ltype == expect_type);
-//    assert(streq(expect_name, token.u.name));
-//}
+static void test_parse_one_literal_name(){
+    char *input = "/add";
+    int expect_type = LITERAL_NAME;
+    char *expect_name = "add";
+
+    struct Token token = {UNKNOWN, {0}};
+
+    cl_getc_set_src(input);
+    parse_one(EOF, &token);
+
+    assert(token.ltype == expect_type);
+
+    assert(streq(expect_name, token.u.name));
+}
 
 
 static void unit_tests() {
