@@ -267,6 +267,7 @@ static void unit_tests() {
     test_parse_one_close_curly();
 }
 
+
 int main() {
     unit_tests();
 
