@@ -62,6 +62,13 @@ void stack_clear() {
 
 }
 
+void stack_init(){
+    stack_pos = 1;
+    stack[stack_pos - 1].etype = NO_ELEMENT;
+    stack[stack_pos - 1].u.number = 0;
+}
+
+
 static void test_stack_pop_when_stack_has_no_elements(){
 
     struct Element expect = {NO_ELEMENT, {0}};
@@ -168,13 +175,6 @@ static void unit_tests(){
     test_stack_push();
     test_stack_pop_one_times();
     test_stack_pop_two_times();
-}
-
-
-void stack_init(){
-    stack_pos = 1;
-    stack[stack_pos - 1].etype = NO_ELEMENT;
-    stack[stack_pos - 1].u.number = 0;
 }
 
 
