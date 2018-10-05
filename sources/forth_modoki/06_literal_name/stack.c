@@ -4,8 +4,8 @@
 
 #define STACK_SIZE 1024
 
-struct Element stack[STACK_SIZE];
-int stack_pos;
+static struct Element stack[STACK_SIZE];
+static int stack_pos;
 
 void stack_push(struct Element *token){
     stack[stack_pos] = *token;

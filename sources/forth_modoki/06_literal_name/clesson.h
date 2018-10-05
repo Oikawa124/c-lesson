@@ -38,6 +38,10 @@ struct Element {
     } u;
 };
 
+struct KeyValue {
+    char *key;
+    struct Element value;
+};
 
 int cl_getc();
 
@@ -64,3 +68,16 @@ void stack_print_all();
 void stack_init();
 
 void stack_clear();
+
+// 辞書関係の関数
+void dict_init();
+
+void dict_put(char *key, struct Element *elem);
+
+int dict_get(char *key, struct Element *out_elem);
+
+void dict_print_all();
+
+void dict_clean();
+
+int find_index(char *key);
