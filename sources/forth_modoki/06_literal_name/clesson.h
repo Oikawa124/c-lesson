@@ -2,7 +2,6 @@
 #include <string.h>
 
 
-
 enum LexicalType {
     NUMBER,
     SPACE,
@@ -61,8 +60,6 @@ void stack_push(struct Element *token);
 
 void stack_pop(struct Element *out_element);
 
-void stack_add();
-
 void stack_print_all();
 
 void stack_init();
@@ -79,5 +76,3 @@ int dict_get(char *key, struct Element *out_elem);
 void dict_print_all();
 
 void dict_clean();
-
-int find_index(char *key);

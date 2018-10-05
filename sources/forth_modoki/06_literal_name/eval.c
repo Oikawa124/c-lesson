@@ -33,6 +33,7 @@ void eval(){
 
     do{
         struct Token token = {UNKNOWN, {0}};
+        struct Element val = {UNKNOWN, {0}};
 
         ch = parse_one(ch, &token);
 
@@ -50,9 +51,7 @@ void eval(){
                 } else if (streq("def", token.u.name)){
                     def_op();
                     break;
-                } else if (find_index(token.u.name) != -1){
-                    struct Element val = {UNKNOWN, {0}};
-                    dict_get(token.u.name, &val);
+                } else if (dict_get(token.u.name, &val) != -1){
                     stack_push(&val);
                     break;
                 }
@@ -122,7 +121,7 @@ static void test_eval_add_with_many_values(){
 }
 
 static void test_eval_dict(){
-    char *expect_dict_key = "abc";
+    char *input_key = "abc";
     int expect_dict_value = 12;
 
     char *input = "/abc 12 def";
@@ -131,7 +130,7 @@ static void test_eval_dict(){
     eval();
 
     struct Element actual_dict = {NO_ELEMENT, {0}};
-    dict_get(expect_dict_key, &actual_dict);
+    dict_get(input_key, &actual_dict);
 
     assert_elem_number(expect_dict_value, &actual_dict);
 

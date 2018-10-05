@@ -5,7 +5,7 @@ struct KeyValue dict_array[1024];
 static int dict_pos;
 
 
-int find_index(char *key){
+static int find_index(char *key){
     for (int index = 0; index < dict_pos; index++) {
         if (streq(key, dict_array[index].key)) {
             return index;
@@ -67,13 +67,13 @@ void dict_init(){
 }
 
 static void test_dict_one_times(){
-    char *expect_key = "plus";
+    char *input_key = "plus";
     struct Element expect_elem = {ELEMENT_LITERAL_NAME, {"plus"}};
 
-    dict_put(expect_key, &expect_elem);
+    dict_put(input_key, &expect_elem);
 
     struct Element actual = {NO_ELEMENT, {0}};
-    dict_get(expect_key, &actual);
+    dict_get(input_key, &actual);
 
     assert(streq(expect_elem.u.name, actual.u.name));
 
@@ -81,33 +81,33 @@ static void test_dict_one_times(){
 }
 
 static void test_dict_two_times(){
-    char *expect_key1 = "plus";
-    struct Element expect_elem1 = {ELEMENT_LITERAL_NAME, {"plus"}};
-    char *expect_key2 = "mum";
-    struct Element expect_elem2 = {ELEMENT_NUMBER, {1}};
+    char *input_key1 = "plus";
+    struct Element input_elem1 = {ELEMENT_LITERAL_NAME, {"plus"}};
+    char *input_key2 = "mum";
+    struct Element input_elem2 = {ELEMENT_NUMBER, {1}};
 
-    dict_put(expect_key1, &expect_elem1);
-    dict_put(expect_key2, &expect_elem2);
+    dict_put(input_key1, &input_elem1);
+    dict_put(input_key2, &input_elem2);
 
 
-    assert(streq(expect_key1, dict_array[0].key));
-    assert(streq(expect_elem1.u.name, dict_array[0].value.u.name));
+    assert(streq(input_key1, dict_array[0].key));
+    assert(streq(input_elem1.u.name, dict_array[0].value.u.name));
 
-    assert(streq(expect_key2, dict_array[1].key));
-    assert(expect_elem2.u.number == dict_array[1].value.u.number);
+    assert(streq(input_key2, dict_array[1].key));
+    assert(input_elem2.u.number == dict_array[1].value.u.number);
 
     dict_print_all();
     dict_clean();
 }
 
 static void test_dict_same_key(){
-    char *expect_key = "plus";
+    char *input_key = "plus";
     struct Element expect_elem = {ELEMENT_LITERAL_NAME, {"plus2"}};
 
-    dict_put(expect_key, &expect_elem);
-    dict_put(expect_key, &expect_elem);
+    dict_put(input_key, &expect_elem);
+    dict_put(input_key, &expect_elem);
 
-    assert(streq(expect_key, dict_array[0].key));
+    assert(streq(input_key, dict_array[0].key));
     assert(streq(expect_elem.u.name, dict_array[0].value.u.name));
 
     dict_clean();
@@ -117,13 +117,13 @@ static void test_dict_get(){
     struct Element expect_elem1 = {ELEMENT_LITERAL_NAME, {"plus"}};
     int expect_dict_get_result = 1;
 
-    char *key = "plus";
+    char *input_key = "plus";
 
-    dict_put(key, &expect_elem1);
+    dict_put(input_key, &expect_elem1);
 
     struct Element actual = {NO_ELEMENT, {0}};
 
-    int dict_get_result = dict_get(key, &actual);
+    int dict_get_result = dict_get(input_key, &actual);
 
     assert(expect_dict_get_result == dict_get_result);
     assert(expect_elem1.etype == actual.etype);
