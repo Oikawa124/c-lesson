@@ -1,6 +1,6 @@
 #include <stdio.h>
 #include <string.h>
-#define STACK_SIZE 1024
+
 
 
 enum LexicalType {
@@ -38,8 +38,6 @@ struct Element {
     } u;
 };
 
-struct Element stack[STACK_SIZE];
-int stack_pos;
 
 int cl_getc();
 

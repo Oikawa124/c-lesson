@@ -2,11 +2,10 @@
 #include <stdio.h>
 #include <assert.h>
 
+#define STACK_SIZE 1024
 
-
-
-extern struct Element stack[STACK_SIZE];
-extern int stack_pos;
+struct Element stack[STACK_SIZE];
+int stack_pos;
 
 void stack_push(struct Element *token){
     stack[stack_pos] = *token;
@@ -21,22 +20,6 @@ void stack_pop(struct Element *out_element){
         *out_element = stack[stack_pos];
     }
 }
-
-void stack_add(){
-    struct Element answer = {NO_ELEMENT, {0}};
-    struct Element num1 = {NO_ELEMENT, {0}};
-    struct Element num2 = {NO_ELEMENT, {0}};
-
-    stack_pop(&num1);
-    stack_pop(&num2);
-
-    answer.u.number = num1.u.number + num2.u.number;
-    answer.etype = NUMBER;
-
-    stack_push(&answer);
-}
-
-
 
 
 void stack_print_all(){
