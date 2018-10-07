@@ -163,7 +163,7 @@ static void unit_test(){
     test_eval_def_and_stack_pop();
 }
 
-
+#if 0
 int main() {
     stack_init();
     dict_init();
@@ -174,3 +174,4 @@ int main() {
 
     return 1;
 }
+#endif

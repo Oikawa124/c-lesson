@@ -4,6 +4,7 @@
 
 #define TABLE_SIZE 1024
 
+
 struct Node {
     char *key;
     struct Element value;
@@ -37,20 +38,16 @@ static void update_or_insert_list(struct Node *head, char *key, int value){
     static struct Node *pos;
     struct Node *new_node;
 
-    int result;
-
     for (pos = head; pos !=NULL; pos = pos->next){
-        result = strcmp(pos->key, key);
-        if (result == 0){
-            break;
+
+        if (streq(pos->key, key)) {
+            pos->value.u.number = value;
+            return;
         }
     }
-    if (head != NULL && result == 0){
-        pos->value.u.number = value;
-    }else{
-        new_node = create_node(key, value);
-        pos->next = new_node;
-    }
+
+    new_node = create_node(key, value);
+    pos->next = new_node;
 }
 
 
@@ -104,18 +101,24 @@ void dict_print_all(){
 }
 
 
-void dict_finalize(){
-    int i;
+void dict_clear(){
+    int i = 0;
     struct Node *pos;
     struct Node *temp;
 
-    for (i=0; i < TABLE_SIZE; i++){
-        for (pos = array[i]; pos != NULL;){
+    while (i < TABLE_SIZE) {
+        pos = array[i];
+
+        while (pos != NULL) {
             temp = pos->next;
             free(pos);
             pos = temp;
         }
+
+        array[i] = NULL;
+        i++;
     }
+
 }
 
 
@@ -131,7 +134,8 @@ static void test_dict_one_times(){
     dict_get(input_key, &actual);
 
     assert(expect_elem.u.number == actual.u.number);
-    dict_finalize();
+
+    dict_clear();
 }
 
 static void test_dict_two_times(){
@@ -152,6 +156,7 @@ static void test_dict_two_times(){
     assert(input_elem1.u.number == actual1.u.number);
     assert(input_elem2.u.number == actual2.u.number);
 
+    dict_clear();
 }
 
 static void test_dict_same_key(){
@@ -165,6 +170,9 @@ static void test_dict_same_key(){
     dict_get(input_key, &actual);
 
     assert(input_elem.u.number == actual.u.number);
+    assert(array[hash(input_key)]->next == NULL);
+
+    dict_clear();
 }
 
 static void test_dict_get(){
@@ -183,6 +191,25 @@ static void test_dict_get(){
     assert(expect_elem1.u.number == actual.u.number);
     assert(expect_elem1.etype == actual.etype);
 
+    dict_clear();
+}
+
+static void test_dict_not_exist_key(){
+    struct Element expect_elem1 = {ELEMENT_NUMBER, {5}};
+    int expect_dict_get_result = 0;
+
+    char *input_key = "five";
+    char *not_exist_key = "not_exist_key";
+
+    dict_put(input_key, &expect_elem1);
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    int dict_get_result = dict_get(not_exist_key, &actual);
+
+    assert(expect_dict_get_result == dict_get_result);
+
+    dict_clear();
 }
 
 static void unit_test(){
@@ -190,6 +217,7 @@ static void unit_test(){
     test_dict_two_times();
     test_dict_same_key();
     test_dict_get();
+    test_dict_not_exist_key();
 }
 
 
