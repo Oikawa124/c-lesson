@@ -37,11 +37,6 @@ struct Element {
     } u;
 };
 
-struct KeyValue {
-    char *key;
-    struct Element value;
-};
-
 int cl_getc();
 
 void cl_getc_set_src(char* str);
