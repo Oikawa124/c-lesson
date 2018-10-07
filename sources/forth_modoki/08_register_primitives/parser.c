@@ -78,12 +78,22 @@ int parse_one(int prev_ch, struct Token *out_token) {
         ch = cl_getc();
         return ch;
 
-    } else if (ch == '}'){
+    } else if (ch == '}') {
         out_token->ltype = CLOSE_CURLY;
-        out_token->u.onechar = (char)ch;
+        out_token->u.onechar = (char) ch;
         ch = cl_getc();
         return ch;
 
+    }else if (ch == '-'){
+        ch = cl_getc();
+        int num = 0;
+        for (; _isdigit(ch); ch = cl_getc()) {
+            num = num * 10 + (ch - '0');
+        }
+
+        out_token->ltype = NUMBER;
+        out_token->u.number = -num;
+        return ch;
     } else if (ch == EOF) {
         out_token->ltype = END_OF_FILE;
         return EOF;
@@ -145,7 +155,7 @@ static void test_parse_one_number() {
     ch = parse_one(EOF, &token);
 
     assert(ch == EOF);
-    assert(token.ltype == ELEMENT_NUMBER);
+    assert(token.ltype == NUMBER);
     assert(expect == token.u.number);
 }
 
@@ -188,7 +198,7 @@ static void test_parse_one_executable_name(){
 
 static void test_parse_one_literal_name(){
     char *input = "/add";
-    int expect_type = ELEMENT_LITERAL_NAME;
+    int expect_type = LITERAL_NAME;
     char *expect_name = "add";
 
     struct Token token = {UNKNOWN, {0}};
@@ -229,6 +239,22 @@ static void test_parse_one_close_curly(){
     assert(expect_onechar == token.u.onechar);
 }
 
+void test_parse_one_minus_number(){
+    char *input = "-123";
+    int expect = -123;
+
+    struct Token token = {UNKNOWN, {0}};
+    int ch;
+
+    cl_getc_set_src(input);
+
+    ch = parse_one(EOF, &token);
+
+    assert(ch == EOF);
+    assert(token.ltype == NUMBER);
+    assert(expect == token.u.number);
+}
+
 
 static void unit_tests() {
     test_parse_one_executable_name();
@@ -237,14 +263,16 @@ static void unit_tests() {
     test_parse_one_number();
     test_parse_one_open_curly();
     test_parse_one_close_curly();
+    test_parse_one_minus_number();
+
 }
 
 #if 0
 int main() {
     unit_tests();
 
-    cl_getc_set_src("123 45 add /some { 2 3 add } def");
-    parser_print_all();
+//    cl_getc_set_src("123 45 add /some { 2 3 add } def");
+//    parser_print_all();
     return 1;
 }
 #endif
