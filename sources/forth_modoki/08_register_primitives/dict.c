@@ -40,7 +40,7 @@ static void update_or_insert_list(struct Node *head, char *key, struct Element *
     for (pos = head; pos !=NULL; pos = pos->next){
 
         if (streq(pos->key, key)) {
-            pos->value.u.number = elem->u.number;
+            pos->value = *elem;
             return;
         }
     }
