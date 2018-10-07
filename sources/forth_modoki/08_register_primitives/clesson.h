@@ -34,8 +34,10 @@ struct Element {
     union {
         int number;
         char *name;
+        void (*cfunc)();
     } u;
 };
+
 
 int cl_getc();
 

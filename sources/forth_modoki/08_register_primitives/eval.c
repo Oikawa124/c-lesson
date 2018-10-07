@@ -16,10 +16,10 @@ void preprocessing_four_arithmetic_operations(int *out_num1, int *out_num2){
 }
 
 void def_op(){
-    struct Element val = {UNKNOWN, {0}};
+    struct Element val = {NO_ELEMENT, {0}};
     stack_pop(&val);
 
-    struct Element literal_name = {UNKNOWN, {0}};
+    struct Element literal_name = {NO_ELEMENT, {0}};
     stack_pop(&literal_name);
 
     dict_put(literal_name.u.name, &val);
@@ -30,9 +30,8 @@ void add_op(){
     int num1, num2;
     preprocessing_four_arithmetic_operations(&num1, &num2);
 
-    struct Element answer = {NO_ELEMENT, {0}};
+    struct Element answer = {ELEMENT_NUMBER, {0}};
     answer.u.number = num1+ num2;
-    answer.etype = NUMBER;
 
     stack_push(&answer);
 }
@@ -42,9 +41,8 @@ void sub_op(){
     int num1, num2;
     preprocessing_four_arithmetic_operations(&num1, &num2);
 
-    struct Element answer = {NO_ELEMENT, {0}};
-    answer.u.number = num1 - num2;
-    answer.etype = NUMBER;
+    struct Element answer = {ELEMENT_NUMBER, {0}};
+    answer.u.number = num2 - num1;
 
     stack_push(&answer);
 }
@@ -53,9 +51,8 @@ void mul_op(){
     int num1, num2;
     preprocessing_four_arithmetic_operations(&num1, &num2);
 
-    struct Element answer = {NO_ELEMENT, {0}};
+    struct Element answer = {ELEMENT_NUMBER, {0}};
     answer.u.number = num1 * num2;
-    answer.etype = NUMBER;
 
     stack_push(&answer);
 }
@@ -64,9 +61,8 @@ void div_op(){
     int num1, num2;
     preprocessing_four_arithmetic_operations(&num1, &num2);
 
-    struct Element answer = {NO_ELEMENT, {0}};
-    answer.u.number = num1 / num2;
-    answer.etype = NUMBER;
+    struct Element answer = {ELEMENT_NUMBER, {0}};
+    answer.u.number = num2 / num1;
 
     stack_push(&answer);
 }
@@ -77,23 +73,27 @@ void eval(){
 
     do{
         struct Token token = {UNKNOWN, {0}};
-        struct Element val = {UNKNOWN, {0}};
+        struct Element elem = {NO_ELEMENT, {0}};
 
         ch = parse_one(ch, &token);
 
         switch (token.ltype) {
             case NUMBER:
-                stack_push(&token);
+                elem.etype = ELEMENT_NUMBER;
+                elem.u.number = token.u.number;
+                stack_push(&elem);
                 break;
             case LITERAL_NAME:
-                stack_push(&token);
+                elem.etype = ELEMENT_LITERAL_NAME;
+                elem.u.name = token.u.name;
+                stack_push(&elem);
                 break;
             case EXECUTABLE_NAME:
-                if (dict_get(token.u.name, &val) != -1){
-                    if (val.etype == ELEMENT_C_FUNC){
-                        val.u.cfunc();
+                if (dict_get(token.u.name, &elem) != -1){
+                    if (elem.etype == ELEMENT_C_FUNC){
+                        elem.u.cfunc();
                     } else {
-                        stack_push(&val);
+                        stack_push(&elem);
                         break;
                     }
                 }
@@ -101,22 +101,17 @@ void eval(){
     }while (ch != EOF);
 }
 
+void register_one_primitive(char *name, void (*cfunc)(void)){
+    struct Element elem = {ELEMENT_C_FUNC, {.cfunc = cfunc}};
+    dict_put(name, &elem);
+}
+
 void register_primitives(){
-    struct Element add_elem = {ELEMENT_C_FUNC, {.cfunc = add_op}};
-    dict_put("add", &add_elem);
-
-    struct Element def_elem = {ELEMENT_C_FUNC, {.cfunc = def_op}};
-    dict_put("def", &def_elem);
-
-    struct Element sub_elem = {ELEMENT_C_FUNC, {.cfunc = sub_op}};
-    dict_put("sub", &sub_elem);
-
-    struct Element mul_elem = {ELEMENT_C_FUNC, {.cfunc = mul_op}};
-    dict_put("mul", &mul_elem);
-
-    struct Element div_elem = {ELEMENT_C_FUNC, {.cfunc = div_op}};
-    dict_put("div", &div_elem);
-
+    register_one_primitive("add", add_op);
+    register_one_primitive("sub", sub_op);
+    register_one_primitive("mul", mul_op);
+    register_one_primitive("div", div_op);
+    register_one_primitive("def", def_op);
 }
 
 void assert_elem_number(int number, struct Element *elm){
@@ -214,7 +209,7 @@ static void test_eval_def_and_stack_pop(){
 }
 
 static void test_eval_sub(){
-    int expect1 = -2;
+    int expect1 = 2;
 
     char *input = "3 1 sub";
     cl_getc_set_src(input);
@@ -250,7 +245,7 @@ static void test_eval_mul(){
 static void test_eval_div(){
     int expect1 = 3;
 
-    char *input = "3 9 div";
+    char *input = "9 3 div";
     cl_getc_set_src(input);
 
     eval();

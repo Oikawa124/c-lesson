@@ -22,31 +22,30 @@ static int hash(char *str){
     return (int)(val%TABLE_SIZE);
 }
 
-static struct Word *create_node(char *key, int value){
+static struct Node *create_node(char *key, struct Element *elem){
     struct Node *new_node;
 
     new_node = malloc(sizeof(struct Node));
     new_node->key= key;
-    new_node->value.u.number = value;
-    new_node->value.etype = ELEMENT_NUMBER;
+    new_node->value = *elem;
     new_node->next = NULL;
 
     return new_node;
 }
 
-static void update_or_insert_list(struct Node *head, char *key, int value){
+static void update_or_insert_list(struct Node *head, char *key, struct Element *elem){
     static struct Node *pos;
     struct Node *new_node;
 
     for (pos = head; pos !=NULL; pos = pos->next){
 
         if (streq(pos->key, key)) {
-            pos->value.u.number = value;
+            pos->value.u.number = elem->u.number;
             return;
         }
     }
 
-    new_node = create_node(key, value);
+    new_node = create_node(key, elem);
     pos->next = new_node;
 }
 
@@ -58,14 +57,14 @@ void dict_put(char *key, struct Element *elem){
 
     if (head == NULL) {
         head = malloc(sizeof(struct Node));
+        head->value  = *elem;
         head->next = NULL;
         head->key = key;
-        head->value.etype = elem->etype;
-        head->value.u.number = elem->u.number;
+
         array[idx] = head;
         return;
     }
-    update_or_insert_list(head, key, elem->u.number);
+    update_or_insert_list(head, key, elem);
 }
 
 
