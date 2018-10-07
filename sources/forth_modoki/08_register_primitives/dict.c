@@ -220,11 +220,10 @@ static void unit_test(){
     test_dict_not_exist_key();
 }
 
-#if 0
+
 int main(){
     unit_test();
     dict_print_all();
 
     return 1;
 }
-#endif
