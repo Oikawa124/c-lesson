@@ -5,9 +5,11 @@
 #include <assert.h>
 
 #define NAME_SIZE 256
+#define CONTINUE 1
+
 static struct ElementArray *exec_array = NULL;
 static int operation_pos = 0;
-#define CONTINUE 1;
+
 
 int _isdigit(int n) { return '0' <= n && n <= '9';}
 
@@ -106,10 +108,16 @@ static int parse_one(int prev_ch, struct Token *out_token) {
     return EOF;
 }
 
-void set_exec_array_to_parser(struct ElementArray *elemarr){
-    exec_array = elemarr;
-    operation_pos = 0;
+
+void set_cont(struct Continuation *cont) {
+    exec_array = cont->exec_array;
+    operation_pos = cont->pc;
 }
+
+//void set_exec_array_to_parser(struct ElementArray *elemarr){
+//    exec_array = elemarr;
+//    operation_pos = 0;
+//}
 
 int get_next_token(int prev_ch, struct Token *out_token){
     if (exec_array == NULL) {

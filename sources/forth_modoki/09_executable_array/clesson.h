@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <string.h>
 
+#define STACK_SIZE 1024
 
 enum LexicalType {
     NUMBER,
@@ -65,6 +66,8 @@ int get_next_token(int prev_ch, struct Token *out_token);
 
 void set_exec_array_to_parser(struct ElementArray *elemarr);
 
+void set_cont(struct Continuation *cont);
+
 int streq(char *s1, char *s2);
 
 
@@ -85,4 +88,27 @@ void dict_put(char *key, struct Element *elem);
 
 int dict_get(char *key, struct Element *out_elem);
 
+// co_stack関係
+void co_push(struct Continuation *cont);
 
+void co_pop();
+
+struct Continuation *co_peek();
+
+void co_stack_clear();
+
+int get_stack_pos();
+
+
+// プリミティブ関連
+void def_op();
+
+void add_op();
+
+void sub_op();
+
+void mul_op();
+
+void div_op();
+
+void register_primitives();

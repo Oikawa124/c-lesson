@@ -2,8 +2,6 @@
 #include <stdio.h>
 #include <assert.h>
 
-#define STACK_SIZE 1024
-
 static struct Element stack[STACK_SIZE];
 static int stack_pos;
 

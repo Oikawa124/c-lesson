@@ -4,69 +4,7 @@
 #include <malloc.h>
 #define MAX_NAME_OP_NUMBERS 256
 
-void eval_exec_array(struct ElementArray *elmarr);
-
-static void preprocessing_four_arithmetic_operations(int *out_num1, int *out_num2){
-
-    struct Element num1 = {NO_ELEMENT, {0}};
-    struct Element num2 = {NO_ELEMENT, {0}};
-
-    stack_pop(&num1);
-    stack_pop(&num2);
-
-    *out_num1 = num1.u.number;
-    *out_num2 = num2.u.number;
-}
-
-static void def_op(){
-    struct Element val = {NO_ELEMENT, {0}};
-    stack_pop(&val);
-
-    struct Element literal_name = {NO_ELEMENT, {0}};
-    stack_pop(&literal_name);
-
-    dict_put(literal_name.u.name, &val);
-}
-
-static void add_op(){
-    int num1, num2;
-    preprocessing_four_arithmetic_operations(&num1, &num2);
-
-    struct Element answer = {ELEMENT_NUMBER, {0}};
-    answer.u.number = num1+ num2;
-
-    stack_push(&answer);
-}
-
-static void sub_op(){
-    int num1, num2;
-    preprocessing_four_arithmetic_operations(&num1, &num2);
-
-    struct Element answer = {ELEMENT_NUMBER, {0}};
-    answer.u.number = num2 - num1;
-
-    stack_push(&answer);
-}
-
-static void mul_op(){
-    int num1, num2;
-    preprocessing_four_arithmetic_operations(&num1, &num2);
-
-    struct Element answer = {ELEMENT_NUMBER, {0}};
-    answer.u.number = num1 * num2;
-
-    stack_push(&answer);
-}
-
-static void div_op(){
-    int num1, num2;
-    preprocessing_four_arithmetic_operations(&num1, &num2);
-
-    struct Element answer = {ELEMENT_NUMBER, {0}};
-    answer.u.number = num2 / num1;
-
-    stack_push(&answer);
-}
+void eval_exec_array();
 
 static int compile_exec_array(int ch, struct Element *out_elem){
     struct Element arr[MAX_NAME_OP_NUMBERS];
@@ -98,7 +36,7 @@ static int compile_exec_array(int ch, struct Element *out_elem){
                 arr[i].etype = nest_elem.etype;
                 arr[i].u.byte_codes = nest_elem.u.byte_codes;
                 i++;
-                ch = parse_one(ch, &token);
+                ch = get_next_token(ch, &token);
                 break;
             }
         }
@@ -115,7 +53,6 @@ static int compile_exec_array(int ch, struct Element *out_elem){
 
     return ch;
 }
-
 
 void eval(){
     static int ch = EOF;
@@ -143,7 +80,9 @@ void eval(){
                         elem.u.cfunc();
                         break;
                     } else if (elem.etype == ELEMENT_EXECUTABLE_ARRAY) {
-                        eval_exec_array(elem.u.byte_codes);
+                        struct Continuation cont = {elem.u.byte_codes, 0};
+                        co_push(&cont);
+                        eval_exec_array();
                         break;
                     } else {
                         stack_push(&elem);
@@ -158,24 +97,16 @@ void eval(){
     }while (ch != EOF);
 }
 
-void eval_exec_array(struct ElementArray *elmarr) {
-    set_exec_array_to_parser(elmarr);
-    eval();
+void eval_exec_array() {
+
+    while (get_stack_pos() > 1){
+        struct Continuation *cont = co_peek();
+        set_cont(cont);
+    }
+    co_pop();
 }
 
 
-void register_one_primitive(char *name, void (*cfunc)(void)){
-    struct Element elem = {ELEMENT_C_FUNC, {.cfunc = cfunc}};
-    dict_put(name, &elem);
-}
-
-void register_primitives(){
-    register_one_primitive("add", add_op);
-    register_one_primitive("sub", sub_op);
-    register_one_primitive("mul", mul_op);
-    register_one_primitive("div", div_op);
-    register_one_primitive("def", def_op);
-}
 
 void assert_elem_number(int number, struct Element *elm){
     assert(number == elm->u.number);
@@ -493,6 +424,7 @@ static void test_eval_nested_executable_array_action(){
     cl_getc_set_src(input);
 
     eval();
+    stack_print_all();
 
     struct Element actual = {NO_ELEMENT, {0}};
 
@@ -522,7 +454,7 @@ static void unit_test(){
 //    test_eval_executable_array_two_numbers();
 //    test_eval_two_executable_arrays();
 //    test_eval_nest_executable_arrays();
-    test_eval_executable_array_action();
+//    test_eval_executable_array_action();
     test_eval_nested_executable_array_action();
 }
 
