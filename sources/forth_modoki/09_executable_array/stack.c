@@ -38,6 +38,9 @@ void stack_print_all(){
             case ELEMENT_LITERAL_NAME:
                 printf("%d:: ELEMENT_LITERAL_NAME: %s\n",_stack_pos, stack[_stack_pos].u.name);
                 break;
+            case ELEMENT_EXECUTABLE_ARRAY:
+                printf("%d:: ELEMENT_EXECUTABLE_ARRAY", _stack_pos);
+                break;
         }
         _stack_pos--;
     }while (_stack_pos >= 1);

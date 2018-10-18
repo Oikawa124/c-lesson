@@ -72,8 +72,7 @@ int dict_get(char *key, struct Element *out_elem){
     struct Node *pos;
     for (pos = array[hash(key)]; pos != NULL; pos = pos->next ) {
         if (streq(pos->key, key)){
-            out_elem->u.number = pos->value.u.number;
-            out_elem->etype = pos->value.etype;
+            *out_elem = pos->value;
             return 1;
         }
     }
@@ -220,9 +219,9 @@ static void unit_test(){
 }
 
 
-int main(){
-    unit_test();
-    dict_print_all();
-
-    return 1;
-}
+//int main(){
+//    unit_test();
+//    dict_print_all();
+//
+//    return 1;
+//}

@@ -10,7 +10,7 @@ enum LexicalType {
     OPEN_CURLY,
     CLOSE_CURLY,
     END_OF_FILE,
-    UNKNOWN
+    UNKNOWN,
 };
 
 
@@ -26,7 +26,10 @@ struct Token {
 enum ElementType {
     ELEMENT_NUMBER,
     ELEMENT_LITERAL_NAME,
-    NO_ELEMENT
+    ELEMENT_EXECUTABLE_NAME,
+    ELEMENT_C_FUNC,
+    ELEMENT_EXECUTABLE_ARRAY,
+    NO_ELEMENT,
 };
 
 struct Element {
@@ -35,7 +38,13 @@ struct Element {
         int number;
         char *name;
         void (*cfunc)();
+        struct ElementArray *byte_codes;
     } u;
+};
+
+struct ElementArray {
+    int len;
+    struct Element elements[0];
 };
 
 
@@ -64,12 +73,10 @@ void stack_init();
 void stack_clear();
 
 // 辞書関係の関数
-void dict_init();
+
 
 void dict_put(char *key, struct Element *elem);
 
 int dict_get(char *key, struct Element *out_elem);
 
-void dict_print_all();
 
-void dict_clean();
