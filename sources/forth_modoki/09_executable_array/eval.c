@@ -2,9 +2,11 @@
 #include <stdio.h>
 #include <assert.h>
 #include <malloc.h>
-#define MAX_NAME_OP_MUMBERS 256
+#define MAX_NAME_OP_NUMBERS 256
 
-void preprocessing_four_arithmetic_operations(int *out_num1, int *out_num2){
+void eval_exec_array(struct ElementArray *elmarr);
+
+static void preprocessing_four_arithmetic_operations(int *out_num1, int *out_num2){
 
     struct Element num1 = {NO_ELEMENT, {0}};
     struct Element num2 = {NO_ELEMENT, {0}};
@@ -16,7 +18,7 @@ void preprocessing_four_arithmetic_operations(int *out_num1, int *out_num2){
     *out_num2 = num2.u.number;
 }
 
-void def_op(){
+static void def_op(){
     struct Element val = {NO_ELEMENT, {0}};
     stack_pop(&val);
 
@@ -26,8 +28,7 @@ void def_op(){
     dict_put(literal_name.u.name, &val);
 }
 
-
-void add_op(){
+static void add_op(){
     int num1, num2;
     preprocessing_four_arithmetic_operations(&num1, &num2);
 
@@ -37,8 +38,7 @@ void add_op(){
     stack_push(&answer);
 }
 
-
-void sub_op(){
+static void sub_op(){
     int num1, num2;
     preprocessing_four_arithmetic_operations(&num1, &num2);
 
@@ -48,7 +48,7 @@ void sub_op(){
     stack_push(&answer);
 }
 
-void mul_op(){
+static void mul_op(){
     int num1, num2;
     preprocessing_four_arithmetic_operations(&num1, &num2);
 
@@ -58,7 +58,7 @@ void mul_op(){
     stack_push(&answer);
 }
 
-void div_op(){
+static void div_op(){
     int num1, num2;
     preprocessing_four_arithmetic_operations(&num1, &num2);
 
@@ -68,36 +68,37 @@ void div_op(){
     stack_push(&answer);
 }
 
-void compile_exec_array(int ch, struct Token *token, struct Element *out_elem){
-    struct Element arr[MAX_NAME_OP_MUMBERS];
-
+static int compile_exec_array(int ch, struct Element *out_elem){
+    struct Element arr[MAX_NAME_OP_NUMBERS];
+    struct Token token = {UNKNOWN, {0}};
 
     int i=0;
 
     do{
-        ch = parse_one(ch, token);
-        switch (token->ltype) {
+        ch = parse_one(ch, &token);
+        switch (token.ltype) {
             case NUMBER:
                 arr[i].etype = ELEMENT_NUMBER;
-                arr[i].u.number = token->u.number;
+                arr[i].u.number = token.u.number;
                 i++;
                 break;
             case LITERAL_NAME:
                 arr[i].etype = ELEMENT_LITERAL_NAME;
-                arr[i].u.name = token->u.name;
+                arr[i].u.name = token.u.name;
                 i++;
                 break;
             case EXECUTABLE_NAME:
                 arr[i].etype = ELEMENT_EXECUTABLE_NAME;
-                arr[i].u.name = token->u.name;
+                arr[i].u.name = token.u.name;
                 i++;
                 break;
             case OPEN_CURLY: {
                 struct Element nest_elem = {NO_ELEMENT, {0}};
-                compile_exec_array(ch, token, &nest_elem);
+                compile_exec_array(ch, &nest_elem);
                 arr[i].etype = nest_elem.etype;
                 arr[i].u.byte_codes = nest_elem.u.byte_codes;
                 i++;
+                ch = parse_one(ch, &token);
                 break;
             }
         }
@@ -111,6 +112,8 @@ void compile_exec_array(int ch, struct Token *token, struct Element *out_elem){
 
     out_elem->etype = ELEMENT_EXECUTABLE_ARRAY;
     out_elem->u.byte_codes = elem_arr;
+
+    return ch;
 }
 
 
@@ -121,7 +124,7 @@ void eval(){
         struct Token token = {UNKNOWN, {0}};
         struct Element elem = {NO_ELEMENT, {0}};
 
-        ch = parse_one(ch, &token);
+        ch = get_next_token(ch, &token);
 
         switch (token.ltype) {
             case NUMBER:
@@ -136,21 +139,30 @@ void eval(){
                 break;
             case EXECUTABLE_NAME:
                 if (dict_get(token.u.name, &elem) != -1){
-                    if (elem.etype == ELEMENT_C_FUNC){
+                    if (elem.etype == ELEMENT_C_FUNC) {
                         elem.u.cfunc();
+                        break;
+                    } else if (elem.etype == ELEMENT_EXECUTABLE_ARRAY) {
+                        eval_exec_array(elem.u.byte_codes);
+                        break;
                     } else {
                         stack_push(&elem);
                         break;
                     }
                 }
             case OPEN_CURLY:
-                compile_exec_array(ch, &token, &elem);
+                ch = compile_exec_array(ch, &elem);
                 stack_push(&elem);
-                ch = parse_one(ch, &token);
                 break;
         }
     }while (ch != EOF);
 }
+
+void eval_exec_array(struct ElementArray *elmarr) {
+    set_exec_array_to_parser(elmarr);
+    eval();
+}
+
 
 void register_one_primitive(char *name, void (*cfunc)(void)){
     struct Element elem = {ELEMENT_C_FUNC, {.cfunc = cfunc}};
@@ -437,7 +449,6 @@ static void test_eval_nest_executable_arrays(){
     cl_getc_set_src(input);
 
     eval();
-    stack_print_all();
 
     struct Element actual = {NO_ELEMENT, {0}};
 
@@ -455,28 +466,49 @@ static void test_eval_nest_executable_arrays(){
     stack_clear();
 }
 
+static void test_eval_executable_array_action(){
+
+    struct Element expect = {ELEMENT_NUMBER, {2}};
+
+    char *input = "/a {1 1 add} def a";
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual);
+
+    assert(expect.etype == actual.etype);
+    assert(expect.u.number == actual.u.number);
+
+    stack_clear();
+}
+
 static void unit_test(){
 //    test_eval_push_number_to_stack();
 //    test_eval_add();
 //    test_eval_add_with_many_values();
 //    test_eval_dict();
+
 //    test_eval_def_and_stack_pop();
 //    test_eval_sub();
 //    test_eval_mul();
 //    test_eval_div();
+
 //    test_eval_executable_array_one_number();
 //    test_eval_executable_array_literal_name();
 //    test_eval_executable_array_executable_name();
 //    test_eval_executable_array_two_numbers();
 //    test_eval_two_executable_arrays();
-    test_eval_nest_executable_arrays();
-
+//    test_eval_nest_executable_arrays();
+    test_eval_executable_array_action();
 }
 
 
 int main() {
     stack_init();
-//    register_primitives();
+    register_primitives();
 
     unit_test();
 

@@ -58,6 +58,10 @@ void parser_print_all();
 
 int parse_one(int prev_ch, struct Token *out_token);
 
+int get_next_token(int prev_ch, struct Token *out_token);
+
+void set_exec_array_to_parser(struct ElementArray *elemarr);
+
 int streq(char *s1, char *s2);
 
 
@@ -72,9 +76,8 @@ void stack_init();
 
 void stack_clear();
 
+
 // 辞書関係の関数
-
-
 void dict_put(char *key, struct Element *elem);
 
 int dict_get(char *key, struct Element *out_elem);

@@ -5,6 +5,9 @@
 #include <assert.h>
 
 #define NAME_SIZE 256
+static struct ElementArray *exec_array = NULL;
+static int operation_pos = 0;
+#define CONTINUE 1;
 
 int _isdigit(int n) { return '0' <= n && n <= '9';}
 
@@ -101,6 +104,47 @@ int parse_one(int prev_ch, struct Token *out_token) {
 
     out_token->ltype = UNKNOWN;
     return EOF;
+}
+
+void set_exec_array_to_parser(struct ElementArray *elemarr){
+    exec_array = elemarr;
+}
+
+int get_next_token(int prev_ch, struct Token *out_token){
+    if (exec_array == NULL) {
+        // TODO : prev_chがCONTINUEの時の処理をする。
+        return parse_one(prev_ch, out_token);
+    }
+
+    if (exec_array[operation_pos].len == 0){
+        fprintf(stderr, "空の実行可能配列です\n");
+    }
+
+    struct Element cur = exec_array->elements[operation_pos];
+    operation_pos++;
+
+    switch (cur.etype){
+        case ELEMENT_NUMBER:
+            out_token->ltype = NUMBER;
+            out_token->u.number = cur.u.number;
+            break;
+        case ELEMENT_LITERAL_NAME:
+            out_token->ltype = LITERAL_NAME;
+            out_token->u.name = cur.u.name;
+            break;
+        case ELEMENT_EXECUTABLE_NAME:
+            out_token->ltype = EXECUTABLE_NAME;
+            out_token->u.name = cur.u.name;
+            break;
+    }
+
+    // 実行可能配列が実行し終わった。
+    if (exec_array->len == operation_pos){
+        exec_array = NULL;
+        operation_pos = 0;
+        return EOF;
+    }
+    return CONTINUE;
 }
 
 
@@ -264,7 +308,6 @@ static void unit_tests() {
     test_parse_one_open_curly();
     test_parse_one_close_curly();
     test_parse_one_minus_number();
-
 }
 
 #if 0
