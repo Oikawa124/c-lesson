@@ -13,7 +13,7 @@ int _isdigit(int n) { return '0' <= n && n <= '9';}
 
 int _isLetter(int ch){ return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_';}
 
-int parse_one(int prev_ch, struct Token *out_token) {
+static int parse_one(int prev_ch, struct Token *out_token) {
 
     int ch;
 
@@ -108,6 +108,7 @@ int parse_one(int prev_ch, struct Token *out_token) {
 
 void set_exec_array_to_parser(struct ElementArray *elemarr){
     exec_array = elemarr;
+    operation_pos = 0;
 }
 
 int get_next_token(int prev_ch, struct Token *out_token){
@@ -116,25 +117,25 @@ int get_next_token(int prev_ch, struct Token *out_token){
         return parse_one(prev_ch, out_token);
     }
 
-    if (exec_array[operation_pos].len == 0){
+    if (exec_array->len == 0){
         fprintf(stderr, "空の実行可能配列です\n");
     }
 
-    struct Element cur = exec_array->elements[operation_pos];
+    struct Element *cur = &exec_array->elements[operation_pos];
     operation_pos++;
 
-    switch (cur.etype){
+    switch (cur->etype){
         case ELEMENT_NUMBER:
             out_token->ltype = NUMBER;
-            out_token->u.number = cur.u.number;
+            out_token->u.number = cur->u.number;
             break;
         case ELEMENT_LITERAL_NAME:
             out_token->ltype = LITERAL_NAME;
-            out_token->u.name = cur.u.name;
+            out_token->u.name = cur->u.name;
             break;
         case ELEMENT_EXECUTABLE_NAME:
             out_token->ltype = EXECUTABLE_NAME;
-            out_token->u.name = cur.u.name;
+            out_token->u.name = cur->u.name;
             break;
     }
 

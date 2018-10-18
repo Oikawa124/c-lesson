@@ -47,6 +47,11 @@ struct ElementArray {
     struct Element elements[0];
 };
 
+struct Continuation {
+    struct ElementArray *exec_array;
+    int pc;
+};
+
 
 int cl_getc();
 
@@ -55,8 +60,6 @@ void cl_getc_set_src(char* str);
 
 // パーサー関係の関数
 void parser_print_all();
-
-int parse_one(int prev_ch, struct Token *out_token);
 
 int get_next_token(int prev_ch, struct Token *out_token);
 

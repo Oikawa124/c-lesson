@@ -75,7 +75,7 @@ static int compile_exec_array(int ch, struct Element *out_elem){
     int i=0;
 
     do{
-        ch = parse_one(ch, &token);
+        ch = get_next_token(ch, &token);
         switch (token.ltype) {
             case NUMBER:
                 arr[i].etype = ELEMENT_NUMBER;
@@ -485,6 +485,26 @@ static void test_eval_executable_array_action(){
     stack_clear();
 }
 
+static void test_eval_nested_executable_array_action(){
+
+    struct Element expect = {ELEMENT_NUMBER, {3}};
+
+    char *input = "/ZZ {6} def /YY {4 ZZ 5} def /XX {1 2 YY 3} def XX";
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual);
+
+    assert(expect.etype == actual.etype);
+    assert(expect.u.number == actual.u.number);
+
+    stack_clear();
+}
+
+
 static void unit_test(){
 //    test_eval_push_number_to_stack();
 //    test_eval_add();
@@ -503,6 +523,7 @@ static void unit_test(){
 //    test_eval_two_executable_arrays();
 //    test_eval_nest_executable_arrays();
     test_eval_executable_array_action();
+    test_eval_nested_executable_array_action();
 }
 
 
@@ -514,9 +535,7 @@ int main() {
 
 //    dict_print_all();
 //    stack_print_all();
-
     return 1;
 }
-
 
 // TODO 実行可能配列を実装していく。
