@@ -62,7 +62,7 @@ void cl_getc_set_src(char* str);
 // パーサー関係の関数
 void parser_print_all();
 
-int get_next_token(int prev_ch, struct Token *out_token);
+int get_next_token(int prev_ch, struct Token *out_token, int *out_op_pos);
 
 void set_exec_array_to_parser(struct ElementArray *elemarr);
 
@@ -89,7 +89,7 @@ void dict_put(char *key, struct Element *elem);
 int dict_get(char *key, struct Element *out_elem);
 
 // co_stack関係
-void co_push(struct Continuation *cont);
+void co_push(struct Continuation *cont, int out_op_pos);
 
 void co_pop();
 
@@ -98,6 +98,8 @@ struct Continuation *co_peek();
 void co_stack_clear();
 
 int get_stack_pos();
+
+void set_current_op_pos(int out_op_pos);
 
 
 // プリミティブ関連

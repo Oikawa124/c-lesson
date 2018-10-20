@@ -114,14 +114,13 @@ void set_cont(struct Continuation *cont) {
     operation_pos = cont->pc;
 }
 
-//void set_exec_array_to_parser(struct ElementArray *elemarr){
-//    exec_array = elemarr;
-//    operation_pos = 0;
-//}
 
-int get_next_token(int prev_ch, struct Token *out_token){
+int get_next_token(int prev_ch, struct Token *out_token, int *out_op_pos){
     if (exec_array == NULL) {
-        // TODO : prev_chがCONTINUEの時の処理をする。
+
+        if (prev_ch == CONTINUE){
+            prev_ch = EOF;
+        }
         return parse_one(prev_ch, out_token);
     }
 
@@ -136,14 +135,17 @@ int get_next_token(int prev_ch, struct Token *out_token){
         case ELEMENT_NUMBER:
             out_token->ltype = NUMBER;
             out_token->u.number = cur->u.number;
+            *out_op_pos = operation_pos;
             break;
         case ELEMENT_LITERAL_NAME:
             out_token->ltype = LITERAL_NAME;
             out_token->u.name = cur->u.name;
+            *out_op_pos = operation_pos;
             break;
         case ELEMENT_EXECUTABLE_NAME:
             out_token->ltype = EXECUTABLE_NAME;
             out_token->u.name = cur->u.name;
+            *out_op_pos = operation_pos;
             break;
     }
 
@@ -151,6 +153,7 @@ int get_next_token(int prev_ch, struct Token *out_token){
     if (exec_array->len == operation_pos){
         exec_array = NULL;
         operation_pos = 0;
+        co_pop();
         return EOF;
     }
     return CONTINUE;

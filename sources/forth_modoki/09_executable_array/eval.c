@@ -9,11 +9,12 @@ void eval_exec_array();
 static int compile_exec_array(int ch, struct Element *out_elem){
     struct Element arr[MAX_NAME_OP_NUMBERS];
     struct Token token = {UNKNOWN, {0}};
+    int out_op_pos = 0;
 
     int i=0;
 
     do{
-        ch = get_next_token(ch, &token);
+        ch = get_next_token(ch, &token, &out_op_pos);
         switch (token.ltype) {
             case NUMBER:
                 arr[i].etype = ELEMENT_NUMBER;
@@ -36,7 +37,7 @@ static int compile_exec_array(int ch, struct Element *out_elem){
                 arr[i].etype = nest_elem.etype;
                 arr[i].u.byte_codes = nest_elem.u.byte_codes;
                 i++;
-                ch = get_next_token(ch, &token);
+                ch = get_next_token(ch, &token, &out_op_pos);
                 break;
             }
         }
@@ -56,12 +57,13 @@ static int compile_exec_array(int ch, struct Element *out_elem){
 
 void eval(){
     static int ch = EOF;
+    int out_op_pos=0;
 
     do{
         struct Token token = {UNKNOWN, {0}};
         struct Element elem = {NO_ELEMENT, {0}};
 
-        ch = get_next_token(ch, &token);
+        ch = get_next_token(ch, &token, &out_op_pos);
 
         switch (token.ltype) {
             case NUMBER:
@@ -81,7 +83,7 @@ void eval(){
                         break;
                     } else if (elem.etype == ELEMENT_EXECUTABLE_ARRAY) {
                         struct Continuation cont = {elem.u.byte_codes, 0};
-                        co_push(&cont);
+                        co_push(&cont, out_op_pos);
                         eval_exec_array();
                         break;
                     } else {
@@ -98,13 +100,50 @@ void eval(){
 }
 
 void eval_exec_array() {
+    int ch = EOF;
+    struct Token token = {UNKNOWN, 0};
+    struct Element elem = {NO_ELEMENT, {0}};
+    int out_op_pos=0;
 
-    while (get_stack_pos() > 1){
+    while (get_stack_pos() >= 1){
         struct Continuation *cont = co_peek();
         set_cont(cont);
+
+        do{
+            ch = get_next_token(ch, &token, &out_op_pos);
+
+            if (token.ltype == NUMBER) {
+                elem.etype = ELEMENT_NUMBER;
+                elem.u.number = token.u.number;
+                stack_push(&elem);
+
+            }else if (token.ltype == LITERAL_NAME){
+                elem.etype = ELEMENT_LITERAL_NAME;
+                elem.u.name = token.u.name;
+                stack_push(&elem);
+
+            }else if (token.ltype == EXECUTABLE_NAME) {
+                if (dict_get(token.u.name, &elem) != -1){
+                    if (elem.etype == ELEMENT_C_FUNC) {
+                        elem.u.cfunc();
+                    } else if (elem.etype == ELEMENT_EXECUTABLE_ARRAY) {
+                        struct Continuation next_cont = {elem.u.byte_codes, .pc=0};
+                        set_current_op_pos(out_op_pos);
+                        out_op_pos = 0;
+                        co_push(&next_cont, out_op_pos);
+                        break;
+                    } else {
+                        stack_push(&elem);
+                    }
+                }
+            }else {
+                break;
+            }
+        }while (ch != EOF);
+
     }
-    co_pop();
 }
+
 
 
 
@@ -416,15 +455,15 @@ static void test_eval_executable_array_action(){
     stack_clear();
 }
 
-static void test_eval_nested_executable_array_action(){
+static void test_eval_nested_executable_array_action1(){
 
-    struct Element expect = {ELEMENT_NUMBER, {3}};
+    struct Element expect = {ELEMENT_NUMBER, {2}};
 
-    char *input = "/ZZ {6} def /YY {4 ZZ 5} def /XX {1 2 YY 3} def XX";
+    char *input = "/a {1 add} def /b {1 a} def b";
+
     cl_getc_set_src(input);
 
     eval();
-    stack_print_all();
 
     struct Element actual = {NO_ELEMENT, {0}};
 
@@ -436,6 +475,53 @@ static void test_eval_nested_executable_array_action(){
     stack_clear();
 }
 
+static void test_eval_nested_executable_array_action2(){
+
+    struct Element expect_array_no5 = {ELEMENT_NUMBER, {5}};
+    struct Element expect_array_no6 = {ELEMENT_NUMBER, {3}};
+
+    // 出力 : 1, 2, 4, 6, 5, 3
+    char *input = "/ZZ {6} def /YY {4 ZZ 5} def /XX {1 2 YY 3} def XX";
+
+
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual1= {NO_ELEMENT, {0}};
+    struct Element actual2= {NO_ELEMENT, {0}};
+
+    stack_pop(&actual1);
+    stack_pop(&actual2);
+
+    assert(expect_array_no6.etype == actual1.etype);
+    assert(expect_array_no6.u.number == actual1.u.number);
+
+    assert(expect_array_no5.etype == actual2.etype);
+    assert(expect_array_no5.u.number == actual2.u.number);
+
+    stack_clear();
+}
+
+static void test_eval_nested_executable_array_action3(){
+
+    struct Element expect = {ELEMENT_NUMBER, {6}};
+
+    char *input = "/a {1 add} def /b {1 a} def /c {1 b add 2 mul} def c ";
+
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual);
+
+    assert(expect.etype == actual.etype);
+    assert(expect.u.number == actual.u.number);
+
+    stack_clear();
+}
 
 static void unit_test(){
 //    test_eval_push_number_to_stack();
@@ -455,7 +541,9 @@ static void unit_test(){
 //    test_eval_two_executable_arrays();
 //    test_eval_nest_executable_arrays();
 //    test_eval_executable_array_action();
-    test_eval_nested_executable_array_action();
+    test_eval_nested_executable_array_action1();
+    test_eval_nested_executable_array_action2();
+    test_eval_nested_executable_array_action3();
 }
 
 
@@ -469,5 +557,3 @@ int main() {
 //    stack_print_all();
     return 1;
 }
-
-// TODO 実行可能配列を実装していく。
