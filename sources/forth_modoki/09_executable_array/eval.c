@@ -83,7 +83,7 @@ void eval(){
                         break;
                     } else if (elem.etype == ELEMENT_EXECUTABLE_ARRAY) {
                         struct Continuation cont = {elem.u.byte_codes, 0};
-                        co_push(&cont, out_op_pos);
+                        co_push(&cont);
                         eval_exec_array();
                         break;
                     } else {
@@ -130,17 +130,14 @@ void eval_exec_array() {
                         struct Continuation next_cont = {elem.u.byte_codes, .pc=0};
                         set_current_op_pos(out_op_pos);
                         out_op_pos = 0;
-                        co_push(&next_cont, out_op_pos);
+                        co_push(&next_cont);
                         break;
                     } else {
                         stack_push(&elem);
                     }
                 }
-            }else {
-                break;
             }
         }while (ch != EOF);
-
     }
 }
 
@@ -528,12 +525,12 @@ static void unit_test(){
 //    test_eval_add();
 //    test_eval_add_with_many_values();
 //    test_eval_dict();
-
+//
 //    test_eval_def_and_stack_pop();
 //    test_eval_sub();
 //    test_eval_mul();
 //    test_eval_div();
-
+//
 //    test_eval_executable_array_one_number();
 //    test_eval_executable_array_literal_name();
 //    test_eval_executable_array_executable_name();
