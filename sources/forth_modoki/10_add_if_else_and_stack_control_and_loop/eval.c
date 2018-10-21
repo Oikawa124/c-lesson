@@ -289,6 +289,268 @@ static void test_eval_div(){
     stack_clear();
 }
 
+static void test_eval_eq(){
+    int expect1 = 1;
+
+    char *input = "1 1 eq";
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual);
+
+    assert(expect1 == actual.u.number);
+
+    stack_clear();
+}
+
+
+static void test_eval_neq(){
+    int expect1 = 1;
+
+    char *input = "1 2 neq";
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual);
+
+    assert(expect1 == actual.u.number);
+
+    stack_clear();
+}
+
+static void test_eval_gt(){
+    int expect1 = 1;
+
+    char *input = "10 2 gt";
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual);
+
+    assert(expect1 == actual.u.number);
+
+    stack_clear();
+}
+
+static void test_eval_ge(){
+    int expect1 = 1;
+
+    char *input = "2 2 ge";
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual);
+
+    assert(expect1 == actual.u.number);
+
+    stack_clear();
+}
+
+static void test_eval_lt(){
+    int expect1 = 1;
+
+    char *input = "1 2 lt";
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual);
+
+    assert(expect1 == actual.u.number);
+
+    stack_clear();
+}
+
+static void test_eval_le(){
+    int expect1 = 1;
+
+    char *input = "1 1 le";
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual);
+
+    assert(expect1 == actual.u.number);
+
+    stack_clear();
+}
+
+static void test_eval_pop(){
+    int expect1 = 1;
+
+    char *input = "1 1 pop";
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual);
+
+    assert(expect1 == actual.u.number);
+
+    stack_clear();
+}
+
+static void test_eval_exch(){
+    int expect1 = 1;
+
+    char *input = "1 2 exch";
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual);
+
+    assert(expect1 == actual.u.number);
+
+    stack_clear();
+}
+
+static void test_eval_dup(){
+    int expect1 = 1;
+    int expect2 = 1;
+
+    char *input = "1 dup";
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual1 = {NO_ELEMENT, {0}};
+    struct Element actual2 = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual1);
+    stack_pop(&actual2);
+
+    assert(expect1 == actual1.u.number);
+    assert(expect2 == actual2.u.number);
+
+    stack_clear();
+}
+
+static void test_eval_index(){
+    int expect1 = 3;
+
+    char *input = "1 2 3 4 5 2 index";
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual);
+
+    assert(expect1 == actual.u.number);
+
+    stack_clear();
+}
+
+static void test_eval_exec(){
+    int expect1 = 10;
+
+    char *input = "{5 5 add} exec";
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual);
+
+    assert(expect1 == actual.u.number);
+
+    stack_clear();
+}
+
+static void test_eval_if(){
+    int expect1 = 3;
+
+    char *input = "1 {1 2 add} if";
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual);
+
+    assert(expect1 == actual.u.number);
+
+    stack_clear();
+}
+
+static void test_eval_ifelse(){
+    int expect1 = 10;
+
+    char *input = "0 {5 5 add} {3 2 add} ifelse";
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual);
+
+    assert(expect1 == actual.u.number);
+
+    stack_clear();
+}
+
+static void test_eval_repeat(){
+    int expect1 = 11;
+
+    char *input = "1 2 {5 add} repeat";
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual);
+
+    assert(expect1 == actual.u.number);
+
+    stack_clear();
+}
+
+static void test_eval_while(){
+    int expect1 = 0;
+
+    char *input = "1 1 1 {pop} {1} while";
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual);
+
+    assert(expect1 == actual.u.number);
+
+    stack_clear();
+}
+
+
+
 static void test_eval_executable_array_one_number(){
 
     struct Element expect = {ELEMENT_EXECUTABLE_ARRAY, {0}};
@@ -521,23 +783,39 @@ static void test_eval_nested_executable_array_action3(){
 }
 
 static void unit_test(){
-//    test_eval_push_number_to_stack();
-//    test_eval_add();
-//    test_eval_add_with_many_values();
-//    test_eval_dict();
-//
-//    test_eval_def_and_stack_pop();
-//    test_eval_sub();
-//    test_eval_mul();
-//    test_eval_div();
-//
-//    test_eval_executable_array_one_number();
-//    test_eval_executable_array_literal_name();
-//    test_eval_executable_array_executable_name();
-//    test_eval_executable_array_two_numbers();
-//    test_eval_two_executable_arrays();
-//    test_eval_nest_executable_arrays();
-//    test_eval_executable_array_action();
+    test_eval_push_number_to_stack();
+    test_eval_add();
+    test_eval_add_with_many_values();
+    test_eval_dict();
+
+    test_eval_def_and_stack_pop();
+    test_eval_sub();
+    test_eval_mul();
+    test_eval_div();
+    test_eval_eq();
+    test_eval_neq();
+    test_eval_gt();
+    test_eval_ge();
+    test_eval_lt();
+    test_eval_le();
+    test_eval_pop();
+    test_eval_exch();
+    test_eval_dup();
+    test_eval_index();
+    test_eval_exec();
+    test_eval_if();
+    test_eval_ifelse();
+    test_eval_repeat();
+    test_eval_while();
+
+
+    test_eval_executable_array_one_number();
+    test_eval_executable_array_literal_name();
+    test_eval_executable_array_executable_name();
+    test_eval_executable_array_two_numbers();
+    test_eval_two_executable_arrays();
+    test_eval_nest_executable_arrays();
+    test_eval_executable_array_action();
     test_eval_nested_executable_array_action1();
     test_eval_nested_executable_array_action2();
     test_eval_nested_executable_array_action3();

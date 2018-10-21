@@ -74,12 +74,16 @@ void stack_push(struct Element *token);
 
 void stack_pop(struct Element *out_element);
 
+void stack_value_copy(struct Element *out_element, int index);
+
 void stack_print_all();
 
 void stack_init();
 
 void stack_clear();
 
+// eval関係
+void eval_exec_array();
 
 // 辞書関係の関数
 void dict_put(char *key, struct Element *elem);

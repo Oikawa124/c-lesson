@@ -19,6 +19,10 @@ void stack_pop(struct Element *out_element){
     }
 }
 
+void stack_value_copy(struct Element *out_element, int index){
+        *out_element = stack[index+1];
+}
+
 
 void stack_print_all(){
     int _stack_pos = stack_pos - 1;
