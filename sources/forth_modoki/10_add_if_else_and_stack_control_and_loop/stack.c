@@ -6,6 +6,10 @@ static struct Element stack[STACK_SIZE];
 static int stack_pos;
 
 void stack_push(struct Element *token){
+    if (stack_pos >STACK_SIZE ){
+        printf("stack_pos is larger than STACK_SIZE");
+    }
+
     stack[stack_pos] = *token;
     stack_pos++;
 }
@@ -28,7 +32,7 @@ void stack_print_all(){
     int _stack_pos = stack_pos - 1;
 
     if (stack_pos == 1){
-        printf("NO ELEMENT");
+        printf("NO ELEMENT\n");
         return;
     }
 
@@ -41,7 +45,7 @@ void stack_print_all(){
                 printf("%d:: ELEMENT_LITERAL_NAME: %s\n",_stack_pos, stack[_stack_pos].u.name);
                 break;
             case ELEMENT_EXECUTABLE_ARRAY:
-                printf("%d:: ELEMENT_EXECUTABLE_ARRAY", _stack_pos);
+                printf("%d:: ELEMENT_EXECUTABLE_ARRAY\n", _stack_pos);
                 break;
         }
         _stack_pos--;

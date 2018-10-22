@@ -251,7 +251,7 @@ static void while_op(){
     struct Element val = {NO_ELEMENT, {0}};
     stack_pop(&val);
 
-    while (val.u.number == 1) {
+    while (val.etype == NUMBER && val.u.number == 1) {
         struct Continuation _cont = {body.u.byte_codes, 0};
         co_push(&_cont);
         eval_exec_array();

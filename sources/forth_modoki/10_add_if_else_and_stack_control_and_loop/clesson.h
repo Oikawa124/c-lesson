@@ -2,6 +2,7 @@
 #include <string.h>
 
 #define STACK_SIZE 1024
+FILE *fp;
 
 enum LexicalType {
     NUMBER,

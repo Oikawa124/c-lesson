@@ -3,7 +3,8 @@
 #include "clesson.h"
 
 #define TABLE_SIZE 1024
-
+// テスト用
+//#define TABLE_SIZE 4
 
 struct Node {
     char *key;
@@ -36,6 +37,8 @@ static struct Node *create_node(char *key, struct Element *elem){
 static void update_or_insert_list(struct Node *head, char *key, struct Element *elem){
     static struct Node *pos;
     struct Node *new_node;
+    struct Node *prev = head;
+
 
     for (pos = head; pos !=NULL; pos = pos->next){
 
@@ -43,18 +46,20 @@ static void update_or_insert_list(struct Node *head, char *key, struct Element *
             pos->value = *elem;
             return;
         }
+
+        if (pos != NULL){prev =pos;}
     }
 
     // ここに行った時があやしい 同じhash値で違う名前だと、pos->next = new_nodeでエラーがでる。
     new_node = create_node(key, elem);
-    pos->next = new_node;
+    new_node->next = prev->next;
+    prev->next = new_node;
 }
 
 
 
 void dict_put(char *key, struct Element *elem){
     int idx = hash(key);
-    //int idx = 100;
     struct Node *head = array[idx];
 
     if (head == NULL) {
@@ -214,30 +219,41 @@ static void test_dict_not_exist_key(){
 }
 
 static void test_dict_same_hash_no_same_keyname(){
-    char *input_key = "one";
-    struct Element input_elem = {ELEMENT_NUMBER, {1}};
-    char *input_key2 = "test";
-    struct Element input_elem2 = {ELEMENT_NUMBER, {1}};
+    // key1とkey2はTABLE_SIZEが4のとき同じハッシュ値になる。
+    char *input_key1 = "one";
+    struct Element input_elem1 = {ELEMENT_NUMBER, {1}};
+    char *input_key2 = "two";
+    struct Element input_elem2 = {ELEMENT_NUMBER, {2}};
 
-    dict_put(input_key, &input_elem);
+    dict_put(input_key1, &input_elem1);
     dict_put(input_key2, &input_elem2);
+
+    struct Element actual1 = {NO_ELEMENT, {0}};
+    struct Element actual2 = {NO_ELEMENT, {0}};
+
+    dict_get(input_key1, &actual1);
+    dict_get(input_key2, &actual2);
+
+    assert(input_elem1.u.number == actual1.u.number);
+    assert(input_elem2.u.number == actual2.u.number);
 
 }
 
 
 static void unit_test(){
-//    test_dict_one_times();
-//    test_dict_two_times();
-//    test_dict_same_key();
-//    test_dict_get();
-//    test_dict_not_exist_key();
+    test_dict_one_times();
+    test_dict_two_times();
+    test_dict_same_key();
+    test_dict_get();
+    test_dict_not_exist_key();
     test_dict_same_hash_no_same_keyname();
 }
 
-
+#if 0
 int main(){
     unit_test();
-    dict_print_all();
+//    dict_print_all();
 
     return 1;
 }
+#endif
