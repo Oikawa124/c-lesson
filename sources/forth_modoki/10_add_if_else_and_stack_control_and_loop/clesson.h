@@ -11,6 +11,7 @@ enum LexicalType {
     OPEN_CURLY,
     CLOSE_CURLY,
     END_OF_FILE,
+    NEW_LINE,
     UNKNOWN,
 };
 
@@ -58,11 +59,13 @@ int cl_getc();
 
 void cl_getc_set_src(char* str);
 
+void textfile_to_input(FILE *fp);
+
 
 // パーサー関係の関数
 void parser_print_all();
 
-int get_next_token(int prev_ch, struct Token *out_token, int *cur_op_pos);
+int get_next_token(int prev_ch, struct Token *out_token, int *out_op_pos);
 
 void set_cont(struct Continuation *cont);
 
@@ -83,7 +86,9 @@ void stack_init();
 void stack_clear();
 
 // eval関係
+void eval();
 void eval_exec_array();
+void init();
 
 // 辞書関係の関数
 void dict_put(char *key, struct Element *elem);

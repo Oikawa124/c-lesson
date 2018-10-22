@@ -45,6 +45,7 @@ static void update_or_insert_list(struct Node *head, char *key, struct Element *
         }
     }
 
+    // ここに行った時があやしい 同じhash値で違う名前だと、pos->next = new_nodeでエラーがでる。
     new_node = create_node(key, elem);
     pos->next = new_node;
 }
@@ -53,6 +54,7 @@ static void update_or_insert_list(struct Node *head, char *key, struct Element *
 
 void dict_put(char *key, struct Element *elem){
     int idx = hash(key);
+    //int idx = 100;
     struct Node *head = array[idx];
 
     if (head == NULL) {
@@ -164,6 +166,7 @@ static void test_dict_same_key(){
     dict_put(input_key, &input_elem);
     dict_put(input_key, &input_elem);
 
+
     struct Element actual = {NO_ELEMENT, {0}};
     dict_get(input_key, &actual);
 
@@ -210,18 +213,31 @@ static void test_dict_not_exist_key(){
     dict_clear();
 }
 
-static void unit_test(){
-    test_dict_one_times();
-    test_dict_two_times();
-    test_dict_same_key();
-    test_dict_get();
-    test_dict_not_exist_key();
+static void test_dict_same_hash_no_same_keyname(){
+    char *input_key = "one";
+    struct Element input_elem = {ELEMENT_NUMBER, {1}};
+    char *input_key2 = "test";
+    struct Element input_elem2 = {ELEMENT_NUMBER, {1}};
+
+    dict_put(input_key, &input_elem);
+    dict_put(input_key2, &input_elem2);
+
 }
 
 
-//int main(){
-//    unit_test();
-//    dict_print_all();
-//
-//    return 1;
-//}
+static void unit_test(){
+//    test_dict_one_times();
+//    test_dict_two_times();
+//    test_dict_same_key();
+//    test_dict_get();
+//    test_dict_not_exist_key();
+    test_dict_same_hash_no_same_keyname();
+}
+
+
+int main(){
+    unit_test();
+    dict_print_all();
+
+    return 1;
+}

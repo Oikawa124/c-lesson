@@ -837,14 +837,18 @@ static void unit_test(){
     test_eval_nested_executable_array_action3();
 }
 
-
-int main() {
+void init(){
     stack_init();
     register_primitives();
-
-    unit_test();
-
-//    dict_print_all();
-//    stack_print_all();
-    return 1;
 }
+
+//int main() {
+//    stack_init();
+//    register_primitives();
+//
+//    unit_test();
+//
+////    dict_print_all();
+////    stack_print_all();
+//    return 1;
+//}

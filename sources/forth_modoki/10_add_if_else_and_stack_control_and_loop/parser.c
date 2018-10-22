@@ -115,7 +115,7 @@ void set_cont(struct Continuation *cont) {
 }
 
 
-int get_next_token(int prev_ch, struct Token *out_token, int *cur_op_pos){
+int get_next_token(int prev_ch, struct Token *out_token, int *out_op_pos){
     if (exec_array == NULL) {
 
         if (prev_ch == CONTINUE){
@@ -130,7 +130,7 @@ int get_next_token(int prev_ch, struct Token *out_token, int *cur_op_pos){
 
     struct Element *cur = &exec_array->elements[operation_pos];
     operation_pos++;
-    *cur_op_pos = operation_pos;
+    *out_op_pos = operation_pos;
 
     switch (cur->etype){
         case ELEMENT_NUMBER:
@@ -186,6 +186,9 @@ void parser_print_all() {
                     break;
                 case LITERAL_NAME:
                     printf("ELEMENT_LITERAL_NAME: %s\n", token.u.name);
+                    break;
+                case NEW_LINE:
+                    printf("NEW_LINE\n");
                     break;
 
                 default:
@@ -308,23 +311,63 @@ void test_parse_one_minus_number(){
     assert(expect == token.u.number);
 }
 
+void test_parse_one_newline(){
+    char *input = "123\n456";
+    int expect = 456;
+
+    struct Token token1 = {UNKNOWN, {0}};
+    struct Token token2 = {UNKNOWN, {0}};
+    struct Token token3 = {UNKNOWN, {0}};
+
+    int ch;
+    cl_getc_set_src(input);
+
+    ch = parse_one(EOF, &token1);
+    ch = parse_one(ch, &token2);
+    parse_one(ch, &token3);
+
+    assert(token2.ltype == SPACE);
+    assert(token3.ltype == NUMBER);
+    assert(token3.u.number == expect);
+}
+
+void test_parse_comment(){
+    char *input = "123%This is comment\n456";
+    int expect = 456;
+
+    struct Token token1 = {UNKNOWN, {0}};
+    struct Token token2 = {UNKNOWN, {0}};
+    struct Token token3 = {UNKNOWN, {0}};
+
+    int ch;
+    cl_getc_set_src(input);
+
+    ch = parse_one(EOF, &token1);
+    ch = parse_one(ch, &token2);
+    parse_one(ch, &token3);
+
+    assert(token2.ltype == SPACE);
+    assert(token3.ltype == NUMBER);
+    assert(token3.u.number == expect);
+}
 
 static void unit_tests() {
-    test_parse_one_executable_name();
-    test_parse_one_literal_name();
-    test_parse_one_empty_should_return_END_OF_FILE();
-    test_parse_one_number();
-    test_parse_one_open_curly();
-    test_parse_one_close_curly();
-    test_parse_one_minus_number();
+//    test_parse_one_executable_name();
+//    test_parse_one_literal_name();
+//    test_parse_one_empty_should_return_END_OF_FILE();
+//    test_parse_one_number();
+//    test_parse_one_open_curly();
+//    test_parse_one_close_curly();
+//    test_parse_one_minus_number();
+    test_parse_one_newline();
+    test_parse_comment();
 }
 
-#if 0
-int main() {
-    unit_tests();
 
-//    cl_getc_set_src("123 45 add /some { 2 3 add } def");
-//    parser_print_all();
-    return 1;
-}
-#endif
+//int main() {
+//    unit_tests();
+//
+////    cl_getc_set_src("123 45 add /some { 2 3 add } def");
+////    parser_print_all();
+//    return 1;
+//}
