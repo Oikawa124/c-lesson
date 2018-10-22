@@ -8,6 +8,11 @@ void co_push(struct Continuation *cont){
     co_pos++;
 }
 
+void co_push_elem_arr(struct Element *elem){
+    struct Continuation cont = {elem->u.byte_codes, .pc=0};
+    co_push(&cont);
+}
+
 void co_pop(){
     co_pos--;
 }
@@ -23,3 +28,6 @@ int get_stack_pos(){
 void set_current_op_pos(int out_op_pos){
     co_stack[co_pos-1].pc = out_op_pos;
 }
+
+
+

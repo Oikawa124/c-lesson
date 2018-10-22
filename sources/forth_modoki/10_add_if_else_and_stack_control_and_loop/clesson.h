@@ -62,7 +62,7 @@ void cl_getc_set_src(char* str);
 // パーサー関係の関数
 void parser_print_all();
 
-int get_next_token(int prev_ch, struct Token *out_token, int *out_op_pos);
+int get_next_token(int prev_ch, struct Token *out_token, int *cur_op_pos);
 
 void set_cont(struct Continuation *cont);
 
@@ -100,6 +100,8 @@ struct Continuation *co_peek();
 int get_stack_pos();
 
 void set_current_op_pos(int out_op_pos);
+
+void co_push_elem_arr(struct Element *elem_arr);
 
 
 // プリミティブ関連
