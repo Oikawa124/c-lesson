@@ -2,7 +2,9 @@
 #include <stdlib.h>
 #include "clesson.h"
 
-char words[100];
+#define CHARACTER_SIZE 100
+
+char words[CHARACTER_SIZE];
 int word_pos = 0;
 
 void add_char(int ch){
@@ -28,7 +30,7 @@ char *get_readline(FILE *f_p){
         add_char(EOF);
     }
 
-    ret = malloc(sizeof(char) * 100);
+    ret = malloc(sizeof(char) * CHARACTER_SIZE);
     strcpy(ret, words);
 
     return ret;
@@ -37,9 +39,11 @@ char *get_readline(FILE *f_p){
 int main(int argc, char *argv[]){
 
     char *buf;
+    FILE *fp;
 
     if (argc >= 2) {
         fp = fopen("text", "r");
+        cl_getc_set_fp(fp);
         if (fp == NULL) {
             fprintf(stderr, "NO EXIST FILE");
         }
@@ -48,6 +52,7 @@ int main(int argc, char *argv[]){
         eval();
 
         stack_print_all();
+        dict_print_all();
 
         fclose(fp);
     } else {

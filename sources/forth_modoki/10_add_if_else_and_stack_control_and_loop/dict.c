@@ -50,7 +50,6 @@ static void update_or_insert_list(struct Node *head, char *key, struct Element *
         if (pos != NULL){prev =pos;}
     }
 
-    // ここに行った時があやしい 同じhash値で違う名前だと、pos->next = new_nodeでエラーがでる。
     new_node = create_node(key, elem);
     new_node->next = prev->next;
     prev->next = new_node;
@@ -125,8 +124,6 @@ void dict_clear(){
     }
 
 }
-
-
 
 
 static void test_dict_one_times(){

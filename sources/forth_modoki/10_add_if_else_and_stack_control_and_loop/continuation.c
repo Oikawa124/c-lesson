@@ -28,6 +28,3 @@ int get_stack_pos(){
 void set_current_op_pos(int out_op_pos){
     co_stack[co_pos-1].pc = out_op_pos;
 }
-
-
-

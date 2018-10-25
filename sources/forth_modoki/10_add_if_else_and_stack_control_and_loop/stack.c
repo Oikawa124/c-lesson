@@ -24,7 +24,7 @@ void stack_pop(struct Element *out_element){
 }
 
 void stack_value_copy(struct Element *out_element, int index){
-        *out_element = stack[index+1];
+        *out_element = stack[stack_pos - index - 1];
 }
 
 
@@ -46,7 +46,33 @@ void stack_print_all(){
                 break;
             case ELEMENT_EXECUTABLE_ARRAY:
                 printf("%d:: ELEMENT_EXECUTABLE_ARRAY\n", _stack_pos);
+                int i=0;
+                printf("##\n");
+                do {
+                    switch(stack[_stack_pos].u.byte_codes->elements[i].etype)
+                    {
+                        case ELEMENT_NUMBER:
+                            printf("%d:::: num: %d\n",i, stack[_stack_pos].u.byte_codes->elements[i].u.number);
+                            break;
+                        case ELEMENT_LITERAL_NAME:
+                            printf("%d:::: ELEMENT_LITERAL_NAME: %s\n",i, stack[_stack_pos].u.byte_codes->elements[i].u.name);
+                            break;
+                        case ELEMENT_EXECUTABLE_NAME:
+                            printf("%d:::: ELEMENT_EXECUTABLE_NAME: %s\n",i, stack[_stack_pos].u.byte_codes->elements[i].u.name);
+                            break;
+                        case ELEMENT_EXECUTABLE_ARRAY:
+                            printf("%d:::: ELEMENT_EXECUTABLE_ARRAY\n", i);
+                            break;
+                        default:
+                            printf("default");
+                            break;
+                    }
+                    i++;
+                } while(i < stack[_stack_pos].u.byte_codes->len);
+                printf("##\n");
                 break;
+            default:
+                printf("UNKNOWN_ELEMENT_TYPE\n");
         }
         _stack_pos--;
     }while (_stack_pos >= 1);

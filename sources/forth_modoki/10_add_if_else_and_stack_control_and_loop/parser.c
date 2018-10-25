@@ -110,6 +110,8 @@ static int parse_one(int prev_ch, struct Token *out_token) {
             }
         };
         return ch;
+    }else {
+        printf("This place will not come! :: parse_one\n");
     }
 
     out_token->ltype = UNKNOWN;
@@ -153,7 +155,14 @@ int get_next_token(int prev_ch, struct Token *out_token, int *out_op_pos){
             out_token->ltype = EXECUTABLE_NAME;
             out_token->u.name = cur->u.name;
             break;
+        case ELEMENT_EXECUTABLE_ARRAY:
+            out_token->ltype = EXECUTABLE_ARRAY;
+            out_token->u.byte_codes = cur->u.byte_codes;
+            break;
+        default:
+            printf("This place will not come! :: get_next_token\n");
     }
+    //TODO 実行配列の場合や漏れている処理を追加
 
     // 実行可能配列が実行し終わった。
     if (exec_array->len == operation_pos){
@@ -195,10 +204,6 @@ void parser_print_all() {
                 case LITERAL_NAME:
                     printf("ELEMENT_LITERAL_NAME: %s\n", token.u.name);
                     break;
-                case NEW_LINE:
-                    printf("NEW_LINE\n");
-                    break;
-
                 default:
                     printf("Unknown type %d\n", token.ltype);
                     break;

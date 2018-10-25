@@ -39,6 +39,12 @@ static int compile_exec_array(int ch, struct Element *out_elem){
                 i++;
                 ch = get_next_token(ch, &token, &cur_op_pos);
                 break;
+            case SPACE:
+                break;
+            case END_OF_FILE:
+                break;        
+            default:
+                printf("This place will not come! :: compile_exec_array\n");
             }
         }
     }while (ch != '}');
@@ -94,6 +100,14 @@ void eval(){
                 ch = compile_exec_array(ch, &elem);
                 stack_push(&elem);
                 break;
+            case SPACE:
+                break;
+            case CLOSE_CURLY:
+                break;
+            case END_OF_FILE:
+                break;
+            default:
+                printf("This place will not come! :: eval\n");
         }
     }while (ch != EOF);
 }
@@ -122,11 +136,11 @@ void eval_exec_array() {
                 stack_push(&elem);
 
             }else if (token.ltype == EXECUTABLE_NAME) {
-                if (dict_get(token.u.name, &elem) != -1){
+                if (dict_get(token.u.name, &elem) != -1) {
+                    set_current_op_pos(cur_op_pos);
                     if (elem.etype == ELEMENT_C_FUNC) {
                         elem.u.cfunc();
                     } else if (elem.etype == ELEMENT_EXECUTABLE_ARRAY) {
-                        set_current_op_pos(cur_op_pos);
                         cur_op_pos = 0;
                         co_push_elem_arr(&elem);
                         break;
@@ -134,7 +148,16 @@ void eval_exec_array() {
                         stack_push(&elem);
                     }
                 }
+            }else if (token.ltype == EXECUTABLE_ARRAY) {
+                elem.etype = ELEMENT_EXECUTABLE_ARRAY;
+                elem.u.byte_codes = token.u.byte_codes;
+                stack_push(&elem);
+            }else if (token.ltype == END_OF_FILE) {
+                // ignore
+            }else {
+                printf("This place will not come! :: eval_exec_array\n");
             }
+
         }while (ch != EOF);
     }
 }
@@ -450,9 +473,9 @@ static void test_eval_dup(){
 }
 
 static void test_eval_index(){
-    int expect = 3;
+    int expect = 2;
 
-    char *input = "1 2 3 4 5 2 index";
+    char *input = "1 2 3 4 5 3 index";
     cl_getc_set_src(input);
 
     eval();
@@ -461,7 +484,9 @@ static void test_eval_index(){
 
     stack_pop(&actual);
 
+    assert(expect == actual.u.number);
     assert_number_eq(expect, &actual);
+
 
 
     stack_clear();
@@ -798,6 +823,26 @@ static void test_eval_nested_executable_array_action3(){
     stack_clear();
 }
 
+static void test_eval_nested_executable_array_action4(){
+
+    struct Element expect = {ELEMENT_NUMBER, {2}};
+
+    char *input = "{{1} exec {1 add} exec} exec ";
+
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual);
+
+    assert(expect.etype == actual.etype);
+    assert(expect.u.number == actual.u.number);
+
+    stack_clear();
+}
+
 static void unit_test(){
     test_eval_push_number_to_stack();
     test_eval_add();
@@ -832,9 +877,11 @@ static void unit_test(){
     test_eval_two_executable_arrays();
     test_eval_nest_executable_arrays();
     test_eval_executable_array_action();
+
     test_eval_nested_executable_array_action1();
     test_eval_nested_executable_array_action2();
     test_eval_nested_executable_array_action3();
+    test_eval_nested_executable_array_action4();
 }
 
 void init(){
@@ -852,3 +899,5 @@ void init(){
 ////    stack_print_all();
 //    return 1;
 //}
+
+// TODO slackのtodoを実装していく。

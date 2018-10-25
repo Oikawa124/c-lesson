@@ -1,8 +1,14 @@
 #include "clesson.h"
 #include <string.h>
 
+static FILE *fp;
+
 static char *input = NULL;
 static int pos = 0;
+
+void cl_getc_set_fp(FILE *_fp){
+    fp = _fp;
+}
 
 void cl_getc_set_src(char* str){
     input = str;

@@ -2,17 +2,16 @@
 #include <string.h>
 
 #define STACK_SIZE 1024
-FILE *fp;
 
 enum LexicalType {
     NUMBER,
     SPACE,
     EXECUTABLE_NAME,
     LITERAL_NAME,
+    EXECUTABLE_ARRAY,
     OPEN_CURLY,
     CLOSE_CURLY,
     END_OF_FILE,
-    NEW_LINE,
     UNKNOWN,
 };
 
@@ -23,6 +22,7 @@ struct Token {
         int number;
         char onechar;
         char *name;
+        struct ElementArray *byte_codes;
     } u;
 };
 
@@ -60,7 +60,7 @@ int cl_getc();
 
 void cl_getc_set_src(char* str);
 
-void textfile_to_input(FILE *fp);
+void cl_getc_set_fp(FILE *_fp);
 
 
 // パーサー関係の関数
@@ -88,13 +88,17 @@ void stack_clear();
 
 // eval関係
 void eval();
+
 void eval_exec_array();
+
 void init();
 
 // 辞書関係の関数
 void dict_put(char *key, struct Element *elem);
 
 int dict_get(char *key, struct Element *out_elem);
+
+void dict_print_all();
 
 // co_stack関係
 void co_push(struct Continuation *cont);
@@ -111,14 +115,4 @@ void co_push_elem_arr(struct Element *elem_arr);
 
 
 // プリミティブ関連
-void def_op();
-
-void add_op();
-
-void sub_op();
-
-void mul_op();
-
-void div_op();
-
 void register_primitives();

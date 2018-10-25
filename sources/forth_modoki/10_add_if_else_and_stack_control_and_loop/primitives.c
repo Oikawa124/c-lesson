@@ -184,8 +184,7 @@ void exec_op(){
     struct Element val = {NO_ELEMENT, {0}};
     stack_pop(&val);
 
-    struct Continuation cont = {val.u.byte_codes, 0};
-    co_push(&cont);
+    co_push_elem_arr(&val);
     eval_exec_array();
 }
 
@@ -196,8 +195,7 @@ void if_op(){
     stack_pop(&bool);
 
     if (bool.u.number == 1){
-        struct Continuation cont = {proc.u.byte_codes, 0};
-        co_push(&cont);
+        co_push_elem_arr(&proc);
         eval_exec_array();
     }
 }
@@ -212,12 +210,10 @@ void ifelse_op(){
     stack_pop(&bool);
 
     if (bool.u.number == 1){
-        struct Continuation cont = {proc1.u.byte_codes, 0};
-        co_push(&cont);
+        co_push_elem_arr(&proc2);
         eval_exec_array();
     } else {
-        struct Continuation cont = {proc1.u.byte_codes, 0};
-        co_push(&cont);
+        co_push_elem_arr(&proc1);
         eval_exec_array();
     }
 }
@@ -230,8 +226,7 @@ void repeat_op(){
     stack_pop(&n);
 
     for (int i=0; i < n.u.number; i++){
-        struct Continuation cont = {proc.u.byte_codes, 0};
-        co_push(&cont);
+        co_push_elem_arr(&proc);
         eval_exec_array();
     }
 
@@ -244,20 +239,20 @@ static void while_op(){
     stack_pop(&body);
     stack_pop(&cond);
 
-    struct Continuation cont = {cond.u.byte_codes, 0};
-    co_push(&cont);
+    co_push_elem_arr(&cond);
     eval_exec_array();
 
     struct Element val = {NO_ELEMENT, {0}};
     stack_pop(&val);
 
     while (val.etype == NUMBER && val.u.number == 1) {
-        struct Continuation _cont = {body.u.byte_codes, 0};
-        co_push(&_cont);
+//        printf("################\n");
+//        stack_print_all();
+
+        co_push_elem_arr(&body);
         eval_exec_array();
 
-        struct Continuation __cont = {cond.u.byte_codes, 0};
-        co_push(&__cont);
+        co_push_elem_arr(&cond);
         eval_exec_array();
 
         stack_pop(&val);
