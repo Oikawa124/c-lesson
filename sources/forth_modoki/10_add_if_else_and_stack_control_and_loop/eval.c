@@ -138,6 +138,11 @@ void eval_exec_array() {
             }else if (token.ltype == EXECUTABLE_NAME) {
                 if (dict_get(token.u.name, &elem) != -1) {
                     if (elem.etype == ELEMENT_C_FUNC) {
+//                        if (streq(token.u.name, "exec") || streq(token.u.name, "if")
+//                            || streq(token.u.name, "ifelse") || streq(token.u.name, "repeat")
+//                            || streq(token.u.name, "while")) {
+//                            set_current_op_pos(cur_op_pos);
+//                        }
                         set_current_op_pos(cur_op_pos);
                         elem.u.cfunc();
                     } else if (elem.etype == ELEMENT_EXECUTABLE_ARRAY) {
@@ -869,17 +874,19 @@ static void test_eval_nested_executable_array_action5(){
 //    C:\Users\devel\CLionProjects\10_add_if_else_and_stack_control_and_loop\cmake-build-debug\control_sentense.exe test
 //    stop here!
 //    stop here!
-//    This place will not come! :: get_next_token :: etype::38142　　　　<-etypeは実行のたびに値が変わる
+//    This place will not come! :: get_next_token :: etype :55888| operation_pos :5 | exec_array->len :3
 //    stop here!
-//    This place will not come! :: get_next_token :: etype::7143616 　　<-etypeは実行のたびに値が変わる
-//    stop here!
-//    stop here!
+//    This place will not come! :: get_next_token :: etype :13697216| operation_pos :6 | exec_array->len :3
 //    stop here!
 //    stop here!
 //    stop here!
 //    stop here!
 //    stop here!
+//    stop here!
+//    stop here!
+//
 //    Process finished with exit code -1073741819 (0xC0000005)
+
 
 }
 
