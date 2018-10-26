@@ -36,37 +36,37 @@ char *get_readline(FILE *f_p){
     return ret;
 }
 
-int main(int argc, char *argv[]){
 
-    char *buf;
-    FILE *fp;
-
-    if (argc >= 2) {
-        fp = fopen("text", "r");
-        cl_getc_set_fp(fp);
-        if (fp == NULL) {
-            fprintf(stderr, "NO EXIST FILE");
-        }
-        init();
-
-        eval();
-
-        //dict_print_one_value("f");
-        stack_print_all();
-
-        fclose(fp);
-    } else {
-        init();
-
-        printf("input words here\n<");
-        while ((buf = get_readline(stdin)) != NULL) {
-            cl_getc_set_src(buf);
-            eval();
-            stack_print_all();
-            printf("<");
-        }
-    }
-
-    return 0;
-}
+//int main(int argc, char *argv[]){
+//
+//    char *buf;
+//    FILE *fp;
+//
+//    if (argc >= 2) {
+//        fp = fopen("text", "r");
+//        cl_getc_set_fp(fp);
+//        if (fp == NULL) {
+//            fprintf(stderr, "NO EXIST FILE");
+//        }
+//        init();
+//
+//        eval();
+//
+//        stack_print_all();
+//
+//        fclose(fp);
+//    } else {
+//        init();
+//
+//        printf("input words here\n<");
+//        while ((buf = get_readline(stdin)) != NULL) {
+//            cl_getc_set_src(buf);
+//            eval();
+//            stack_print_all();
+//            printf("<");
+//        }
+//    }
+//
+//    return 0;
+//}
 

@@ -135,7 +135,7 @@ int get_next_token(int prev_ch, struct Token *out_token, int *out_op_pos){
     }
 
     if(exec_array->len <= operation_pos) {
-        fprintf(stderr, "stop here!");
+        fprintf(stderr, "stop here!\n");
     }
 
     if (exec_array->len == 0){

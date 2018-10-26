@@ -138,14 +138,8 @@ void eval_exec_array() {
             }else if (token.ltype == EXECUTABLE_NAME) {
                 if (dict_get(token.u.name, &elem) != -1) {
                     if (elem.etype == ELEMENT_C_FUNC) {
-                        if (streq(token.u.name, "exec") || streq(token.u.name, "if")
-                            || streq(token.u.name, "ifelse") || streq(token.u.name, "repeat")
-                            || streq(token.u.name, "while")) {
-                            set_current_op_pos(cur_op_pos);
-                        }
+                        set_current_op_pos(cur_op_pos);
                         elem.u.cfunc();
-
-
                     } else if (elem.etype == ELEMENT_EXECUTABLE_ARRAY) {
                         set_current_op_pos(cur_op_pos);
                         cur_op_pos = 0;
@@ -850,45 +844,85 @@ static void test_eval_nested_executable_array_action4(){
     stack_clear();
 }
 
+
+static void test_eval_nested_executable_array_action5(){
+
+    // Unit test Fail
+    struct Element expect = {ELEMENT_NUMBER, {3}};
+
+    char *input = "/f {{1 3 add} exec 3} def f";
+
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual);
+
+    assert(expect.etype == actual.etype);
+    assert(expect.u.number == actual.u.number);
+
+    stack_clear();
+
+//    エラーメッセージ
+//    C:\Users\devel\CLionProjects\10_add_if_else_and_stack_control_and_loop\cmake-build-debug\control_sentense.exe test
+//    stop here!
+//    stop here!
+//    This place will not come! :: get_next_token :: etype::38142　　　　<-etypeは実行のたびに値が変わる
+//    stop here!
+//    This place will not come! :: get_next_token :: etype::7143616 　　<-etypeは実行のたびに値が変わる
+//    stop here!
+//    stop here!
+//    stop here!
+//    stop here!
+//    stop here!
+//    stop here!
+//    stop here!
+//    Process finished with exit code -1073741819 (0xC0000005)
+
+}
+
 static void unit_test(){
-    test_eval_push_number_to_stack();
-    test_eval_add();
-    test_eval_add_with_many_values();
-    test_eval_dict();
-
-    test_eval_def_and_stack_pop();
-    test_eval_sub();
-    test_eval_mul();
-    test_eval_div();
-    test_eval_eq();
-    test_eval_neq();
-    test_eval_gt();
-    test_eval_ge();
-    test_eval_lt();
-    test_eval_le();
-    test_eval_pop();
-    test_eval_exch();
-    test_eval_dup();
-    test_eval_index();
-    test_eval_exec();
-    test_eval_if();
-    test_eval_ifelse();
-    test_eval_repeat();
-    test_eval_while();
-
-
-    test_eval_executable_array_one_number();
-    test_eval_executable_array_literal_name();
-    test_eval_executable_array_executable_name();
-    test_eval_executable_array_two_numbers();
-    test_eval_two_executable_arrays();
-    test_eval_nest_executable_arrays();
-    test_eval_executable_array_action();
-
-    test_eval_nested_executable_array_action1();
-    test_eval_nested_executable_array_action2();
-    test_eval_nested_executable_array_action3();
-    test_eval_nested_executable_array_action4();
+//    test_eval_push_number_to_stack();
+//    test_eval_add();
+//    test_eval_add_with_many_values();
+//    test_eval_dict();
+//
+//    test_eval_def_and_stack_pop();
+//    test_eval_sub();
+//    test_eval_mul();
+//    test_eval_div();
+//    test_eval_eq();
+//    test_eval_neq();
+//    test_eval_gt();
+//    test_eval_ge();
+//    test_eval_lt();
+//    test_eval_le();
+//    test_eval_pop();
+//    test_eval_exch();
+//    test_eval_dup();
+//    test_eval_index();
+//    test_eval_exec();
+//    test_eval_if();
+//    test_eval_ifelse();
+//    test_eval_repeat();
+//    test_eval_while();
+//
+//
+//    test_eval_executable_array_one_number();
+//    test_eval_executable_array_literal_name();
+//    test_eval_executable_array_executable_name();
+//    test_eval_executable_array_two_numbers();
+//    test_eval_two_executable_arrays();
+//    test_eval_nest_executable_arrays();
+//    test_eval_executable_array_action();
+//
+//    test_eval_nested_executable_array_action1();
+//    test_eval_nested_executable_array_action2();
+//    test_eval_nested_executable_array_action3();
+//    test_eval_nested_executable_array_action4();
+    test_eval_nested_executable_array_action5();
 }
 
 void init(){
@@ -896,15 +930,13 @@ void init(){
     register_primitives();
 }
 
-//int main() {
-//    stack_init();
-//    register_primitives();
-//
-//    unit_test();
-//
-////    dict_print_all();
-////    stack_print_all();
-//    return 1;
-//}
+int main() {
+    stack_init();
+    register_primitives();
 
-// TODO slackのtodoを実装していく。
+    unit_test();
+
+//    dict_print_all();
+//    stack_print_all();
+    return 1;
+}

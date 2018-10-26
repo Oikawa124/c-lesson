@@ -40,7 +40,7 @@ struct Element {
     union {
         int number;
         char *name;
-        int (*cfunc)();
+        void (*cfunc)();
         struct ElementArray *byte_codes;
     } u;
 };

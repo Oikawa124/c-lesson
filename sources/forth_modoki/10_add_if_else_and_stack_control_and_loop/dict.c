@@ -2,9 +2,9 @@
 #include <malloc.h>
 #include "clesson.h"
 
-//#define TABLE_SIZE 1024
+#define TABLE_SIZE 1024
 // テスト用
-#define TABLE_SIZE 4
+// define TABLE_SIZE 4
 
 struct Node {
     char *key;
