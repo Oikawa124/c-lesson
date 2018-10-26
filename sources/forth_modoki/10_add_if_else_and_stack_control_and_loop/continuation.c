@@ -15,6 +15,7 @@ void co_push_elem_arr(struct Element *elem){
 
 void co_pop(){
     co_pos--;
+    if (co_pos < 0) {fprintf(stderr, "co_pos is minus");}
 }
 
 struct Continuation *co_peek(){

@@ -12,7 +12,7 @@ static void preprocessing_operations(int *out_num1, int *out_num2){
     *out_num2 = num2.u.number;
 }
 
-void def_op(){
+int def_op(){
     struct Element val = {NO_ELEMENT, {0}};
     stack_pop(&val);
 
@@ -20,9 +20,10 @@ void def_op(){
     stack_pop(&literal_name);
 
     dict_put(literal_name.u.name, &val);
+    return 0;
 }
 
-void add_op(){
+int add_op(){
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
@@ -30,9 +31,10 @@ void add_op(){
     answer.u.number = num1+ num2;
 
     stack_push(&answer);
+    return 0;
 }
 
-void sub_op(){
+int sub_op(){
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
@@ -40,9 +42,10 @@ void sub_op(){
     answer.u.number = num2 - num1;
 
     stack_push(&answer);
+    return 0;
 }
 
-void mul_op(){
+int mul_op(){
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
@@ -50,9 +53,10 @@ void mul_op(){
     answer.u.number = num1 * num2;
 
     stack_push(&answer);
+    return 0;
 }
 
-void div_op(){
+int div_op(){
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
@@ -60,9 +64,10 @@ void div_op(){
     answer.u.number = num2 / num1;
 
     stack_push(&answer);
+    return 0;
 }
 
-void eq_op(){
+int eq_op(){
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
@@ -74,9 +79,10 @@ void eq_op(){
     }
 
     stack_push(&answer);
+    return 0;
 }
 
-void neq_op(){
+int neq_op(){
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
@@ -88,9 +94,10 @@ void neq_op(){
     }
 
     stack_push(&answer);
+    return 0;
 }
 
-void gt_op(){
+int gt_op(){
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
@@ -102,9 +109,10 @@ void gt_op(){
     }
 
     stack_push(&answer);
+    return 0;
 }
 
-void ge_op(){
+int ge_op(){
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
@@ -116,9 +124,10 @@ void ge_op(){
     }
 
     stack_push(&answer);
+    return 0;
 }
 
-void lt_op(){
+int lt_op(){
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
@@ -130,9 +139,10 @@ void lt_op(){
     }
 
     stack_push(&answer);
+    return 0;
 }
 
-void le_op(){
+int le_op(){
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
@@ -144,14 +154,17 @@ void le_op(){
     }
 
     stack_push(&answer);
+    return 0;
 }
 
-void pop_op(){
+int pop_op(){
     struct Element val = {NO_ELEMENT, {0}};
     stack_pop(&val);
+
+    return 0;
 }
 
-void exch_op(){
+int exch_op(){
     struct Element val1 = {NO_ELEMENT, {0}};
     struct Element val2= {NO_ELEMENT, {0}};
     stack_pop(&val1);
@@ -159,17 +172,21 @@ void exch_op(){
 
     stack_push(&val1);
     stack_push(&val2);
+
+    return 0;
 }
 
-void dup_op(){
+int dup_op(){
     struct Element val = {NO_ELEMENT, {0}};
     stack_pop(&val);
 
     stack_push(&val);
     stack_push(&val);
+
+    return 0;
 }
 
-void index_op(){
+int index_op(){
     struct Element index = {NO_ELEMENT, {0}};
     struct Element val = {NO_ELEMENT, {0}};
 
@@ -178,17 +195,21 @@ void index_op(){
     stack_value_copy(&val, index.u.number);
 
     stack_push(&val);
+
+    return 0;
 }
 
-void exec_op(){
+int exec_op() {
     struct Element val = {NO_ELEMENT, {0}};
     stack_pop(&val);
 
     co_push_elem_arr(&val);
     eval_exec_array();
+
+    return 1;
 }
 
-void if_op(){
+int if_op(){
     struct Element bool = {NO_ELEMENT, {0}};
     struct Element proc = {NO_ELEMENT, {0}};
     stack_pop(&proc);
@@ -198,9 +219,11 @@ void if_op(){
         co_push_elem_arr(&proc);
         eval_exec_array();
     }
+
+    return 1;
 }
 
-void ifelse_op(){
+int ifelse_op(){
     struct Element bool = {NO_ELEMENT, {0}};
     struct Element proc1 = {NO_ELEMENT, {0}};
     struct Element proc2 = {NO_ELEMENT, {0}};
@@ -216,9 +239,11 @@ void ifelse_op(){
         co_push_elem_arr(&proc1);
         eval_exec_array();
     }
+
+    return 1;
 }
 
-void repeat_op(){
+int repeat_op(){
     struct Element n = {NO_ELEMENT, {0}};
     struct Element proc = {NO_ELEMENT, {0}};
 
@@ -230,12 +255,13 @@ void repeat_op(){
         eval_exec_array();
     }
 
+    return 1;
 }
 
-static void while_op(){
+static int while_op(){
     struct Element cond = {NO_ELEMENT, {0}};
     struct Element body = {NO_ELEMENT, {0}};
-
+    stack_print_all();
     stack_pop(&body);
     stack_pop(&cond);
 
@@ -243,11 +269,15 @@ static void while_op(){
     eval_exec_array();
 
     struct Element val = {NO_ELEMENT, {0}};
+    printf("$$$$$$$$$$$$$$$ while_op\n");
+    stack_print_all();
+    printf("$$$$$$$$$$$$$$$\n");
+
     stack_pop(&val);
 
     while (val.etype == NUMBER && val.u.number == 1) {
-//        printf("################\n");
-//        stack_print_all();
+        printf("################\n");
+        stack_print_all();
 
         co_push_elem_arr(&body);
         eval_exec_array();
@@ -257,11 +287,13 @@ static void while_op(){
 
         stack_pop(&val);
     }
+
+    return 0;
 }
 
 
 
-static void register_one_primitive(char *name, void (*cfunc)(void)){
+static void register_one_primitive(char *name, int (*cfunc)(void)){
     struct Element elem = {ELEMENT_C_FUNC, {.cfunc = cfunc}};
     dict_put(name, &elem);
 }

@@ -51,8 +51,8 @@ int main(int argc, char *argv[]){
 
         eval();
 
+        //dict_print_one_value("f");
         stack_print_all();
-        dict_print_all();
 
         fclose(fp);
     } else {

@@ -134,6 +134,10 @@ int get_next_token(int prev_ch, struct Token *out_token, int *out_op_pos){
         return parse_one(prev_ch, out_token);
     }
 
+    if(exec_array->len <= operation_pos) {
+        fprintf(stderr, "stop here!");
+    }
+
     if (exec_array->len == 0){
         fprintf(stderr, "空の実行可能配列です\n");
     }
@@ -160,9 +164,9 @@ int get_next_token(int prev_ch, struct Token *out_token, int *out_op_pos){
             out_token->u.byte_codes = cur->u.byte_codes;
             break;
         default:
-            printf("This place will not come! :: get_next_token\n");
+            fprintf(stderr, "This place will not come! :: get_next_token :: etype::%d\n", cur->etype);
+            break;
     }
-    //TODO 実行配列の場合や漏れている処理を追加
 
     // 実行可能配列が実行し終わった。
     if (exec_array->len == operation_pos){

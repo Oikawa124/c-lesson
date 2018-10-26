@@ -40,7 +40,7 @@ struct Element {
     union {
         int number;
         char *name;
-        void (*cfunc)();
+        int (*cfunc)();
         struct ElementArray *byte_codes;
     } u;
 };
@@ -99,6 +99,8 @@ void dict_put(char *key, struct Element *elem);
 int dict_get(char *key, struct Element *out_elem);
 
 void dict_print_all();
+
+void dict_print_one_value(char *key);
 
 // co_stack関係
 void co_push(struct Continuation *cont);

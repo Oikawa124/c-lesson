@@ -42,9 +42,9 @@ static int compile_exec_array(int ch, struct Element *out_elem){
             case SPACE:
                 break;
             case END_OF_FILE:
-                break;        
+                break;
             default:
-                printf("This place will not come! :: compile_exec_array\n");
+                fprintf(stderr, "This place will not come! :: compile_exec_array\n");
             }
         }
     }while (ch != '}');
@@ -107,7 +107,7 @@ void eval(){
             case END_OF_FILE:
                 break;
             default:
-                printf("This place will not come! :: eval\n");
+                fprintf(stderr, "This place will not come! :: eval\n");
         }
     }while (ch != EOF);
 }
@@ -137,10 +137,17 @@ void eval_exec_array() {
 
             }else if (token.ltype == EXECUTABLE_NAME) {
                 if (dict_get(token.u.name, &elem) != -1) {
-                    set_current_op_pos(cur_op_pos);
                     if (elem.etype == ELEMENT_C_FUNC) {
+                        if (streq(token.u.name, "exec") || streq(token.u.name, "if")
+                            || streq(token.u.name, "ifelse") || streq(token.u.name, "repeat")
+                            || streq(token.u.name, "while")) {
+                            set_current_op_pos(cur_op_pos);
+                        }
                         elem.u.cfunc();
+
+
                     } else if (elem.etype == ELEMENT_EXECUTABLE_ARRAY) {
+                        set_current_op_pos(cur_op_pos);
                         cur_op_pos = 0;
                         co_push_elem_arr(&elem);
                         break;
@@ -155,7 +162,7 @@ void eval_exec_array() {
             }else if (token.ltype == END_OF_FILE) {
                 // ignore
             }else {
-                printf("This place will not come! :: eval_exec_array\n");
+                fprintf(stderr, "This place will not come! :: eval_exec_array\n");
             }
 
         }while (ch != EOF);
