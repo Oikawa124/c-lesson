@@ -61,6 +61,8 @@ static int compile_exec_array(int ch, struct Element *out_elem){
     return ch;
 }
 
+
+
 void eval(){
     static int ch = EOF;
     int cur_op_pos=0;
@@ -118,6 +120,7 @@ void eval_exec_array() {
     struct Element elem = {NO_ELEMENT, {0}};
     int cur_op_pos=0;
 
+
     while (!co_stack_is_empty()){
         struct Continuation *cont = co_peek();
         set_cont(cont);
@@ -142,7 +145,6 @@ void eval_exec_array() {
                         elem.u.cfunc();
                     } else if (elem.etype == ELEMENT_EXECUTABLE_ARRAY) {
                         set_current_op_pos(cur_op_pos);
-                        cur_op_pos = 0;
                         co_push_elem_arr(&elem);
                         break;
                     } else {
@@ -159,14 +161,14 @@ void eval_exec_array() {
                 fprintf(stderr, "This place will not come! :: eval_exec_array\n");
             }
 
-        }while (ch != EOF);
-
-        if (!co_stack_is_empty()) {
-            co_pop();
-            if (co_stack_is_empty()) {
-                init_exec_array();
+            if (ch == EOF && !co_stack_is_empty()) {
+                co_pop();
+                if (co_stack_is_empty()) {
+                    init_exec_array();
+                }
             }
-        }
+
+        }while (ch != EOF);
     }
 }
 
@@ -736,9 +738,11 @@ static void test_eval_executable_array_action(){
     struct Element expect = {ELEMENT_NUMBER, {2}};
 
     char *input = "/a {1 1 add} def a";
+
     cl_getc_set_src(input);
 
     eval();
+    stack_print_all();
 
     struct Element actual = {NO_ELEMENT, {0}};
 
@@ -962,13 +966,13 @@ static void unit_test(){
 //    test_eval_two_executable_arrays();
 //    test_eval_nest_executable_arrays();
 //    test_eval_executable_array_action();
-//
-//    test_eval_nested_executable_array_action1();
-//    test_eval_nested_executable_array_action2();
-//    test_eval_nested_executable_array_action3();
-//    test_eval_nested_executable_array_action4();
+
+    test_eval_nested_executable_array_action1();
+    test_eval_nested_executable_array_action2();
+    test_eval_nested_executable_array_action3();
+    test_eval_nested_executable_array_action4();
     test_eval_nested_executable_array_action5();
-//    test_eval_executable_array_over_operation_pos();
+    test_eval_executable_array_over_operation_pos();
 }
 
 void init(){

@@ -143,6 +143,7 @@ int get_next_token(int prev_ch, struct Token *out_token, int *out_op_pos){
     if (operation_pos >= exec_array->len) {
         out_token->ltype = END_OF_FILE;
         out_token->u.number = EOF;
+        *out_op_pos = exec_array->len;
         return EOF;
     }
 
@@ -171,7 +172,7 @@ int get_next_token(int prev_ch, struct Token *out_token, int *out_op_pos){
             break;
     }
 
-    *out_op_pos = exec_array->len;
+    *out_op_pos = operation_pos;
     return CONTINUE;
 }
 

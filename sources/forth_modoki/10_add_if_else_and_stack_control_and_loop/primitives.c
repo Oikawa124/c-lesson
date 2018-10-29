@@ -182,6 +182,10 @@ void index_op(){
     stack_push(&val);
 }
 
+void request_execute(struct ElementArray *execarr){
+
+}
+
 void exec_op() {
     struct Element val = {NO_ELEMENT, {0}};
     stack_pop(&val);
@@ -189,6 +193,7 @@ void exec_op() {
     co_push_elem_arr(&val);
     eval_exec_array();
 }
+
 
 void if_op(){
     struct Element bool = {NO_ELEMENT, {0}};

@@ -95,6 +95,8 @@ void eval_exec_array();
 
 void init();
 
+void request_execute(struct ElementArray *execarr);
+
 // 辞書関係の関数
 void dict_put(char *key, struct Element *elem);
 
