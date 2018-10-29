@@ -115,36 +115,39 @@ static int parse_one(int prev_ch, struct Token *out_token) {
     }
 
     out_token->ltype = UNKNOWN;
-    return EOF;
+    return CONTINUE;
 }
-
 
 void set_cont(struct Continuation *cont) {
     exec_array = cont->exec_array;
     operation_pos = cont->pc;
 }
 
+void init_exec_array(){
+    exec_array = NULL;
+    operation_pos = 0;
+}
+
 
 int get_next_token(int prev_ch, struct Token *out_token, int *out_op_pos){
     if (exec_array == NULL) {
-
-        if (prev_ch == CONTINUE){
-            prev_ch = EOF;
-        }
+        if (prev_ch == CONTINUE) {prev_ch = EOF;}
         return parse_one(prev_ch, out_token);
     }
 
-    if(exec_array->len <= operation_pos) {
-        fprintf(stderr, "stop here!\n");
-    }
 
     if (exec_array->len == 0){
         fprintf(stderr, "空の実行可能配列です\n");
     }
 
+    if (operation_pos >= exec_array->len) {
+        out_token->ltype = END_OF_FILE;
+        out_token->u.number = EOF;
+        return EOF;
+    }
+
     struct Element *cur = &exec_array->elements[operation_pos];
     operation_pos++;
-    *out_op_pos = operation_pos;
 
     switch (cur->etype){
         case ELEMENT_NUMBER:
@@ -164,17 +167,11 @@ int get_next_token(int prev_ch, struct Token *out_token, int *out_op_pos){
             out_token->u.byte_codes = cur->u.byte_codes;
             break;
         default:
-            fprintf(stderr, "This place will not come! :: get_next_token :: etype::%d\n", cur->etype);
+            fprintf(stderr, "This place will not come! :: get_next_token :: etype :%d| operation_pos :%d | exec_array->len :%d\n", cur->etype, operation_pos, exec_array->len);
             break;
     }
 
-    // 実行可能配列が実行し終わった。
-    if (exec_array->len == operation_pos){
-        exec_array = NULL;
-        operation_pos = 0;
-        co_pop();
-        return EOF;
-    }
+    *out_op_pos = exec_array->len;
     return CONTINUE;
 }
 

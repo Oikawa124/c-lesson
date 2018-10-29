@@ -23,6 +23,7 @@ void stack_pop(struct Element *out_element){
     }
 }
 
+
 void stack_value_copy(struct Element *out_element, int index){
         *out_element = stack[stack_pos - index - 1];
 }

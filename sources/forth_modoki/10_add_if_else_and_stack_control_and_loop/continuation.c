@@ -22,8 +22,12 @@ struct Continuation *co_peek(){
     return &co_stack[co_pos - 1];
 }
 
-int get_stack_pos(){
-    return co_pos;
+int co_stack_is_empty(){
+    if (co_pos == 0) {
+        return 1;
+    } else {
+        return 0;
+    }
 }
 
 void set_current_op_pos(int out_op_pos){

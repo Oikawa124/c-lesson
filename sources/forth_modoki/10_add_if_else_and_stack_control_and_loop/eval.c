@@ -118,7 +118,7 @@ void eval_exec_array() {
     struct Element elem = {NO_ELEMENT, {0}};
     int cur_op_pos=0;
 
-    while (get_stack_pos() >= 1){
+    while (!co_stack_is_empty()){
         struct Continuation *cont = co_peek();
         set_cont(cont);
 
@@ -138,11 +138,6 @@ void eval_exec_array() {
             }else if (token.ltype == EXECUTABLE_NAME) {
                 if (dict_get(token.u.name, &elem) != -1) {
                     if (elem.etype == ELEMENT_C_FUNC) {
-//                        if (streq(token.u.name, "exec") || streq(token.u.name, "if")
-//                            || streq(token.u.name, "ifelse") || streq(token.u.name, "repeat")
-//                            || streq(token.u.name, "while")) {
-//                            set_current_op_pos(cur_op_pos);
-//                        }
                         set_current_op_pos(cur_op_pos);
                         elem.u.cfunc();
                     } else if (elem.etype == ELEMENT_EXECUTABLE_ARRAY) {
@@ -165,6 +160,13 @@ void eval_exec_array() {
             }
 
         }while (ch != EOF);
+
+        if (!co_stack_is_empty()) {
+            co_pop();
+            if (co_stack_is_empty()) {
+                init_exec_array();
+            }
+        }
     }
 }
 
@@ -855,11 +857,12 @@ static void test_eval_nested_executable_array_action5(){
     // Unit test Fail
     struct Element expect = {ELEMENT_NUMBER, {3}};
 
-    char *input = "/f {{1 3 add} exec 3} def f";
+    char *input = "/f {{1 3 add} exec 3} def  f";
 
     cl_getc_set_src(input);
 
     eval();
+    stack_print_all();
 
     struct Element actual = {NO_ELEMENT, {0}};
 
@@ -870,7 +873,7 @@ static void test_eval_nested_executable_array_action5(){
 
     stack_clear();
 
-//    エラーメッセージ
+//    エラーメッセージ 修正前
 //    C:\Users\devel\CLionProjects\10_add_if_else_and_stack_control_and_loop\cmake-build-debug\control_sentense.exe test
 //    stop here!
 //    stop here!
@@ -887,7 +890,42 @@ static void test_eval_nested_executable_array_action5(){
 //
 //    Process finished with exit code -1073741819 (0xC0000005)
 
+// 修正後　エラーメッセージは出なかったのでスタックの中身
+// 1:: num: 4
 
+}
+
+static void test_eval_executable_array_over_operation_pos(){
+    int expect_ch = EOF;
+    struct Token expect_out_token = {END_OF_FILE, {0}};
+    int expect_cur_op_pos=1;
+
+    char *input = "{1}";
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element elem = {NO_ELEMENT, {0}};
+    stack_pop(&elem);
+    co_push_elem_arr(&elem);
+
+    struct Continuation *cont = co_peek();
+    set_cont(cont);
+
+    int actual_ch = EOF;
+    struct Token actual_token = {UNKNOWN, 0};
+    int actual_cur_op_pos=0;
+
+    actual_ch = get_next_token(actual_ch, &actual_token, &actual_cur_op_pos);
+    // operation_pos >= exec_array->len になる
+    actual_ch = get_next_token(actual_ch, &actual_token, &actual_cur_op_pos);
+    actual_ch = get_next_token(actual_ch, &actual_token, &actual_cur_op_pos);
+
+    assert(expect_ch == actual_ch);
+    assert(expect_out_token.ltype == actual_token.ltype);
+    assert(expect_cur_op_pos == actual_cur_op_pos);
+
+    stack_clear();
 }
 
 static void unit_test(){
@@ -930,12 +968,14 @@ static void unit_test(){
 //    test_eval_nested_executable_array_action3();
 //    test_eval_nested_executable_array_action4();
     test_eval_nested_executable_array_action5();
+//    test_eval_executable_array_over_operation_pos();
 }
 
 void init(){
     stack_init();
     register_primitives();
 }
+
 
 int main() {
     stack_init();

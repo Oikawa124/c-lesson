@@ -72,6 +72,8 @@ void set_cont(struct Continuation *cont);
 
 int streq(char *s1, char *s2);
 
+void init_exec_array();
+
 
 // スタック関係の関数
 void stack_push(struct Element *token);
@@ -109,7 +111,7 @@ void co_pop();
 
 struct Continuation *co_peek();
 
-int get_stack_pos();
+int co_stack_is_empty();
 
 void set_current_op_pos(int out_op_pos);
 
