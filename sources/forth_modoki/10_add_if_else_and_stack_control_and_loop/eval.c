@@ -2,9 +2,14 @@
 #include <stdio.h>
 #include <assert.h>
 #include <malloc.h>
-#define MAX_NAME_OP_NUMBERS 256
 
-void eval_exec_array();
+#define MAX_NAME_OP_NUMBERS 256
+static struct Element *exec_arr_pointer = NULL;
+
+
+void request_execute(struct Element *execarr){
+    exec_arr_pointer = execarr;
+}
 
 static int compile_exec_array(int ch, struct Element *out_elem){
     struct Element arr[MAX_NAME_OP_NUMBERS];
@@ -88,8 +93,9 @@ void eval(){
                 if (dict_get(token.u.name, &elem) != -1){
                     if (elem.etype == ELEMENT_C_FUNC) {
                         elem.u.cfunc();
-                        if (get_exec_array_pointer() != NULL) {
-                            co_push_elem_arr(get_exec_array_pointer());
+                        if (exec_arr_pointer != NULL) {
+                            co_push_elem_arr(exec_arr_pointer);
+                            exec_arr_pointer = NULL;
                             eval_exec_array();
                             break;
                         }
@@ -147,10 +153,10 @@ void eval_exec_array() {
                 if (dict_get(token.u.name, &elem) != -1) {
                     if (elem.etype == ELEMENT_C_FUNC) {
                         elem.u.cfunc();
-                        if (get_exec_array_pointer() != NULL) {
+                        if (exec_arr_pointer != NULL) {
                             set_current_op_pos(cur_op_pos);
-                            co_push_elem_arr(get_exec_array_pointer());
-                            init_exec_array_pointer();
+                            co_push_elem_arr(exec_arr_pointer);
+                            exec_arr_pointer = NULL;
                             break;
                         }
                     } else if (elem.etype == ELEMENT_EXECUTABLE_ARRAY) {
@@ -564,12 +570,13 @@ static void test_eval_ifelse(){
 }
 
 static void test_eval_repeat(){
-    int expect = 11;
+    int expect = 50;
 
-    char *input = "1 2 {5 add} repeat";
+    char *input = "0 10 {5 add} repeat";
     cl_getc_set_src(input);
 
     eval();
+    stack_print_all();
 
     struct Element actual = {NO_ELEMENT, {0}};
 
@@ -966,7 +973,7 @@ static void unit_test(){
 //    test_eval_exec();
 //    test_eval_if();
 //    test_eval_ifelse();
-//    test_eval_repeat();
+   test_eval_repeat();
 //    test_eval_while();
 //
 //
@@ -981,7 +988,7 @@ static void unit_test(){
 //    test_eval_nested_executable_array_action1();
 //    test_eval_nested_executable_array_action2();
 //    test_eval_nested_executable_array_action3();
-    test_eval_nested_executable_array_action4();
+ //   test_eval_nested_executable_array_action4();
 //    test_eval_nested_executable_array_action5();
 //    test_eval_executable_array_over_operation_pos();
 }

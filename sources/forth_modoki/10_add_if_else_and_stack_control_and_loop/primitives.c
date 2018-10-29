@@ -1,4 +1,6 @@
+#include <malloc.h>
 #include "clesson.h"
+#define MAX_LEN 256
 
 static void preprocessing_operations(int *out_num1, int *out_num2){
 
@@ -183,19 +185,7 @@ void index_op(){
 }
 
 
-static struct Element *exec_arr_pointer = NULL;
 
-struct Element *get_exec_array_pointer(){
-    return exec_arr_pointer;
-}
-
-void init_exec_array_pointer(){
-    exec_arr_pointer = NULL;
-}
-
-static void request_execute(struct Element *execarr){
-    exec_arr_pointer = execarr;
-}
 
 void exec_op() {
     struct Element val = {NO_ELEMENT, {0}};
@@ -212,10 +202,8 @@ void if_op(){
     stack_pop(&bool);
 
     if (bool.u.number == 1){
-        co_push_elem_arr(&proc);
-        eval_exec_array();
+        request_execute(&proc);
     }
-
 }
 
 void ifelse_op(){
@@ -228,11 +216,9 @@ void ifelse_op(){
     stack_pop(&bool);
 
     if (bool.u.number == 1){
-        co_push_elem_arr(&proc2);
-        eval_exec_array();
+        request_execute(&proc2);
     } else {
-        co_push_elem_arr(&proc1);
-        eval_exec_array();
+        request_execute(&proc1);
     }
 
 }
@@ -244,10 +230,23 @@ void repeat_op(){
     stack_pop(&proc);
     stack_pop(&n);
 
-    for (int i=0; i < n.u.number; i++){
-        co_push_elem_arr(&proc);
-        eval_exec_array();
+    struct Element exec = {ELEMENT_EXECUTABLE_NAME, {.name="exec"}};
+
+    struct Element arr[MAX_LEN];
+
+    int i=0;
+    for (; i < n.u.number*2; i +=2){
+        arr[i] = proc;
+        arr[i+1] = exec;
     }
+    struct ElementArray *elem_arr = (struct EelementArray*)malloc(sizeof(struct ElementArray)+sizeof(struct Element)*(i));
+    elem_arr->len = i;
+
+    memcpy(elem_arr->elements, arr, sizeof(struct Element)*(i));
+
+    struct Element val = {ELEMENT_EXECUTABLE_ARRAY, {.byte_codes = elem_arr}};
+
+    request_execute(&val);
 }
 
 static void while_op(){
