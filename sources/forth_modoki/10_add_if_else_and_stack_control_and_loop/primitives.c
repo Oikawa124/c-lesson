@@ -182,16 +182,26 @@ void index_op(){
     stack_push(&val);
 }
 
-void request_execute(struct ElementArray *execarr){
 
+static struct Element *exec_arr_pointer = NULL;
+
+struct Element *get_exec_array_pointer(){
+    return exec_arr_pointer;
+}
+
+void init_exec_array_pointer(){
+    exec_arr_pointer = NULL;
+}
+
+static void request_execute(struct Element *execarr){
+    exec_arr_pointer = execarr;
 }
 
 void exec_op() {
     struct Element val = {NO_ELEMENT, {0}};
     stack_pop(&val);
 
-    co_push_elem_arr(&val);
-    eval_exec_array();
+    request_execute(&val);
 }
 
 

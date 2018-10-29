@@ -95,8 +95,6 @@ void eval_exec_array();
 
 void init();
 
-void request_execute(struct ElementArray *execarr);
-
 // 辞書関係の関数
 void dict_put(char *key, struct Element *elem);
 
@@ -122,3 +120,7 @@ void co_push_elem_arr(struct Element *elem_arr);
 
 // プリミティブ関連
 void register_primitives();
+
+struct Element *get_exec_array_pointer();
+
+void init_exec_array_pointer();
