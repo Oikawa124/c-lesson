@@ -10,6 +10,10 @@
 static struct ElementArray *exec_array = NULL;
 static int operation_pos = 0;
 
+void set_operation_pos(int num){
+    operation_pos = (operation_pos-1) + num;
+}
+
 
 int _isdigit(int n) { return '0' <= n && n <= '9';}
 

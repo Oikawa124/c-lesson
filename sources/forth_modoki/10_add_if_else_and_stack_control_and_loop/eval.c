@@ -11,6 +11,8 @@ void request_execute(struct Element *execarr){
     exec_arr_pointer = execarr;
 }
 
+
+
 static int compile_exec_array(int ch, struct Element *out_elem){
     struct Element arr[MAX_NAME_OP_NUMBERS];
     struct Token token = {UNKNOWN, {0}};
@@ -65,7 +67,6 @@ static int compile_exec_array(int ch, struct Element *out_elem){
 
     return ch;
 }
-
 
 
 void eval(){
@@ -163,6 +164,10 @@ void eval_exec_array() {
                         set_current_op_pos(cur_op_pos);
                         co_push_elem_arr(&elem);
                         break;
+                    }else if (streq(token.u.name, "jmp")){
+                        jmp();
+                    }else if (streq(token.u.name, "jmpif")){
+                        jmpif();
                     } else {
                         stack_push(&elem);
                     }
@@ -950,6 +955,28 @@ static void test_eval_executable_array_over_operation_pos(){
     stack_clear();
 }
 
+
+static void test_eval_factorial(){
+
+    struct Element expect = {ELEMENT_NUMBER, {120}};
+
+    char *input = "/f { dup {dup 1 gt} {1 sub exch 1 index mul exch} while pop } def 5 f";
+
+    cl_getc_set_src(input);
+
+    eval();
+
+    struct Element actual = {NO_ELEMENT, {0}};
+
+    stack_pop(&actual);
+
+
+    assert(expect.etype == actual.etype);
+    assert(expect.u.number == actual.u.number);
+
+    stack_clear();
+}
+
 static void unit_test(){
 //    test_eval_push_number_to_stack();
 //    test_eval_add();
@@ -973,7 +1000,7 @@ static void unit_test(){
 //    test_eval_exec();
 //    test_eval_if();
 //    test_eval_ifelse();
-   test_eval_repeat();
+//   test_eval_repeat();
 //    test_eval_while();
 //
 //
@@ -991,6 +1018,7 @@ static void unit_test(){
  //   test_eval_nested_executable_array_action4();
 //    test_eval_nested_executable_array_action5();
 //    test_eval_executable_array_over_operation_pos();
+    test_eval_factorial();
 }
 
 void init(){
@@ -1009,3 +1037,5 @@ int main() {
 //    stack_print_all();
     return 1;
 }
+
+// TODO ifelseの形式を変更する

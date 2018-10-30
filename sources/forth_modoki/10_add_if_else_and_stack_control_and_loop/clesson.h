@@ -74,6 +74,8 @@ int streq(char *s1, char *s2);
 
 void init_exec_array();
 
+void set_operation_pos(int num);
+
 
 // スタック関係の関数
 void stack_push(struct Element *token);
@@ -122,3 +124,7 @@ void co_push_elem_arr(struct Element *elem_arr);
 
 // プリミティブ関連
 void register_primitives();
+
+void jmp();
+
+void jmpif();
