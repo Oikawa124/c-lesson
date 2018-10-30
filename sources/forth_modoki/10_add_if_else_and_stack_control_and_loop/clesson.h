@@ -11,6 +11,8 @@ enum LexicalType {
     EXECUTABLE_ARRAY,
     OPEN_CURLY,
     CLOSE_CURLY,
+    JMP,
+    JMP_NOT_IF,
     END_OF_FILE,
     UNKNOWN,
 };
@@ -32,6 +34,8 @@ enum ElementType {
     ELEMENT_EXECUTABLE_NAME,
     ELEMENT_C_FUNC,
     ELEMENT_EXECUTABLE_ARRAY,
+    ELEMENT_JMP,
+    ELEMENT_JMP_NOT_IF,
     NO_ELEMENT,
 };
 
@@ -74,7 +78,7 @@ int streq(char *s1, char *s2);
 
 void init_exec_array();
 
-void set_operation_pos(int num);
+void goto_rel_pos(int num);
 
 
 // スタック関係の関数
@@ -98,6 +102,7 @@ void eval_exec_array();
 void init();
 
 void request_execute(struct Element *execarr);
+
 
 // 辞書関係の関数
 void dict_put(char *key, struct Element *elem);
@@ -125,6 +130,3 @@ void co_push_elem_arr(struct Element *elem_arr);
 // プリミティブ関連
 void register_primitives();
 
-void jmp();
-
-void jmpif();

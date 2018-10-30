@@ -11,7 +11,23 @@ void request_execute(struct Element *execarr){
     exec_arr_pointer = execarr;
 }
 
+void jmp(){
+    struct Element num1 = {NO_ELEMENT, {0}};
+    stack_pop(&num1);
+    goto_rel_pos(num1.u.number);
+}
 
+void jmp_not_if(){
+    struct Element num1 = {NO_ELEMENT, {0}};
+    struct Element num2 = {NO_ELEMENT, {0}};
+
+    stack_pop(&num2);
+    stack_pop(&num1);
+
+    if (num1.u.number == 0) {
+        goto_rel_pos(num2.u.number);
+    }
+}
 
 static int compile_exec_array(int ch, struct Element *out_elem){
     struct Element arr[MAX_NAME_OP_NUMBERS];
@@ -137,7 +153,7 @@ void eval_exec_array() {
         struct Continuation *cont = co_peek();
         set_cont(cont);
 
-        do{
+        do {
             ch = get_next_token(ch, &token, &cur_op_pos);
 
             if (token.ltype == NUMBER) {
@@ -145,12 +161,12 @@ void eval_exec_array() {
                 elem.u.number = token.u.number;
                 stack_push(&elem);
 
-            }else if (token.ltype == LITERAL_NAME){
+            } else if (token.ltype == LITERAL_NAME) {
                 elem.etype = ELEMENT_LITERAL_NAME;
                 elem.u.name = token.u.name;
                 stack_push(&elem);
 
-            }else if (token.ltype == EXECUTABLE_NAME) {
+            } else if (token.ltype == EXECUTABLE_NAME) {
                 if (dict_get(token.u.name, &elem) != -1) {
                     if (elem.etype == ELEMENT_C_FUNC) {
                         elem.u.cfunc();
@@ -164,19 +180,19 @@ void eval_exec_array() {
                         set_current_op_pos(cur_op_pos);
                         co_push_elem_arr(&elem);
                         break;
-                    }else if (streq(token.u.name, "jmp")){
-                        jmp();
-                    }else if (streq(token.u.name, "jmpif")){
-                        jmpif();
                     } else {
                         stack_push(&elem);
                     }
                 }
-            }else if (token.ltype == EXECUTABLE_ARRAY) {
+            } else if (token.ltype == EXECUTABLE_ARRAY) {
                 elem.etype = ELEMENT_EXECUTABLE_ARRAY;
                 elem.u.byte_codes = token.u.byte_codes;
                 stack_push(&elem);
-            }else if (token.ltype == END_OF_FILE) {
+            } else if (token.ltype == JMP) {
+                jmp();
+            } else if (token.ltype == JMP_NOT_IF) {
+                jmp_not_if();
+            } else if (token.ltype == END_OF_FILE) {
                 // ignore
             }else {
                 fprintf(stderr, "This place will not come! :: eval_exec_array\n");
@@ -518,8 +534,6 @@ static void test_eval_index(){
     assert(expect == actual.u.number);
     assert_number_eq(expect, &actual);
 
-
-
     stack_clear();
 }
 
@@ -581,7 +595,6 @@ static void test_eval_repeat(){
     cl_getc_set_src(input);
 
     eval();
-    stack_print_all();
 
     struct Element actual = {NO_ELEMENT, {0}};
 
@@ -764,7 +777,6 @@ static void test_eval_executable_array_action(){
     cl_getc_set_src(input);
 
     eval();
-    stack_print_all();
 
     struct Element actual = {NO_ELEMENT, {0}};
 
@@ -778,7 +790,7 @@ static void test_eval_executable_array_action(){
 
 static void test_eval_nested_executable_array_action1(){
 
-    struct Element expect = {ELEMENT_NUMBER, {1}};
+    struct Element expect = {ELEMENT_NUMBER, {2}};
 
     char *input = "/a {1 add} def /b {1 a} def b";
 
@@ -881,7 +893,7 @@ static void test_eval_nested_executable_array_action4(){
 
 static void test_eval_nested_executable_array_action5(){
 
-    // Unit test Fail
+    // Unit test Fail ←通るようになった。
     struct Element expect = {ELEMENT_NUMBER, {3}};
 
     char *input = "/f {{1 3 add} exec 3} def  f";
@@ -889,7 +901,6 @@ static void test_eval_nested_executable_array_action5(){
     cl_getc_set_src(input);
 
     eval();
-    stack_print_all();
 
     struct Element actual = {NO_ELEMENT, {0}};
 
@@ -944,7 +955,7 @@ static void test_eval_executable_array_over_operation_pos(){
     int actual_cur_op_pos=0;
 
     actual_ch = get_next_token(actual_ch, &actual_token, &actual_cur_op_pos);
-    // operation_pos >= exec_array->len になる
+    // 下を実行するとoperation_pos >= exec_array->len になる
     actual_ch = get_next_token(actual_ch, &actual_token, &actual_cur_op_pos);
     actual_ch = get_next_token(actual_ch, &actual_token, &actual_cur_op_pos);
 
@@ -952,6 +963,8 @@ static void test_eval_executable_array_over_operation_pos(){
     assert(expect_out_token.ltype == actual_token.ltype);
     assert(expect_cur_op_pos == actual_cur_op_pos);
 
+    init_exec_array();
+    co_pop();
     stack_clear();
 }
 
@@ -970,7 +983,6 @@ static void test_eval_factorial(){
 
     stack_pop(&actual);
 
-
     assert(expect.etype == actual.etype);
     assert(expect.u.number == actual.u.number);
 
@@ -978,54 +990,54 @@ static void test_eval_factorial(){
 }
 
 static void unit_test(){
-//    test_eval_push_number_to_stack();
-//    test_eval_add();
-//    test_eval_add_with_many_values();
-//    test_eval_dict();
-//
-//    test_eval_def_and_stack_pop();
-//    test_eval_sub();
-//    test_eval_mul();
-//    test_eval_div();
-//    test_eval_eq();
-//    test_eval_neq();
-//    test_eval_gt();
-//    test_eval_ge();
-//    test_eval_lt();
-//    test_eval_le();
-//    test_eval_pop();
-//    test_eval_exch();
-//    test_eval_dup();
-//    test_eval_index();
-//    test_eval_exec();
-//    test_eval_if();
-//    test_eval_ifelse();
-//   test_eval_repeat();
-//    test_eval_while();
-//
-//
-//    test_eval_executable_array_one_number();
-//    test_eval_executable_array_literal_name();
-//    test_eval_executable_array_executable_name();
-//    test_eval_executable_array_two_numbers();
-//    test_eval_two_executable_arrays();
-//    test_eval_nest_executable_arrays();
-//    test_eval_executable_array_action();
+    test_eval_push_number_to_stack();
+    test_eval_add();
+    test_eval_add_with_many_values();
+    test_eval_dict();
 
-//    test_eval_nested_executable_array_action1();
-//    test_eval_nested_executable_array_action2();
-//    test_eval_nested_executable_array_action3();
- //   test_eval_nested_executable_array_action4();
-//    test_eval_nested_executable_array_action5();
-//    test_eval_executable_array_over_operation_pos();
+    test_eval_def_and_stack_pop();
+    test_eval_sub();
+    test_eval_mul();
+    test_eval_div();
+    test_eval_eq();
+    test_eval_neq();
+    test_eval_gt();
+    test_eval_ge();
+    test_eval_lt();
+    test_eval_le();
+    test_eval_pop();
+    test_eval_exch();
+    test_eval_dup();
+    test_eval_index();
+    test_eval_exec();
+    test_eval_if();
+    test_eval_ifelse();
+    test_eval_repeat();
+    test_eval_while();
+
+
+    test_eval_executable_array_one_number();
+    test_eval_executable_array_literal_name();
+    test_eval_executable_array_executable_name();
+    test_eval_executable_array_two_numbers();
+    test_eval_two_executable_arrays();
+    test_eval_nest_executable_arrays();
+    test_eval_executable_array_action();
+
+    test_eval_nested_executable_array_action1();
+    test_eval_nested_executable_array_action2();
+    test_eval_nested_executable_array_action3();
+    test_eval_nested_executable_array_action4();
+    test_eval_nested_executable_array_action5();
+    test_eval_executable_array_over_operation_pos();
     test_eval_factorial();
 }
+
 
 void init(){
     stack_init();
     register_primitives();
 }
-
 
 int main() {
     stack_init();
@@ -1037,5 +1049,3 @@ int main() {
 //    stack_print_all();
     return 1;
 }
-
-// TODO ifelseの形式を変更する

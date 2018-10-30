@@ -232,42 +232,20 @@ void repeat_op(){
 
     struct Element exec = {ELEMENT_EXECUTABLE_NAME, {.name="exec"}};
 
-    struct Element arr[MAX_LEN];
 
-    int i=0;
-    for (; i < n.u.number*2; i +=2){
-        arr[i] = proc;
-        arr[i+1] = exec;
+    struct ElementArray *elem_arr = (struct EelementArray*)malloc(sizeof(struct ElementArray)+sizeof(struct Element)*(n.u.number*2));
+    elem_arr->len = n.u.number*2;
+
+    for (int i = 0; i < elem_arr->len; i +=2){
+        elem_arr->elements[i] = proc;
+        elem_arr->elements[i+1] = exec;
     }
-    struct ElementArray *elem_arr = (struct EelementArray*)malloc(sizeof(struct ElementArray)+sizeof(struct Element)*(i));
-    elem_arr->len = i;
-
-    memcpy(elem_arr->elements, arr, sizeof(struct Element)*(i));
 
     struct Element val = {ELEMENT_EXECUTABLE_ARRAY, {.byte_codes = elem_arr}};
 
     request_execute(&val);
 }
 
-
-
-void jmp(){
-    struct Element num1 = {NO_ELEMENT, {0}};
-    stack_pop(&num1);
-    set_operation_pos(num1.u.number);
-}
-
-void jmpif(){
-    struct Element num1 = {NO_ELEMENT, {0}};
-    struct Element num2 = {NO_ELEMENT, {0}};
-
-    stack_pop(&num2);
-    stack_pop(&num1);
-
-    if (num1.u.number == 0) {
-        set_operation_pos(num2.u.number);
-    }
-}
 
 static void while_op(){
     struct Element cond = {NO_ELEMENT, {0}};
@@ -276,26 +254,23 @@ static void while_op(){
     stack_pop(&cond);
 
     struct Element exec = {ELEMENT_EXECUTABLE_NAME, {.name="exec"}};
-    struct Element jmp = {ELEMENT_EXECUTABLE_NAME, {.name="jmp"}};
-    struct Element jmpif = {ELEMENT_EXECUTABLE_NAME, {.name="jmpif"}};
+    struct Element jmp = {ELEMENT_JMP, {0}};
+    struct Element jmp_not_if = {ELEMENT_JMP_NOT_IF, {0}};
     struct Element number_5 = {ELEMENT_NUMBER, {.number=5}};
     struct Element number_minus_7 = {ELEMENT_NUMBER, {.number=-7}};
 
-    struct Element arr[MAX_LEN];
-
-    arr[0] = cond;
-    arr[1] = exec;
-    arr[2] = number_5;
-    arr[3] = jmpif;
-    arr[4] = body;
-    arr[5] = exec;
-    arr[6] = number_minus_7;
-    arr[7] = jmp;
 
     struct ElementArray *elem_arr = (struct EelementArray*)malloc(sizeof(struct ElementArray)+sizeof(struct Element)*8);
     elem_arr->len = 8;
 
-    memcpy(elem_arr->elements, arr, sizeof(struct Element)*8);
+    elem_arr->elements[0] = cond;
+    elem_arr->elements[1] = exec;
+    elem_arr->elements[2] = number_5;
+    elem_arr->elements[3] = jmp_not_if;
+    elem_arr->elements[4] = body;
+    elem_arr->elements[5] = exec;
+    elem_arr->elements[6] = number_minus_7;
+    elem_arr->elements[7] = jmp;
 
     struct Element val = {ELEMENT_EXECUTABLE_ARRAY, {.byte_codes = elem_arr}};
 

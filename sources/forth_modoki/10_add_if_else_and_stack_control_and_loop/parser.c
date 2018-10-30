@@ -10,7 +10,7 @@
 static struct ElementArray *exec_array = NULL;
 static int operation_pos = 0;
 
-void set_operation_pos(int num){
+void goto_rel_pos(int num){
     operation_pos = (operation_pos-1) + num;
 }
 
@@ -171,8 +171,16 @@ int get_next_token(int prev_ch, struct Token *out_token, int *out_op_pos){
             out_token->ltype = EXECUTABLE_ARRAY;
             out_token->u.byte_codes = cur->u.byte_codes;
             break;
+        case ELEMENT_JMP:
+            out_token->ltype = JMP;
+            break;
+        case ELEMENT_JMP_NOT_IF:
+            out_token->ltype = JMP_NOT_IF;
+            break;
         default:
-            fprintf(stderr, "This place will not come! :: get_next_token :: etype :%d| operation_pos :%d | exec_array->len :%d\n", cur->etype, operation_pos, exec_array->len);
+            fprintf(stderr,
+                    "This place will not come! :: get_next_token :: etype :%d| operation_pos :%d | exec_array->len :%d\n",
+                    cur->etype, operation_pos, exec_array->len);
             break;
     }
 

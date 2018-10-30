@@ -168,7 +168,7 @@ static void test_stack_pop_one_times(){
 
 static void test_stack_pop_two_times(){
     struct Element expect1 = {ELEMENT_NUMBER, {3}};
-    struct Element expect2 = {ELEMENT_LITERAL_NAME, {"add"}};
+    struct Element expect2 = {ELEMENT_LITERAL_NAME, {.name="add"}};
 
     stack_push(&expect1);
     stack_push(&expect2);
