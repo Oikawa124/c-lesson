@@ -1,6 +1,5 @@
 #include <malloc.h>
 #include "clesson.h"
-#define MAX_LEN 256
 
 static void preprocessing_operations(int *out_num1, int *out_num2){
 
