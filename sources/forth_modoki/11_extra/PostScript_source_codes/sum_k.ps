@@ -1,0 +1,14 @@
+/sum_k {
+  dup
+  {dup 1 gt} 
+  {
+    1 sub
+    exch
+    1 index
+    add
+    exch
+  } while
+  pop
+} def
+10 sum_k
+% =55

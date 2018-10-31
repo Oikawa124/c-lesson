@@ -1,0 +1,10 @@
+/sum_k2 {
+   /k exch 1 add def
+
+  {/k k 1 sub def
+    k 0 gt}
+  {k dup mul add} % k^2してaddする
+  while
+
+} def
+3559 sum_k2
