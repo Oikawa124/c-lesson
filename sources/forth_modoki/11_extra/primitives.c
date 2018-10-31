@@ -63,6 +63,16 @@ void div_op(){
     stack_push(&answer);
 }
 
+void mod_op(){
+    int num1, num2;
+    preprocessing_operations(&num1, &num2);
+
+    struct Element answer = {ELEMENT_NUMBER, {0}};
+    answer.u.number = num2 % num1;
+
+    stack_push(&answer);
+}
+
 void eq_op(){
     int num1, num2;
     preprocessing_operations(&num1, &num2);
@@ -215,9 +225,9 @@ void ifelse_op(){
     stack_pop(&bool);
 
     if (bool.u.number == 1){
-        request_execute(&proc2);
-    } else {
         request_execute(&proc1);
+    } else {
+        request_execute(&proc2);
     }
 
 }
@@ -288,6 +298,7 @@ void register_primitives(){
     register_one_primitive("sub", sub_op);
     register_one_primitive("mul", mul_op);
     register_one_primitive("div", div_op);
+    register_one_primitive("mod", mod_op);
 
     register_one_primitive("def", def_op);
 

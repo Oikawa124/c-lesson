@@ -110,9 +110,13 @@ static int parse_one(int prev_ch, struct Token *out_token) {
         while(ch != '\n'){
             ch = cl_getc();
             if (ch == EOF){
+                out_token->ltype = SPACE;
+                out_token->u.onechar = ' ';
                 return EOF;
             }
         };
+        out_token->ltype = SPACE;
+        out_token->u.onechar = ' ';
         return ch;
     }else {
         printf("This place will not come! :: parse_one\n");

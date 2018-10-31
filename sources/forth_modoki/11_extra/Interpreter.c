@@ -43,7 +43,7 @@ int main(int argc, char *argv[]){
     FILE *fp;
 
     if (argc >= 2) {
-        fp = fopen("sum_K2.ps", "r"); //argv[1]
+        fp = fopen("text", "r"); //argv[1]
         cl_getc_set_fp(fp);
         if (fp == NULL) {
             fprintf(stderr, "NO EXIST FILE");

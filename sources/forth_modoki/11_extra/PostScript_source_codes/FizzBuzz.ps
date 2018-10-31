@@ -1,0 +1,18 @@
+/FizzBuzz {
+    /counter exch 1 add def
+
+    {/counter counter 1 sub def
+        counter 0 gt}
+    {
+
+    counter 15 mod  0 eq{/FizzBuzz}{
+    counter 5   mod  0 eq{/Buzz}      {
+    counter 3   mod  0 eq{/Fizz}
+                                    {counter} ifelse }ifelse }ifelse
+
+    }
+    while
+
+} def
+
+30 FizzBuzz
