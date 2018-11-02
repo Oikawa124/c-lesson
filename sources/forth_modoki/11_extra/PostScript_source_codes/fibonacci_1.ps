@@ -1,0 +1,17 @@
+/fibonacci {
+    /n exch def
+    n 0 eq {0}{
+    n 1 eq {1}{
+        n
+        n 1 sub fibonacci
+        exch
+        2 sub fibonacci
+        add
+     }ifelse}ifelse
+}def
+
+10 fibonacci
+% > 55
+
+% セットアップ用と再帰するようの関数に分ける方法もでは、自分は実装できなかった
+% /f {... /f_inner {...}def f_inner... } def のように分ける
