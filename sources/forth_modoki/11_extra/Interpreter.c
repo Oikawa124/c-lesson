@@ -1,71 +1,26 @@
 #include "clesson.h"
 #include <stdio.h>
 
-#define CHARACTER_SIZE 100
-
-char words[CHARACTER_SIZE];
-int word_pos = 0;
-
-void add_char(int ch) {
-    words[word_pos] = ch;
-    word_pos++;
-    if (ch == '\0') {
-        word_pos = 0;
-    }
-}
-
-char *get_readline(FILE *f_p) {
-    int ch;
-    char *ret;
-
-    while ((ch = getc(f_p)) != EOF) {
-        if (ch == '\n') {
-            add_char('\0');
-            break;
-        }
-        add_char(ch);
-    }
-    if (ch == EOF) {
-        add_char(EOF);
-    }
-
-    ret = malloc(sizeof(char) * CHARACTER_SIZE);
-    strcpy(ret, words);
-
-    return ret;
-}
-
-
 int main(int argc, char *argv[]) {
-
-    char *buf;
     FILE *fp;
+
+    init();
 
     if (argc >= 2) {
         fp = fopen("fibonacci_2.ps", "r"); //argv[1]
         cl_getc_set_fp(fp);
         if (fp == NULL) {
             fprintf(stderr, "NO EXIST FILE");
+            exit(1);
         }
-        init();
-
         eval();
 
         stack_print_all();
 
         fclose(fp);
     } else {
-        init();
-
-        printf("input words here\n<");
-        while ((buf = get_readline(stdin)) != NULL) {
-            cl_getc_set_src(buf);
-            eval();
-            stack_print_all();
-            printf("<");
-        }
+        repl();
     }
-
     return 0;
 }
 

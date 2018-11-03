@@ -135,3 +135,7 @@ void co_push_elem_arr(struct Element *elem_arr);
 // プリミティブ関連
 void register_primitives();
 
+
+// REPL関係
+void repl();
+
