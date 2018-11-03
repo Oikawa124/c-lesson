@@ -1,23 +1,20 @@
 #include "clesson.h"
-#include <stdio.h>
-#include <assert.h>
-#include <malloc.h>
 
 #define MAX_NAME_OP_NUMBERS 256
 static struct Element *exec_arr_pointer = NULL;
 
 
-void request_execute(struct Element *execarr){
+void request_execute(struct Element *execarr) {
     exec_arr_pointer = execarr;
 }
 
-void jmp(){
+void jmp() {
     struct Element num1 = {NO_ELEMENT, {0}};
     stack_pop(&num1);
     goto_rel_pos(num1.u.number);
 }
 
-void jmp_not_if(){
+void jmp_not_if() {
     struct Element num1 = {NO_ELEMENT, {0}};
     struct Element num2 = {NO_ELEMENT, {0}};
 
@@ -29,14 +26,14 @@ void jmp_not_if(){
     }
 }
 
-static int compile_exec_array(int ch, struct Element *out_elem){
+static int compile_exec_array(int ch, struct Element *out_elem) {
     struct Element arr[MAX_NAME_OP_NUMBERS];
     struct Token token = {UNKNOWN, {0}};
     int cur_op_pos = 0;
 
-    int i=0;
+    int i = 0;
 
-    do{
+    do {
         ch = get_next_token(ch, &token, &cur_op_pos);
         switch (token.ltype) {
             case NUMBER:
@@ -62,21 +59,22 @@ static int compile_exec_array(int ch, struct Element *out_elem){
                 i++;
                 ch = get_next_token(ch, &token, &cur_op_pos);
                 break;
-            case SPACE:
-                break;
-            case END_OF_FILE:
-                break;
-            default:
-                fprintf(stderr, "This place will not come! :: compile_exec_array\n");
+                case SPACE:
+                    break;
+                case END_OF_FILE:
+                    break;
+                default:
+                    fprintf(stderr, "This place will not come! :: compile_exec_array\n");
             }
         }
-    }while (ch != '}');
+    } while (ch != '}');
 
-    struct ElementArray *elem_arr = (struct EelementArray*)malloc(sizeof(struct ElementArray)+sizeof(struct Element)*i);
+    struct ElementArray *elem_arr = (struct EelementArray *) malloc(
+            sizeof(struct ElementArray) + sizeof(struct Element) * i);
 
     elem_arr->len = i;
 
-    memcpy(elem_arr->elements, arr, sizeof(struct Element)*i);
+    memcpy(elem_arr->elements, arr, sizeof(struct Element) * i);
 
     out_elem->etype = ELEMENT_EXECUTABLE_ARRAY;
     out_elem->u.byte_codes = elem_arr;
@@ -85,11 +83,11 @@ static int compile_exec_array(int ch, struct Element *out_elem){
 }
 
 
-void eval(){
+void eval() {
     static int ch = EOF;
-    int cur_op_pos=0;
+    int cur_op_pos = 0;
 
-    do{
+    do {
         struct Token token = {UNKNOWN, {0}};
         struct Element elem = {NO_ELEMENT, {0}};
 
@@ -107,7 +105,7 @@ void eval(){
                 stack_push(&elem);
                 break;
             case EXECUTABLE_NAME:
-                if (dict_get(token.u.name, &elem) != -1){
+                if (dict_get(token.u.name, &elem) != -1) {
                     if (elem.etype == ELEMENT_C_FUNC) {
                         elem.u.cfunc();
                         if (exec_arr_pointer != NULL) {
@@ -139,17 +137,17 @@ void eval(){
             default:
                 fprintf(stderr, "This place will not come! :: eval\n");
         }
-    }while (ch != EOF);
+    } while (ch != EOF);
 }
 
 void eval_exec_array() {
     int ch = EOF;
     struct Token token = {UNKNOWN, 0};
     struct Element elem = {NO_ELEMENT, {0}};
-    int cur_op_pos=0;
+    int cur_op_pos = 0;
 
 
-    while (!co_stack_is_empty()){
+    while (!co_stack_is_empty()) {
         struct Continuation *cont = co_peek();
         set_cont(cont);
 
@@ -194,7 +192,7 @@ void eval_exec_array() {
                 jmp_not_if();
             } else if (token.ltype == END_OF_FILE) {
                 // ignore
-            }else {
+            } else {
                 fprintf(stderr, "This place will not come! :: eval_exec_array\n");
             }
 
@@ -205,18 +203,16 @@ void eval_exec_array() {
                 }
             }
 
-        }while (ch != EOF);
+        } while (ch != EOF);
     }
 }
 
 
-
-
-void assert_number_eq(int expect, struct Element *actual){
+void assert_number_eq(int expect, struct Element *actual) {
     assert(expect == actual->u.number);
 }
 
-static void test_eval_push_number_to_stack(){
+static void test_eval_push_number_to_stack() {
     int expect1 = 1;
     int expect2 = 2;
 
@@ -237,7 +233,7 @@ static void test_eval_push_number_to_stack(){
     stack_clear();
 }
 
-static void test_eval_add(){
+static void test_eval_add() {
     int expect1 = 3;
 
     char *input = "1 2 add";
@@ -254,7 +250,7 @@ static void test_eval_add(){
     stack_clear();
 }
 
-static void test_eval_add_with_many_values(){
+static void test_eval_add_with_many_values() {
     int expect1 = 45;
 
     char *input = "1 2 3 add add 4 5 6 7 8 9 add add add add add add";
@@ -271,7 +267,7 @@ static void test_eval_add_with_many_values(){
     stack_clear();
 }
 
-static void test_eval_dict(){
+static void test_eval_dict() {
     char *input_key = "abc";
     int expect_dict_value = 12;
 
@@ -289,7 +285,7 @@ static void test_eval_dict(){
 
 }
 
-static void test_eval_def_and_stack_pop(){
+static void test_eval_def_and_stack_pop() {
     int expect_value = 12;
 
     char *input = "/abc 12 def abc";
@@ -306,7 +302,7 @@ static void test_eval_def_and_stack_pop(){
 
 }
 
-static void test_eval_sub(){
+static void test_eval_sub() {
     int expect1 = 2;
 
     char *input = "3 1 sub";
@@ -323,7 +319,7 @@ static void test_eval_sub(){
     stack_clear();
 }
 
-static void test_eval_mul(){
+static void test_eval_mul() {
     int expect1 = 10;
 
     char *input = "5 2 mul";
@@ -340,7 +336,7 @@ static void test_eval_mul(){
     stack_clear();
 }
 
-static void test_eval_div(){
+static void test_eval_div() {
     int expect1 = 3;
 
     char *input = "9 3 div";
@@ -357,7 +353,7 @@ static void test_eval_div(){
     stack_clear();
 }
 
-static void test_eval_eq(){
+static void test_eval_eq() {
     int expect = 1;
 
     char *input = "1 1 eq";
@@ -375,7 +371,7 @@ static void test_eval_eq(){
 }
 
 
-static void test_eval_neq(){
+static void test_eval_neq() {
     int expect = 1;
 
     char *input = "1 2 neq";
@@ -392,7 +388,7 @@ static void test_eval_neq(){
     stack_clear();
 }
 
-static void test_eval_gt(){
+static void test_eval_gt() {
     int expect = 1;
 
     char *input = "10 2 gt";
@@ -409,7 +405,7 @@ static void test_eval_gt(){
     stack_clear();
 }
 
-static void test_eval_ge(){
+static void test_eval_ge() {
     int expect = 1;
 
     char *input = "2 2 ge";
@@ -426,7 +422,7 @@ static void test_eval_ge(){
     stack_clear();
 }
 
-static void test_eval_lt(){
+static void test_eval_lt() {
     int expect = 1;
 
     char *input = "1 2 lt";
@@ -443,7 +439,7 @@ static void test_eval_lt(){
     stack_clear();
 }
 
-static void test_eval_le(){
+static void test_eval_le() {
     int expect = 1;
 
     char *input = "1 1 le";
@@ -460,7 +456,7 @@ static void test_eval_le(){
     stack_clear();
 }
 
-static void test_eval_pop(){
+static void test_eval_pop() {
     int expect = 1;
 
     char *input = "1 1 pop";
@@ -477,7 +473,7 @@ static void test_eval_pop(){
     stack_clear();
 }
 
-static void test_eval_exch(){
+static void test_eval_exch() {
     int expect1 = 2;
     int expect2 = 1;
 
@@ -498,7 +494,7 @@ static void test_eval_exch(){
     stack_clear();
 }
 
-static void test_eval_dup(){
+static void test_eval_dup() {
     int expect1 = 1;
     int expect2 = 1;
 
@@ -519,7 +515,7 @@ static void test_eval_dup(){
     stack_clear();
 }
 
-static void test_eval_index(){
+static void test_eval_index() {
     int expect = 2;
 
     char *input = "1 2 3 4 5 3 index";
@@ -537,7 +533,7 @@ static void test_eval_index(){
     stack_clear();
 }
 
-static void test_eval_exec(){
+static void test_eval_exec() {
     int expect = 10;
 
     char *input = "{5 5 add} exec";
@@ -554,7 +550,7 @@ static void test_eval_exec(){
     stack_clear();
 }
 
-static void test_eval_if(){
+static void test_eval_if() {
     int expect = 3;
 
     char *input = "1 {1 2 add} if";
@@ -571,8 +567,8 @@ static void test_eval_if(){
     stack_clear();
 }
 
-static void test_eval_ifelse(){
-    int expect = 10;
+static void test_eval_ifelse() {
+    int expect = 5;
 
     char *input = "0 {5 5 add} {3 2 add} ifelse";
     cl_getc_set_src(input);
@@ -588,7 +584,7 @@ static void test_eval_ifelse(){
     stack_clear();
 }
 
-static void test_eval_repeat(){
+static void test_eval_repeat() {
     int expect = 50;
 
     char *input = "0 10 {5 add} repeat";
@@ -605,7 +601,7 @@ static void test_eval_repeat(){
     stack_clear();
 }
 
-static void test_eval_while(){
+static void test_eval_while() {
     int expect = 0;
 
     char *input = "1 1 1 {pop} {1} while";
@@ -623,8 +619,7 @@ static void test_eval_while(){
 }
 
 
-
-static void test_eval_executable_array_one_number(){
+static void test_eval_executable_array_one_number() {
 
     struct Element expect = {ELEMENT_EXECUTABLE_ARRAY, {0}};
     struct Element expect_array_value = {ELEMENT_NUMBER, {1}};
@@ -645,7 +640,7 @@ static void test_eval_executable_array_one_number(){
     stack_clear();
 }
 
-static void test_eval_executable_array_literal_name(){
+static void test_eval_executable_array_literal_name() {
 
     struct Element expect = {ELEMENT_EXECUTABLE_ARRAY, {0}};
     struct Element expect_array_value = {ELEMENT_LITERAL_NAME, {.name="abc"}};
@@ -666,7 +661,7 @@ static void test_eval_executable_array_literal_name(){
     stack_clear();
 }
 
-static void test_eval_executable_array_executable_name(){
+static void test_eval_executable_array_executable_name() {
 
     struct Element expect = {ELEMENT_EXECUTABLE_ARRAY, {0}};
     struct Element expect_array_value = {ELEMENT_EXECUTABLE_NAME, {.name="abc"}};
@@ -687,7 +682,7 @@ static void test_eval_executable_array_executable_name(){
     stack_clear();
 }
 
-static void test_eval_executable_array_two_numbers(){
+static void test_eval_executable_array_two_numbers() {
 
     struct Element expect = {ELEMENT_EXECUTABLE_ARRAY, {0}};
     struct Element expect_array_value1 = {ELEMENT_NUMBER, {1}};
@@ -712,7 +707,7 @@ static void test_eval_executable_array_two_numbers(){
     stack_clear();
 }
 
-static void test_eval_two_executable_arrays(){
+static void test_eval_two_executable_arrays() {
 
     struct Element expect = {ELEMENT_EXECUTABLE_ARRAY, {0}};
     struct Element expect_array_value1 = {ELEMENT_NUMBER, {1}};
@@ -740,7 +735,7 @@ static void test_eval_two_executable_arrays(){
     stack_clear();
 }
 
-static void test_eval_nest_executable_arrays(){
+static void test_eval_nest_executable_arrays() {
 
     struct Element expect = {ELEMENT_EXECUTABLE_ARRAY, {0}};
     struct Element expect_array_value1 = {ELEMENT_NUMBER, {1}};
@@ -768,7 +763,7 @@ static void test_eval_nest_executable_arrays(){
     stack_clear();
 }
 
-static void test_eval_executable_array_action(){
+static void test_eval_executable_array_action() {
 
     struct Element expect = {ELEMENT_NUMBER, {2}};
 
@@ -788,7 +783,7 @@ static void test_eval_executable_array_action(){
     stack_clear();
 }
 
-static void test_eval_nested_executable_array_action1(){
+static void test_eval_nested_executable_array_action1() {
 
     struct Element expect = {ELEMENT_NUMBER, {2}};
 
@@ -809,7 +804,7 @@ static void test_eval_nested_executable_array_action1(){
     stack_clear();
 }
 
-static void test_eval_nested_executable_array_action2(){
+static void test_eval_nested_executable_array_action2() {
 
     int expect_array_no0 = 1;
     int expect_array_no1 = 2;
@@ -826,8 +821,8 @@ static void test_eval_nested_executable_array_action2(){
 
     eval();
 
-    struct Element actual0= {NO_ELEMENT, {0}};
-    struct Element actual1= {NO_ELEMENT, {0}};
+    struct Element actual0 = {NO_ELEMENT, {0}};
+    struct Element actual1 = {NO_ELEMENT, {0}};
     struct Element actual2 = {NO_ELEMENT, {0}};
     struct Element actual3 = {NO_ELEMENT, {0}};
     struct Element actual4 = {NO_ELEMENT, {0}};
@@ -850,7 +845,7 @@ static void test_eval_nested_executable_array_action2(){
     stack_clear();
 }
 
-static void test_eval_nested_executable_array_action3(){
+static void test_eval_nested_executable_array_action3() {
 
     struct Element expect = {ELEMENT_NUMBER, {6}};
 
@@ -870,7 +865,7 @@ static void test_eval_nested_executable_array_action3(){
     stack_clear();
 }
 
-static void test_eval_nested_executable_array_action4(){
+static void test_eval_nested_executable_array_action4() {
 
     struct Element expect = {ELEMENT_NUMBER, {2}};
 
@@ -891,7 +886,7 @@ static void test_eval_nested_executable_array_action4(){
 }
 
 
-static void test_eval_nested_executable_array_action5(){
+static void test_eval_nested_executable_array_action5() {
 
     // Unit test Fail ←通るようになった。
     struct Element expect = {ELEMENT_NUMBER, {3}};
@@ -933,10 +928,10 @@ static void test_eval_nested_executable_array_action5(){
 
 }
 
-static void test_eval_executable_array_over_operation_pos(){
+static void test_eval_executable_array_over_operation_pos() {
     int expect_ch = EOF;
     struct Token expect_out_token = {END_OF_FILE, {0}};
-    int expect_cur_op_pos=1;
+    int expect_cur_op_pos = 1;
 
     char *input = "{1}";
     cl_getc_set_src(input);
@@ -952,7 +947,7 @@ static void test_eval_executable_array_over_operation_pos(){
 
     int actual_ch = EOF;
     struct Token actual_token = {UNKNOWN, 0};
-    int actual_cur_op_pos=0;
+    int actual_cur_op_pos = 0;
 
     actual_ch = get_next_token(actual_ch, &actual_token, &actual_cur_op_pos);
     // 下を実行するとoperation_pos >= exec_array->len になる
@@ -969,7 +964,7 @@ static void test_eval_executable_array_over_operation_pos(){
 }
 
 
-static void test_eval_factorial(){
+static void test_eval_factorial() {
 
     struct Element expect = {ELEMENT_NUMBER, {120}};
 
@@ -989,7 +984,7 @@ static void test_eval_factorial(){
     stack_clear();
 }
 
-static void unit_test(){
+static void unit_test() {
     test_eval_push_number_to_stack();
     test_eval_add();
     test_eval_add_with_many_values();
@@ -1034,7 +1029,7 @@ static void unit_test(){
 }
 
 
-void init(){
+void init() {
     stack_init();
     register_primitives();
 }

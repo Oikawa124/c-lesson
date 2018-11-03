@@ -1,8 +1,4 @@
 #include "clesson.h"
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
 
 #define NAME_SIZE 256
 #define CONTINUE 1
@@ -10,22 +6,22 @@
 static struct ElementArray *exec_array = NULL;
 static int operation_pos = 0;
 
-void goto_rel_pos(int num){
-    operation_pos = (operation_pos-1) + num;
+void goto_rel_pos(int num) {
+    operation_pos = (operation_pos - 1) + num;
 }
 
 
-int _isdigit(int n) { return '0' <= n && n <= '9';}
+int _isdigit(int n) { return '0' <= n && n <= '9'; }
 
-int _isLetter(int ch){ return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_';}
+int _isLetter(int ch) { return ('a' <= ch && ch <= 'z') || ('A' <= ch && ch <= 'Z') || ch == '_'; }
 
 static int parse_one(int prev_ch, struct Token *out_token) {
 
     int ch;
 
-    if (prev_ch == EOF){
+    if (prev_ch == EOF) {
         ch = cl_getc();
-    }else{
+    } else {
         ch = prev_ch;
     }
 
@@ -74,7 +70,7 @@ static int parse_one(int prev_ch, struct Token *out_token) {
         out_token->ltype = LITERAL_NAME;
         return ch;
 
-    } else if (ch == ' ' || ch =='\n') {
+    } else if (ch == ' ' || ch == '\n') {
         while (ch == ' ' || ch == '\n') { ch = cl_getc(); }
 
         out_token->ltype = SPACE;
@@ -83,7 +79,7 @@ static int parse_one(int prev_ch, struct Token *out_token) {
 
     } else if (ch == '{') {
         out_token->ltype = OPEN_CURLY;
-        out_token->u.onechar = (char)ch;
+        out_token->u.onechar = (char) ch;
         ch = cl_getc();
         return ch;
 
@@ -93,7 +89,7 @@ static int parse_one(int prev_ch, struct Token *out_token) {
         ch = cl_getc();
         return ch;
 
-    }else if (ch == '-'){
+    } else if (ch == '-') {
         ch = cl_getc();
         int num = 0;
         for (; _isdigit(ch); ch = cl_getc()) {
@@ -106,10 +102,10 @@ static int parse_one(int prev_ch, struct Token *out_token) {
     } else if (ch == EOF) {
         out_token->ltype = END_OF_FILE;
         return EOF;
-    }else if (ch == '%') {
-        while(ch != '\n'){
+    } else if (ch == '%') {
+        while (ch != '\n') {
             ch = cl_getc();
-            if (ch == EOF){
+            if (ch == EOF) {
                 out_token->ltype = SPACE;
                 out_token->u.onechar = ' ';
                 return EOF;
@@ -118,7 +114,7 @@ static int parse_one(int prev_ch, struct Token *out_token) {
         out_token->ltype = SPACE;
         out_token->u.onechar = ' ';
         return ch;
-    }else {
+    } else {
         printf("This place will not come! :: parse_one\n");
     }
 
@@ -131,20 +127,20 @@ void set_cont(struct Continuation *cont) {
     operation_pos = cont->pc;
 }
 
-void init_exec_array(){
+void init_exec_array() {
     exec_array = NULL;
     operation_pos = 0;
 }
 
 
-int get_next_token(int prev_ch, struct Token *out_token, int *out_op_pos){
+int get_next_token(int prev_ch, struct Token *out_token, int *out_op_pos) {
     if (exec_array == NULL) {
-        if (prev_ch == CONTINUE) {prev_ch = EOF;}
+        if (prev_ch == CONTINUE) { prev_ch = EOF; }
         return parse_one(prev_ch, out_token);
     }
 
 
-    if (exec_array->len == 0){
+    if (exec_array->len == 0) {
         fprintf(stderr, "空の実行可能配列です\n");
     }
 
@@ -158,7 +154,7 @@ int get_next_token(int prev_ch, struct Token *out_token, int *out_op_pos){
     struct Element *cur = &exec_array->elements[operation_pos];
     operation_pos++;
 
-    switch (cur->etype){
+    switch (cur->etype) {
         case ELEMENT_NUMBER:
             out_token->ltype = NUMBER;
             out_token->u.number = cur->u.number;
@@ -202,8 +198,8 @@ void parser_print_all() {
 
     do {
         ch = parse_one(ch, &token);
-        if(token.ltype != UNKNOWN) {
-            switch(token.ltype) {
+        if (token.ltype != UNKNOWN) {
+            switch (token.ltype) {
                 case NUMBER:
                     printf("num: %d\n", token.u.number);
                     break;
@@ -227,7 +223,7 @@ void parser_print_all() {
                     break;
             }
         }
-    }while(ch != EOF);
+    } while (ch != EOF);
 }
 
 
@@ -261,9 +257,9 @@ static void test_parse_one_empty_should_return_END_OF_FILE() {
     assert(token.ltype == expect);
 }
 
-int streq(char *s1, char *s2){ return 0==strcmp(s1, s2);}
+int streq(char *s1, char *s2) { return 0 == strcmp(s1, s2); }
 
-static void verify_execname_pares_one(char *expect_name, char *input){
+static void verify_execname_pares_one(char *expect_name, char *input) {
     char *_input = input;
     int expect_type = EXECUTABLE_NAME;
     char *_expect_name = expect_name;
@@ -277,14 +273,14 @@ static void verify_execname_pares_one(char *expect_name, char *input){
     assert(streq(_expect_name, token.u.name));
 }
 
-static void test_parse_one_executable_name(){
+static void test_parse_one_executable_name() {
     verify_execname_pares_one("abc", "abc");
     verify_execname_pares_one("abc123", "abc123");
     verify_execname_pares_one("abc_def", "abc_def");
     verify_execname_pares_one("abc", "abc def");
 }
 
-static void test_parse_one_literal_name(){
+static void test_parse_one_literal_name() {
     char *input = "/add";
     int expect_type = LITERAL_NAME;
     char *expect_name = "add";
@@ -298,7 +294,7 @@ static void test_parse_one_literal_name(){
     assert(streq(expect_name, token.u.name));
 }
 
-static void test_parse_one_open_curly(){
+static void test_parse_one_open_curly() {
     char *input = "{";
     int expect_type = OPEN_CURLY;
     char expect_onechar = '{';
@@ -312,7 +308,7 @@ static void test_parse_one_open_curly(){
     assert(expect_onechar == token.u.onechar);
 }
 
-static void test_parse_one_close_curly(){
+static void test_parse_one_close_curly() {
     char *input = "}";
     int expect_type = CLOSE_CURLY;
     char expect_onechar = '}';
@@ -326,7 +322,7 @@ static void test_parse_one_close_curly(){
     assert(expect_onechar == token.u.onechar);
 }
 
-void test_parse_one_minus_number(){
+void test_parse_one_minus_number() {
     char *input = "-123";
     int expect = -123;
 
@@ -342,7 +338,7 @@ void test_parse_one_minus_number(){
     assert(expect == token.u.number);
 }
 
-void test_parse_one_newline(){
+void test_parse_one_newline() {
     char *input = "123\n456";
     int expect = 456;
 
@@ -362,7 +358,7 @@ void test_parse_one_newline(){
     assert(token3.u.number == expect);
 }
 
-void test_parse_comment(){
+void test_parse_comment() {
     char *input = "123%This is comment\n456";
     int expect = 456;
 

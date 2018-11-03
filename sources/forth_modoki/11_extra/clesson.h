@@ -1,5 +1,7 @@
 #include <stdio.h>
 #include <string.h>
+#include <assert.h>
+#include <malloc.h>
 
 #define STACK_SIZE 1024
 
@@ -41,10 +43,13 @@ enum ElementType {
 
 struct Element {
     enum ElementType etype;
+
     union {
         int number;
         char *name;
+
         void (*cfunc)();
+
         struct ElementArray *byte_codes;
     } u;
 };
@@ -62,7 +67,7 @@ struct Continuation {
 
 int cl_getc();
 
-void cl_getc_set_src(char* str);
+void cl_getc_set_src(char *str);
 
 void cl_getc_set_fp(FILE *_fp);
 

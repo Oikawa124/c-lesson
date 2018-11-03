@@ -1,0 +1,13 @@
+/fibonacci {
+    dup 0 eq {pop 0}{
+    dup 1 eq {pop 1}{
+        dup 1 sub fibonacci
+        exch
+        2 sub fibonacci
+        add
+     }ifelse}ifelse
+}def
+
+10 fibonacci
+% > 55
+% 変数nを辞書に登録しないバージョン

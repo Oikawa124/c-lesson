@@ -1,32 +1,31 @@
-#include <stdio.h>
-#include <stdlib.h>
 #include "clesson.h"
+#include <stdio.h>
 
 #define CHARACTER_SIZE 100
 
 char words[CHARACTER_SIZE];
 int word_pos = 0;
 
-void add_char(int ch){
+void add_char(int ch) {
     words[word_pos] = ch;
     word_pos++;
-    if (ch == '\0'){
-        word_pos =0;
+    if (ch == '\0') {
+        word_pos = 0;
     }
 }
 
-char *get_readline(FILE *f_p){
+char *get_readline(FILE *f_p) {
     int ch;
     char *ret;
 
-    while ((ch = getc(f_p)) != EOF){
-        if (ch == '\n'){
+    while ((ch = getc(f_p)) != EOF) {
+        if (ch == '\n') {
             add_char('\0');
             break;
         }
         add_char(ch);
     }
-    if (ch == EOF){
+    if (ch == EOF) {
         add_char(EOF);
     }
 
@@ -37,13 +36,13 @@ char *get_readline(FILE *f_p){
 }
 
 
-int main(int argc, char *argv[]){
+int main(int argc, char *argv[]) {
 
     char *buf;
     FILE *fp;
 
     if (argc >= 2) {
-        fp = fopen("text", "r"); //argv[1]
+        fp = fopen("fibonacci_2.ps", "r"); //argv[1]
         cl_getc_set_fp(fp);
         if (fp == NULL) {
             fprintf(stderr, "NO EXIST FILE");

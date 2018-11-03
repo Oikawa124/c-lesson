@@ -1,4 +1,3 @@
-#include <assert.h>
 #include <malloc.h>
 #include "clesson.h"
 
@@ -15,39 +14,39 @@ struct Node {
 struct Node *array[TABLE_SIZE];
 
 
-static int hash(char *str){
+static int hash(char *str) {
     unsigned int val = 0;
-    while(*str) {
+    while (*str) {
         val += *str++;
     }
-    return (int)(val%TABLE_SIZE);
+    return (int) (val % TABLE_SIZE);
 }
 
-static struct Node *create_node(char *key, struct Element *elem){
+static struct Node *create_node(char *key, struct Element *elem) {
     struct Node *new_node;
 
     new_node = malloc(sizeof(struct Node));
-    new_node->key= key;
+    new_node->key = key;
     new_node->value = *elem;
     new_node->next = NULL;
 
     return new_node;
 }
 
-static void update_or_insert_list(struct Node *head, char *key, struct Element *elem){
+static void update_or_insert_list(struct Node *head, char *key, struct Element *elem) {
     static struct Node *pos;
     struct Node *new_node;
     struct Node *prev = head;
 
 
-    for (pos = head; pos !=NULL; pos = pos->next){
+    for (pos = head; pos != NULL; pos = pos->next) {
 
         if (streq(pos->key, key)) {
             pos->value = *elem;
             return;
         }
 
-        if (pos != NULL){prev =pos;}
+        if (pos != NULL) { prev = pos; }
     }
 
     new_node = create_node(key, elem);
@@ -56,14 +55,13 @@ static void update_or_insert_list(struct Node *head, char *key, struct Element *
 }
 
 
-
-void dict_put(char *key, struct Element *elem){
+void dict_put(char *key, struct Element *elem) {
     int idx = hash(key);
     struct Node *head = array[idx];
 
     if (head == NULL) {
         head = malloc(sizeof(struct Node));
-        head->value  = *elem;
+        head->value = *elem;
         head->next = NULL;
         head->key = key;
 
@@ -74,10 +72,10 @@ void dict_put(char *key, struct Element *elem){
 }
 
 
-int dict_get(char *key, struct Element *out_elem){
+int dict_get(char *key, struct Element *out_elem) {
     struct Node *pos;
-    for (pos = array[hash(key)]; pos != NULL; pos = pos->next ) {
-        if (streq(pos->key, key)){
+    for (pos = array[hash(key)]; pos != NULL; pos = pos->next) {
+        if (streq(pos->key, key)) {
             *out_elem = pos->value;
             return 1;
         }
@@ -86,15 +84,14 @@ int dict_get(char *key, struct Element *out_elem){
 }
 
 
-void dict_print_all(){
+void dict_print_all() {
     int i;
     struct Node *pos;
     static int no_dict_flag = 1;
 
-    for (i=0; i < TABLE_SIZE; i++){
-        for (pos = array[i]; pos != NULL; pos = pos->next){
-            printf("key: %s etype: %d value: %d\n", pos->key
-                    , pos->value.etype, pos->value.u.number);
+    for (i = 0; i < TABLE_SIZE; i++) {
+        for (pos = array[i]; pos != NULL; pos = pos->next) {
+            printf("key: %s etype: %d value: %d\n", pos->key, pos->value.etype, pos->value.u.number);
             no_dict_flag = 0;
         }
     }
@@ -105,7 +102,7 @@ void dict_print_all(){
 }
 
 
-void dict_clear(){
+void dict_clear() {
     int i = 0;
     struct Node *pos;
     struct Node *temp;
@@ -124,7 +121,7 @@ void dict_clear(){
     }
 }
 
-void dict_print_one_value(char *key){
+void dict_print_one_value(char *key) {
     struct Element elem = {NO_ELEMENT, {0}};
     dict_get(key, &elem);
     stack_push(&elem);
@@ -133,7 +130,7 @@ void dict_print_one_value(char *key){
 }
 
 
-static void test_dict_one_times(){
+static void test_dict_one_times() {
     char *input_key = "ten";
     struct Element expect_elem = {ELEMENT_NUMBER, {10}};
 
@@ -147,7 +144,7 @@ static void test_dict_one_times(){
     dict_clear();
 }
 
-static void test_dict_two_times(){
+static void test_dict_two_times() {
     char *input_key1 = "one";
     struct Element input_elem1 = {ELEMENT_NUMBER, {1}};
     char *input_key2 = "two";
@@ -168,7 +165,7 @@ static void test_dict_two_times(){
     dict_clear();
 }
 
-static void test_dict_same_key(){
+static void test_dict_same_key() {
     char *input_key = "one";
     struct Element input_elem = {ELEMENT_NUMBER, {1}};
 
@@ -185,7 +182,7 @@ static void test_dict_same_key(){
     dict_clear();
 }
 
-static void test_dict_get(){
+static void test_dict_get() {
     struct Element expect_elem1 = {ELEMENT_NUMBER, {5}};
     int expect_dict_get_result = 1;
 
@@ -204,7 +201,7 @@ static void test_dict_get(){
     dict_clear();
 }
 
-static void test_dict_not_exist_key(){
+static void test_dict_not_exist_key() {
     struct Element expect_elem1 = {ELEMENT_NUMBER, {5}};
     int expect_dict_get_result = 0;
 
@@ -222,7 +219,7 @@ static void test_dict_not_exist_key(){
     dict_clear();
 }
 
-static void test_dict_same_hash_no_same_keyname(){
+static void test_dict_same_hash_no_same_keyname() {
     // key1とkey2はTABLE_SIZEが4のとき同じハッシュ値になる。
     char *input_key1 = "one";
     struct Element input_elem1 = {ELEMENT_NUMBER, {1}};
@@ -244,7 +241,7 @@ static void test_dict_same_hash_no_same_keyname(){
 }
 
 
-static void unit_test(){
+static void unit_test() {
     test_dict_one_times();
     test_dict_two_times();
     test_dict_same_key();

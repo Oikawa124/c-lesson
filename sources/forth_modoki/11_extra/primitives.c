@@ -1,7 +1,7 @@
 #include <malloc.h>
 #include "clesson.h"
 
-static void preprocessing_operations(int *out_num1, int *out_num2){
+static void preprocessing_operations(int *out_num1, int *out_num2) {
 
     struct Element num1 = {NO_ELEMENT, {0}};
     struct Element num2 = {NO_ELEMENT, {0}};
@@ -13,7 +13,7 @@ static void preprocessing_operations(int *out_num1, int *out_num2){
     *out_num2 = num2.u.number;
 }
 
-void def_op(){
+void def_op() {
     struct Element val = {NO_ELEMENT, {0}};
     stack_pop(&val);
 
@@ -23,17 +23,17 @@ void def_op(){
     dict_put(literal_name.u.name, &val);
 }
 
-void add_op(){
+void add_op() {
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
     struct Element answer = {ELEMENT_NUMBER, {0}};
-    answer.u.number = num1+ num2;
+    answer.u.number = num1 + num2;
 
     stack_push(&answer);
 }
 
-void sub_op(){
+void sub_op() {
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
@@ -43,7 +43,7 @@ void sub_op(){
     stack_push(&answer);
 }
 
-void mul_op(){
+void mul_op() {
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
@@ -53,7 +53,7 @@ void mul_op(){
     stack_push(&answer);
 }
 
-void div_op(){
+void div_op() {
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
@@ -63,7 +63,7 @@ void div_op(){
     stack_push(&answer);
 }
 
-void mod_op(){
+void mod_op() {
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
@@ -73,7 +73,7 @@ void mod_op(){
     stack_push(&answer);
 }
 
-void eq_op(){
+void eq_op() {
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
@@ -87,7 +87,7 @@ void eq_op(){
     stack_push(&answer);
 }
 
-void neq_op(){
+void neq_op() {
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
@@ -101,7 +101,7 @@ void neq_op(){
     stack_push(&answer);
 }
 
-void gt_op(){
+void gt_op() {
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
@@ -115,7 +115,7 @@ void gt_op(){
     stack_push(&answer);
 }
 
-void ge_op(){
+void ge_op() {
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
@@ -129,7 +129,7 @@ void ge_op(){
     stack_push(&answer);
 }
 
-void lt_op(){
+void lt_op() {
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
@@ -143,7 +143,7 @@ void lt_op(){
     stack_push(&answer);
 }
 
-void le_op(){
+void le_op() {
     int num1, num2;
     preprocessing_operations(&num1, &num2);
 
@@ -157,15 +157,15 @@ void le_op(){
     stack_push(&answer);
 }
 
-void pop_op(){
+void pop_op() {
     struct Element val = {NO_ELEMENT, {0}};
     stack_pop(&val);
 
 }
 
-void exch_op(){
+void exch_op() {
     struct Element val1 = {NO_ELEMENT, {0}};
-    struct Element val2= {NO_ELEMENT, {0}};
+    struct Element val2 = {NO_ELEMENT, {0}};
     stack_pop(&val1);
     stack_pop(&val2);
 
@@ -173,7 +173,7 @@ void exch_op(){
     stack_push(&val2);
 }
 
-void dup_op(){
+void dup_op() {
     struct Element val = {NO_ELEMENT, {0}};
     stack_pop(&val);
 
@@ -182,7 +182,7 @@ void dup_op(){
 
 }
 
-void index_op(){
+void index_op() {
     struct Element index = {NO_ELEMENT, {0}};
     struct Element val = {NO_ELEMENT, {0}};
 
@@ -194,8 +194,6 @@ void index_op(){
 }
 
 
-
-
 void exec_op() {
     struct Element val = {NO_ELEMENT, {0}};
     stack_pop(&val);
@@ -204,18 +202,18 @@ void exec_op() {
 }
 
 
-void if_op(){
+void if_op() {
     struct Element bool = {NO_ELEMENT, {0}};
     struct Element proc = {NO_ELEMENT, {0}};
     stack_pop(&proc);
     stack_pop(&bool);
 
-    if (bool.u.number == 1){
+    if (bool.u.number == 1) {
         request_execute(&proc);
     }
 }
 
-void ifelse_op(){
+void ifelse_op() {
     struct Element bool = {NO_ELEMENT, {0}};
     struct Element proc1 = {NO_ELEMENT, {0}};
     struct Element proc2 = {NO_ELEMENT, {0}};
@@ -224,7 +222,7 @@ void ifelse_op(){
     stack_pop(&proc1);
     stack_pop(&bool);
 
-    if (bool.u.number == 1){
+    if (bool.u.number == 1) {
         request_execute(&proc1);
     } else {
         request_execute(&proc2);
@@ -232,7 +230,7 @@ void ifelse_op(){
 
 }
 
-void repeat_op(){
+void repeat_op() {
     struct Element n = {NO_ELEMENT, {0}};
     struct Element proc = {NO_ELEMENT, {0}};
 
@@ -242,12 +240,13 @@ void repeat_op(){
     struct Element exec = {ELEMENT_EXECUTABLE_NAME, {.name="exec"}};
 
 
-    struct ElementArray *elem_arr = (struct EelementArray*)malloc(sizeof(struct ElementArray)+sizeof(struct Element)*(n.u.number*2));
-    elem_arr->len = n.u.number*2;
+    struct ElementArray *elem_arr = (struct EelementArray *) malloc(
+            sizeof(struct ElementArray) + sizeof(struct Element) * (n.u.number * 2));
+    elem_arr->len = n.u.number * 2;
 
-    for (int i = 0; i < elem_arr->len; i +=2){
+    for (int i = 0; i < elem_arr->len; i += 2) {
         elem_arr->elements[i] = proc;
-        elem_arr->elements[i+1] = exec;
+        elem_arr->elements[i + 1] = exec;
     }
 
     struct Element val = {ELEMENT_EXECUTABLE_ARRAY, {.byte_codes = elem_arr}};
@@ -256,7 +255,7 @@ void repeat_op(){
 }
 
 
-static void while_op(){
+static void while_op() {
     struct Element cond = {NO_ELEMENT, {0}};
     struct Element body = {NO_ELEMENT, {0}};
     stack_pop(&body);
@@ -269,7 +268,8 @@ static void while_op(){
     struct Element number_minus_7 = {ELEMENT_NUMBER, {.number=-7}};
 
 
-    struct ElementArray *elem_arr = (struct EelementArray*)malloc(sizeof(struct ElementArray)+sizeof(struct Element)*8);
+    struct ElementArray *elem_arr = (struct EelementArray *) malloc(
+            sizeof(struct ElementArray) + sizeof(struct Element) * 8);
     elem_arr->len = 8;
 
     elem_arr->elements[0] = cond;
@@ -287,13 +287,12 @@ static void while_op(){
 }
 
 
-
-static void register_one_primitive(char *name, void (*cfunc)(void)){
+static void register_one_primitive(char *name, void (*cfunc)(void)) {
     struct Element elem = {ELEMENT_C_FUNC, {.cfunc = cfunc}};
     dict_put(name, &elem);
 }
 
-void register_primitives(){
+void register_primitives() {
     register_one_primitive("add", add_op);
     register_one_primitive("sub", sub_op);
     register_one_primitive("mul", mul_op);
