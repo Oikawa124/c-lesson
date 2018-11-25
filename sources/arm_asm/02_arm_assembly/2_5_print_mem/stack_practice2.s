@@ -1,4 +1,12 @@
 .globl _start
+
+/*
+    arg r1: address of memory mapped UART.
+    arg r13: stack pointer.
+
+    used internal register: r1, r4, r5, r13.
+*/
+
 _start:
   ldr r1,=0x101f1000
 
@@ -7,21 +15,17 @@ _start:
 
   ldr r13,=0x08000000
 
-  sub r13, r13, #1
+  sub r13, r13, #4
   str r5, [r13]
 
-  sub r13, r13, #1
+  sub r13, r13, #4
   str r4, [r13]
 
   ldr r4, [r13]
-  add r13, r13, #1
+  add r13, r13, #4
 
   ldr r5, [r13]
-  add r13, r13, #1
-
-  /* r4だけ表示される r5はスペース?なのか、文字がでない
-     先にpopしたほうだけ表示される。(r4とr5を逆にしても
-     r4だけ表示)*/
+  add r13, r13, #4
 
   str r4, [r1]
   str r5, [r1]
@@ -32,5 +36,4 @@ _start:
 busy:
   b busy
 
-# output >> "4 "
-# ""は表示された文字列。4の左がスペース?のように空いている。
+# output >> "41"
