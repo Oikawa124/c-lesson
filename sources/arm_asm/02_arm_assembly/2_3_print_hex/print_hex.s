@@ -6,9 +6,45 @@
 */
 .globl _start
 _start:
+    ldr r0,=0x101f1000
     ldr r1,=0xdeadbeaf
     b print_hex
+
+
+/*
+    print_hex:
+    arg r0: address of memory mapped UART
+    arg r1: address of target string.
+    arg r3: counter for shifting by 4bits
+    used internal register: r0, r1, r2, r3.
+*/
+
 print_hex:
-    // TODO: implement here
-end:
-    b end
+    mov r3, #28
+    mov r2, #0x30
+    str r2, [r0]
+    mov r2, #0x78
+    str r2, [r0]
+
+_loop:
+    lsr r2, r1, r3
+    and r2, r2, #0x0f
+    cmp r2, #0x0a
+    blt _under_ten
+    add r2, r2, #0x07
+
+_under_ten:
+    add r2, r2, #0x30
+    str r2, [r0]
+
+    sub r3, r3, #4
+
+    cmp r3, #0
+    bge _loop
+    b busy
+
+
+busy:
+    b busy
+
+# output >> DEADBEAF
