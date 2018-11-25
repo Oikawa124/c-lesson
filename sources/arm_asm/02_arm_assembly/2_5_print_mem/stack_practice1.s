@@ -12,9 +12,5 @@ _start:
 
   b busy
 
-
 busy:
   b busy
-
-
-
