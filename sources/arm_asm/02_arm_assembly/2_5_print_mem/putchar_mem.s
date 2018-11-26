@@ -1,5 +1,7 @@
 .globl _start
 _start:
+  /* r13: stack pointer.*/
+  ldr r13,=0x08000000
 
   ldr r0,=msg1
   bl print
@@ -8,23 +10,43 @@ _start:
 end:
   b end
 
+/*
+  putchar:
+    arg r0: target character which is printed.
+    used internal register: r1.
+*/
+
 putchar:
-  // TODO: fix here!
+  stmdb r13!, {r1}
+
   ldr r1,=0x101f1000
-  ldr r0, [r1]
+  str r0, [r1]
+
+  ldmia r13!, {r1}
   mov r15, r14
 
+/*
+  print:
+    arg r0: Address of target string, must end by \0.
+    used internal register: r1, r2.
+*/
 
 print:
-  // TODO: Fix this function too.
-  ldrb r3,[r0]
-_loop:  
-  
+  stmdb r13!, {r1, r2, r14}
+  mov r2, r0
+  ldrb r1,[r2]
 
-  add r0, r0, #1
-  ldrb r3,[r0]
-  cmp r3,#0
+_loop:
+
+  mov r0, r1
+  bl putchar
+
+  add r2, r2, #1
+  ldrb r1,[r2]
+  cmp r1,#0
   bne _loop
+
+  ldmia r13!, {r1, r2, r14}
   mov r15, r14
 
 msg1: .asciz "First text.\n"
