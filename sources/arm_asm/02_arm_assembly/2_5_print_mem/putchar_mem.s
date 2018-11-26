@@ -17,12 +17,12 @@ end:
 */
 
 putchar:
-  stmdb r13!, {r1}
+  stmdb r13!, {r1, r14}
 
   ldr r1,=0x101f1000
   str r0, [r1]
 
-  ldmia r13!, {r1}
+  ldmia r13!, {r1, r14}
   mov r15, r14
 
 /*
