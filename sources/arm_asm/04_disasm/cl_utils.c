@@ -24,5 +24,3 @@ void cl_printf(char *fmt, ...) {
     }
     va_end(arg_ptr);
 }
-
-
