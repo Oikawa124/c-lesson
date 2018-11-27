@@ -12,6 +12,13 @@ int print_asm(int word) {
         cl_printf("mov r1, #0x68");
         return 1;
     }
+
+
+    if (word == 0x64646464) {
+        cl_printf("");
+        return 0;
+    }
+
     return 0;
 }
 
@@ -24,15 +31,31 @@ static void test_print_asm_0xE3A01068() {
 
     cl_enable_buffer_mode();
 
-    print_asm(input);
+    int is_instruction = print_asm(input);
     char *actual = cl_get_printed_buffer();
 
+    assert(is_instruction == 1);
     assert(streq(expect, actual));
+
+}
+
+static void test_print_asm_0x64646464() {
+    int expect = '\0';
+    int input = 0x64646464;
+
+    cl_enable_buffer_mode();
+
+    int is_instruction = print_asm(input);
+    char *actual = cl_get_printed_buffer();
+
+    assert(is_instruction == 0);
+    assert(actual[0] == expect);
 }
 
 
 static void unit_test() {
     test_print_asm_0xE3A01068();
+    test_print_asm_0x64646464();
 }
 
 
