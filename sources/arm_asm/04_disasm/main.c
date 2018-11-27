@@ -9,7 +9,7 @@ int print_asm(int word);
 
 int print_asm(int word) {
     if (word == 0xE3A01068) {
-        cl_printf("mov r1, #0x58");
+        cl_printf("mov r1, #0x68");
         return 1;
     }
     return 0;
@@ -19,7 +19,7 @@ int print_asm(int word) {
 int streq(char *s1, char *s2) { return 0 == strcmp(s1, s2); }
 
 static void test_print_asm_0xE3A01068() {
-    char *expect = "mov r1, #0x58";
+    char *expect = "mov r1, #0x68";
     int input = 0xE3A01068;
 
     cl_enable_buffer_mode();
