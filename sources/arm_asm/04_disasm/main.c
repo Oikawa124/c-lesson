@@ -7,11 +7,22 @@
 int print_asm(int word);
 
 
+
+void to_assembly_case_mov(int word) {}
+
+
+
 int print_asm(int word) {
-    if (word == 0xE3A01068) {
-        cl_printf("mov r1, #0x68");
+    if (0xe3a01000 == (word & 0xe3a01000)) {
+
+        int _register = (word >> 12) & 0x0000f;
+        int offset    = word & 0x00000fff;
+
+        cl_printf("mov r%x, #0x%x", _register, offset);
         return 1;
     }
+
+
 
     if (word == 0xEAFFFFFE) {
         cl_printf("b [r15, #0x34]");
@@ -34,7 +45,6 @@ static void test_print_asm_0xE3A01068() {
     char *expect = "mov r1, #0x68";
     int input = 0xE3A01068;
 
-    cl_enable_buffer_mode();
 
     int is_instruction = print_asm(input);
     char *actual = cl_get_printed_buffer();
@@ -48,7 +58,6 @@ static void test_print_asm_0xE3A01065() {
     char *expect = "mov r1, #0x65";
     int input = 0xE3A01065;
 
-    cl_enable_buffer_mode();
 
     int is_instruction = print_asm(input);
     char *actual = cl_get_printed_buffer();
@@ -63,7 +72,6 @@ static void test_print_asm_EAFFFFFE() {
     char *expect = "b [r15, #0x34]";
     int input = 0xEAFFFFFE;
 
-    cl_enable_buffer_mode();
 
     int is_instruction = print_asm(input);
     char *actual = cl_get_printed_buffer();
@@ -77,7 +85,6 @@ static void test_print_asm_0x64646464() {
     int expect = '\0';
     int input = 0x64646464;
 
-    cl_enable_buffer_mode();
 
     int is_instruction = print_asm(input);
     char *actual = cl_get_printed_buffer();
@@ -88,9 +95,12 @@ static void test_print_asm_0x64646464() {
 
 
 static void unit_test() {
+
+    cl_enable_buffer_mode();
+
     // 命令: mov
     test_print_asm_0xE3A01068();
-    //test_print_asm_0xE3A01065();
+    test_print_asm_0xE3A01065();
 
     // 命令: b
     test_print_asm_EAFFFFFE();
@@ -102,5 +112,6 @@ static void unit_test() {
 
 int main() {
     unit_test();
+
     return 0;
 }
