@@ -13,6 +13,11 @@ int print_asm(int word) {
         return 1;
     }
 
+    if (word == 0xEAFFFFFE) {
+        cl_printf("b [r15, #0x34]");
+        return 1;
+    }
+
 
     if (word == 0x64646464) {
         cl_printf("");
@@ -36,8 +41,37 @@ static void test_print_asm_0xE3A01068() {
 
     assert(is_instruction == 1);
     assert(streq(expect, actual));
-
 }
+
+
+static void test_print_asm_0xE3A01065() {
+    char *expect = "mov r1, #0x65";
+    int input = 0xE3A01065;
+
+    cl_enable_buffer_mode();
+
+    int is_instruction = print_asm(input);
+    char *actual = cl_get_printed_buffer();
+
+    assert(is_instruction == 1);
+    assert(streq(expect, actual));
+}
+
+
+
+static void test_print_asm_EAFFFFFE() {
+    char *expect = "b [r15, #0x34]";
+    int input = 0xEAFFFFFE;
+
+    cl_enable_buffer_mode();
+
+    int is_instruction = print_asm(input);
+    char *actual = cl_get_printed_buffer();
+
+    assert(is_instruction == 1);
+    assert(streq(expect, actual));
+}
+
 
 static void test_print_asm_0x64646464() {
     int expect = '\0';
@@ -54,7 +88,14 @@ static void test_print_asm_0x64646464() {
 
 
 static void unit_test() {
+    // 命令: mov
     test_print_asm_0xE3A01068();
+    //test_print_asm_0xE3A01065();
+
+    // 命令: b
+    test_print_asm_EAFFFFFE();
+
+    //命令でない
     test_print_asm_0x64646464();
 }
 
