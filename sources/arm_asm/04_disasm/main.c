@@ -11,7 +11,6 @@ int print_asm(int word);
 void to_assembly_case_mov(int word) {}
 
 
-
 int print_asm(int word) {
     if (0xe3a01000 == (word & 0xe3a01000)) {
 
@@ -22,17 +21,9 @@ int print_asm(int word) {
         return 1;
     }
 
-
-
     if (word == 0xEAFFFFFE) {
         cl_printf("b [r15, #0x34]");
         return 1;
-    }
-
-
-    if (word == 0x64646464) {
-        cl_printf("");
-        return 0;
     }
 
     return 0;
