@@ -3,29 +3,21 @@
 #include <mem.h>
 #include "disasm.h"
 
-// intを渡してその逆アセンブル結果を出力する．
-int print_asm(int word);
-
-
-
-void to_assembly_case_mov(int word) {}
-
 
 int print_asm(int word) {
     if (0xe3a01000 == (word & 0xe3a01000)) {
 
         int _register = (word >> 12) & 0x0000f;
-        int offset    = word & 0x00000fff;
+        int offset = word & 0x00000fff;
 
         cl_printf("mov r%x, #0x%x", _register, offset);
         return 1;
-    }
-
-    if (word == 0xEAFFFFFE) {
+    } else if (word == 0xEAFFFFFE) {
         cl_printf("b [r15, #0x34]");
         return 1;
+    } else {
+        // 無し
     }
-
     return 0;
 }
 
@@ -38,10 +30,12 @@ static void test_print_asm_immediate68() {
 
 
     int is_instruction = print_asm(input);
-    char *actual = cl_get_printed_buffer();
+    char *actual = cl_get_result(1);
 
     assert(is_instruction == 1);
     assert(streq(expect, actual));
+
+    cl_clear_output();
 }
 
 
@@ -51,10 +45,12 @@ static void test_print_asm_immediate65() {
 
 
     int is_instruction = print_asm(input);
-    char *actual = cl_get_printed_buffer();
+    char *actual = cl_get_result(1);
 
     assert(is_instruction == 1);
     assert(streq(expect, actual));
+
+    cl_clear_output();
 }
 
 
@@ -65,10 +61,12 @@ static void test_print_asm_branch() {
 
 
     int is_instruction = print_asm(input);
-    char *actual = cl_get_printed_buffer();
+    char *actual = cl_get_result(1);
 
     assert(is_instruction == 1);
     assert(streq(expect, actual));
+
+    cl_clear_output();
 }
 
 
@@ -76,9 +74,9 @@ static void test_print_asm_not_an_order() {
     int expect = '\0';
     int input = 0x64646464;
 
-
+    cl_clear_output();
     int is_instruction = print_asm(input);
-    char *actual = cl_get_printed_buffer();
+    char *actual = cl_get_result(1);
 
     assert(is_instruction == 0);
     assert(actual[0] == expect);
@@ -86,15 +84,22 @@ static void test_print_asm_not_an_order() {
 
 static void test_print_asm_get_result() {
     char *expect = "mov r1, #0x65";
-    int input1 = 0xE3A01065;
+    int input1 = 0xE3A01063;
     int input2 = 0xE3A01065;
+    int input3 = 0xE3A01064;
 
 
     print_asm(input1);
     print_asm(input2);
-    char *actual = cl_get_result(1);
+    print_asm(input3);
 
-    assert(streq(expect, actual));
+    char *actual1 = cl_get_result(1);
+    char *actual2 = cl_get_result(2);
+    char *actual3 = cl_get_result(3);
+
+    assert(streq(expect, actual2));
+
+    cl_clear_output();
 }
 
 static void unit_test() {
@@ -106,7 +111,7 @@ static void unit_test() {
     test_print_asm_immediate65();
 
     // 命令: b
-    test_print_asm_branch();
+   test_print_asm_branch();
 
     //命令でない
     test_print_asm_not_an_order();
