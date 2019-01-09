@@ -7,13 +7,19 @@
 int print_asm(int word) {
     if (0xe3a01000 == (word & 0xe3a01000)) {
 
-        int _register = (word >> 12) & 0x0000f;
+        int _register = (word >> 12) & 0x0000f; // 3桁右にシフトさせてマスク（必要なところを抜き出す）する
         int offset = word & 0x00000fff;
 
         cl_printf("mov r%x, #0x%x", _register, offset);
         return 1;
     } else if (word == 0xEAFFFFFE) {
-        cl_printf("b [r15, #0x34]");
+
+        int offset = word & 0x00ffffff;
+        int convert_offset = (~offset& 0xffffff) + 0b1;
+        // 実際のオフセットは、2bit左にシフトした値
+        int actual_offset = convert_offset << 2;
+
+        cl_printf("b [r15, #-0x%x]", actual_offset);
         return 1;
     } else {
         // 無し
@@ -54,9 +60,8 @@ static void test_print_asm_immediate65() {
 }
 
 
-
 static void test_print_asm_branch() {
-    char *expect = "b [r15, #0x34]";
+    char *expect = "b [r15, #-0x8]";
     int input = 0xEAFFFFFE;
 
 
@@ -83,7 +88,9 @@ static void test_print_asm_not_an_order() {
 }
 
 static void test_print_asm_get_result() {
-    char *expect = "mov r1, #0x65";
+    char *expect1 = "mov r1, #0x63";
+    char *expect2 = "mov r1, #0x65";
+    char *expect3 = "mov r1, #0x64";
     int input1 = 0xE3A01063;
     int input2 = 0xE3A01065;
     int input3 = 0xE3A01064;
@@ -97,7 +104,9 @@ static void test_print_asm_get_result() {
     char *actual2 = cl_get_result(2);
     char *actual3 = cl_get_result(3);
 
-    assert(streq(expect, actual2));
+    assert(streq(expect1, actual1));
+    assert(streq(expect2, actual2));
+    assert(streq(expect3, actual3));
 
     cl_clear_output();
 }
@@ -111,9 +120,9 @@ static void unit_test() {
     test_print_asm_immediate65();
 
     // 命令: b
-   test_print_asm_branch();
+    test_print_asm_branch();
 
-    //命令でない
+    //命令以外
     test_print_asm_not_an_order();
 
     test_print_asm_get_result();
