@@ -30,16 +30,20 @@ int print_asm(int word) {
 
 int streq(char *s1, char *s2) { return 0 == strcmp(s1, s2); }
 
+static void assert_streq(char *expect, char *actual) {
+    assert(streq(expect, actual));
+}
+
 static void test_print_asm_immediate68() {
     char *expect = "mov r1, #0x68";
     int input = 0xE3A01068;
 
 
     int is_instruction = print_asm(input);
-    char *actual = cl_get_result(1);
+    char *actual = cl_get_result(0);
 
     assert(is_instruction == 1);
-    assert(streq(expect, actual));
+    assert_streq(expect, actual);
 
     cl_clear_output();
 }
@@ -51,10 +55,10 @@ static void test_print_asm_immediate65() {
 
 
     int is_instruction = print_asm(input);
-    char *actual = cl_get_result(1);
+    char *actual = cl_get_result(0);
 
     assert(is_instruction == 1);
-    assert(streq(expect, actual));
+    assert_streq(expect, actual);
 
     cl_clear_output();
 }
@@ -66,10 +70,10 @@ static void test_print_asm_branch() {
 
 
     int is_instruction = print_asm(input);
-    char *actual = cl_get_result(1);
+    char *actual = cl_get_result(0);
 
     assert(is_instruction == 1);
-    assert(streq(expect, actual));
+    assert_streq(expect, actual);
 
     cl_clear_output();
 }
@@ -81,7 +85,7 @@ static void test_print_asm_not_an_order() {
 
     cl_clear_output();
     int is_instruction = print_asm(input);
-    char *actual = cl_get_result(1);
+    char *actual = cl_get_result(0);
 
     assert(is_instruction == 0);
     assert(actual[0] == expect);
@@ -100,14 +104,13 @@ static void test_print_asm_get_result() {
     print_asm(input2);
     print_asm(input3);
 
-    char *actual1 = cl_get_result(1);
-    char *actual2 = cl_get_result(2);
-    char *actual3 = cl_get_result(3);
+    char *actual1 = cl_get_result(0);
+    char *actual2 = cl_get_result(1);
+    char *actual3 = cl_get_result(2);
 
-    assert(streq(expect1, actual1));
-    assert(streq(expect2, actual2));
-    assert(streq(expect3, actual3));
-
+    assert_streq(expect1, actual1);
+    assert_streq(expect2, actual2);
+    assert_streq(expect3, actual3);
     cl_clear_output();
 }
 
