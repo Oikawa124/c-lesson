@@ -12,16 +12,26 @@ int print_asm(int word) {
 
         cl_printf("mov r%x, #0x%x", _register, offset);
         return 1;
+
     } else if (word == 0xEAFFFFFE) {
 
         int offset = word & 0x00ffffff;
-        int convert_offset = (~offset& 0xffffff) + 0b1;
+        int convert_offset = (~offset & 0xffffff) + 0b1;
         // 実際のオフセットは、2bit左にシフトした値
         int actual_offset = convert_offset << 2;
 
         cl_printf("b [r15, #-0x%x]", actual_offset);
         return 1;
+
+    } else if (word == 0xE59F0030) {
+        int offset = word & 0x00000fff;
+        int _register = (word >> 12) & 0x0000f;
+
+        cl_printf("ldr r%x,[r15, #0x%x]", _register, offset);
+        return 1;
+
     } else {
+
         // 無し
     }
     return 0;
@@ -78,6 +88,19 @@ static void test_print_asm_branch() {
     cl_clear_output();
 }
 
+static void test_print_asm_ldr() {
+    char *expect = "ldr r0,[r15, #0x30]";
+    int input = 0xE59F0030;
+
+    int is_instruction = print_asm(input);
+    char *actual = cl_get_result(0);
+
+    assert(is_instruction == 1);
+    assert_streq(expect, actual);
+
+    cl_clear_output();
+}
+
 
 static void test_print_asm_not_an_order() {
     int expect = '\0';
@@ -124,6 +147,9 @@ static void unit_test() {
 
     // 命令: b
     test_print_asm_branch();
+
+    // 命令: ldr
+    test_print_asm_ldr();
 
     //命令以外
     test_print_asm_not_an_order();
