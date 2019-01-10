@@ -34,10 +34,9 @@ int print_asm(int word) {
 
     } else if (word == 0xE5801000 || word == 0xE5802000) {
         // str の実装
+        int offset = word & 0x00000fff;
         int transfer_souse_register = (word >> 12) & 0x0000f;
         int base_register = (word >> 16) & 0x0000f;
-
-        int offset = word & 0x00000fff;
 
         cl_printf("str r%x, [r%d, #0x%x]", transfer_souse_register, base_register, offset);
         return 1;
