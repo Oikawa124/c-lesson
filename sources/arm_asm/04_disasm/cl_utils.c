@@ -23,7 +23,7 @@ void cl_clear_output() {
 char *cl_get_result(int num) {
     int null_count=0;
     int i=0;
-    while (null_count != num-1) {
+    while (null_count != num) {
         if (buf[i] == '\0') {
             null_count++;
         }
