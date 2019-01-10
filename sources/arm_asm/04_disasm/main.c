@@ -24,10 +24,22 @@ int print_asm(int word) {
         return 1;
 
     } else if (word == 0xE59F0030) {
+        // ldrの実装
         int offset = word & 0x00000fff;
-        int _register = (word >> 12) & 0x0000f;
+        int transfer_souse_register = (word >> 12) & 0x0000f;
+        int base_register = (word >> 16) & 0x0000f;
 
-        cl_printf("ldr r%x,[r15, #0x%x]", _register, offset);
+        cl_printf("ldr r%x,[r%d, #0x%x]", transfer_souse_register, base_register, offset);
+        return 1;
+
+    } else if (word == 0xE5801000 || word == 0xE5802000) {
+        // str の実装
+        int transfer_souse_register = (word >> 12) & 0x0000f;
+        int base_register = (word >> 16) & 0x0000f;
+
+        int offset = word & 0x00000fff;
+
+        cl_printf("str r%x, [r%d, #0x%x]", transfer_souse_register, base_register, offset);
         return 1;
 
     } else {
@@ -101,6 +113,31 @@ static void test_print_asm_ldr() {
     cl_clear_output();
 }
 
+static void test_print_asm_str1() {
+    char *expect = "str r1, [r0, #0x0]";
+    int input = 0xE5801000;
+
+    int is_instruction = print_asm(input);
+    char *actual = cl_get_result(0);
+
+    assert(is_instruction == 1);
+    assert_streq(expect, actual);
+
+    cl_clear_output();
+}
+
+static void test_print_asm_str2() {
+    char *expect = "str r2, [r0, #0x0]";
+    int input = 0xE5802000;
+
+    int is_instruction = print_asm(input);
+    char *actual = cl_get_result(0);
+
+    assert(is_instruction == 1);
+    assert_streq(expect, actual);
+
+    cl_clear_output();
+}
 
 static void test_print_asm_not_an_order() {
     int expect = '\0';
@@ -150,6 +187,10 @@ static void unit_test() {
 
     // 命令: ldr
     test_print_asm_ldr();
+
+    // 命令: str
+    test_print_asm_str1();
+    test_print_asm_str2();
 
     //命令以外
     test_print_asm_not_an_order();
