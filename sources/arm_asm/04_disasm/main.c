@@ -38,7 +38,12 @@ int print_asm(int word) {
         int transfer_souse_register = (word >> 12) & 0x0000f;
         int base_register = (word >> 16) & 0x0000f;
 
-        cl_printf("str r%x, [r%d, #0x%x]", transfer_souse_register, base_register, offset);
+        if (offset == 0) {
+            cl_printf("str r%x, [r%d]", transfer_souse_register, base_register);
+        } else {
+            cl_printf("str r%x, [r%d, #0x%x]", transfer_souse_register, base_register, offset);
+        }
+
         return 1;
 
     } else {
@@ -55,7 +60,7 @@ static void assert_streq(char *expect, char *actual) {
     assert(streq(expect, actual));
 }
 
-static void test_print_asm_immediate68() {
+static void test_print_asm_mov_immediate68() {
     char *expect = "mov r1, #0x68";
     int input = 0xE3A01068;
 
@@ -70,7 +75,7 @@ static void test_print_asm_immediate68() {
 }
 
 
-static void test_print_asm_immediate65() {
+static void test_print_asm_mov_immediate65() {
     char *expect = "mov r1, #0x65";
     int input = 0xE3A01065;
 
@@ -112,8 +117,8 @@ static void test_print_asm_ldr() {
     cl_clear_output();
 }
 
-static void test_print_asm_str1() {
-    char *expect = "str r1, [r0, #0x0]";
+static void test_print_asm_str_reg1() {
+    char *expect = "str r1, [r0]";
     int input = 0xE5801000;
 
     int is_instruction = print_asm(input);
@@ -125,8 +130,8 @@ static void test_print_asm_str1() {
     cl_clear_output();
 }
 
-static void test_print_asm_str2() {
-    char *expect = "str r2, [r0, #0x0]";
+static void test_print_asm_str_reg2() {
+    char *expect = "str r2, [r0]";
     int input = 0xE5802000;
 
     int is_instruction = print_asm(input);
@@ -178,8 +183,8 @@ static void unit_test() {
     cl_enable_buffer_mode();
 
     // 命令: mov
-    test_print_asm_immediate68();
-    test_print_asm_immediate65();
+    test_print_asm_mov_immediate68();
+    test_print_asm_mov_immediate65();
 
     // 命令: b
     test_print_asm_branch();
@@ -188,8 +193,8 @@ static void unit_test() {
     test_print_asm_ldr();
 
     // 命令: str
-    test_print_asm_str1();
-    test_print_asm_str2();
+    test_print_asm_str_reg1();
+    test_print_asm_str_reg2();
 
     //命令以外
     test_print_asm_not_an_order();
