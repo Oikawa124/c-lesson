@@ -5,7 +5,7 @@
 
 
 int print_asm(int word) {
-    if (0xe3a01000 == (word & 0xe3a01000)) {
+    if (0xe3a00000 == (word & 0xe3a00000)) {
 
         int _register = (word >> 12) & 0x0000f; // 3桁右にシフトさせてマスク（必要なところを抜き出す）する
         int offset = word & 0x00000fff;
@@ -47,8 +47,7 @@ int print_asm(int word) {
         return 1;
 
     } else {
-
-        // 無し
+        printf("No Implementation");
     }
     return 0;
 }
@@ -204,7 +203,25 @@ static void unit_test() {
 
 
 int main() {
-    unit_test();
+    //unit_test();
+
+    FILE *fp;
+    int buf;
+
+    fp = fopen("hello_arm.bin", "rb");
+    if (fp == NULL) {
+        printf("Not open this file");
+        return 1;
+    }
+
+    fread(&buf, 4, 1, fp);
+    do {
+        print_asm(buf);
+        printf("\n");
+
+    } while (fread(&buf, 4, 1, fp) == 1);
+
+    fclose(fp);
 
     return 0;
 }
