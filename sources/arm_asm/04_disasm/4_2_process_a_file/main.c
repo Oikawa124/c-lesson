@@ -6,7 +6,7 @@
 
 int print_asm(int word) {
     if (0xe3a00000 == (word & 0xe3a00000)) {
-
+        // movの実装
         int _register = (word >> 12) & 0x0000f; // 3桁右にシフトさせてマスク（必要なところを抜き出す）する
         int offset = word & 0x00000fff;
 
@@ -14,7 +14,7 @@ int print_asm(int word) {
         return 1;
 
     } else if (word == 0xEAFFFFFE) {
-
+        // bの実装
         int offset = word & 0x00ffffff;
         int convert_offset = (~offset & 0xffffff) + 0b1;
         // 実際のオフセットは、2bit左にシフトした値
@@ -23,13 +23,13 @@ int print_asm(int word) {
         cl_printf("b [r15, #-0x%x]", actual_offset);
         return 1;
 
-    } else if (word == 0xE59F0030) {
+    } else if (0xe59f0000 == (word & 0xe59f0000)) {
         // ldrの実装
         int offset = word & 0x00000fff;
         int transfer_souse_register = (word >> 12) & 0x0000f;
         int base_register = (word >> 16) & 0x0000f;
 
-        cl_printf("ldr r%x,[r%d, #0x%x]", transfer_souse_register, base_register, offset);
+        cl_printf("ldr r%x, [r%d, #0x%x]", transfer_souse_register, base_register, offset);
         return 1;
 
     } else if (word == 0xE5801000 || word == 0xE5802000) {
@@ -47,14 +47,19 @@ int print_asm(int word) {
         return 1;
 
     } else {
-        // 16進数ダンプ
-        for (int i = 0; i < 4; ++i) {
-            int two_digit_word = word & 0xff;
-            printf("%02x ", two_digit_word);
-            word = word >> 2*4;
-        }
+        // 実装なし
     }
+
     return 0;
+}
+
+void print_hex_dump(int word){
+    // 16進数ダンプ
+    for (int i = 0; i < 4; ++i) {
+        int two_digit_word = word & 0xff;
+        cl_printf("%02x ", two_digit_word);
+        word = word >> 2*4;
+    }
 }
 
 
@@ -222,10 +227,21 @@ int main() {
     fread(&buf, 4, 1, fp);
 
     int memory_address = 0x00010000;
+    int is_instruction = 1;
+
     do {
-        printf("0x%x  ", memory_address);
-        print_asm(buf);
-        printf("\n");
+        cl_printf("0x%08x  ", memory_address);
+
+        if (is_instruction) {
+            is_instruction = print_asm(buf);
+            if (is_instruction != 1) {
+                print_hex_dump(buf);
+            }
+        } else {
+            print_hex_dump(buf);
+        }
+
+        cl_printf("\n");
         memory_address += 4;
 
     } while (fread(&buf, 4, 1, fp) == 1);
@@ -236,22 +252,41 @@ int main() {
 }
 
 /*
- 画面の表示
+ 画面の表示 hello_arm.bin
 
-0x10000  ldr r0,[r15, #0x30]
-0x10004  mov r1, #0x68
-0x10008  str r1, [r0]
-0x1000c  mov r1, #0x65
-0x10010  str r1, [r0]
-0x10014  mov r1, #0x6c
-0x10018  str r1, [r0]
-0x1001c  mov r1, #0x6f
-0x10020  str r1, [r0]
-0x10024  mov r2, #0xd
-0x10028  str r2, [r0]
-0x1002c  mov r2, #0xa
-0x10030  str r2, [r0]
-0x10034  b [r15, #-0x8]
-0x10038  00 10 1f 10
+0x00010000  ldr r0, [r15, #0x30]
+0x00010004  mov r1, #0x68
+0x00010008  str r1, [r0]
+0x0001000c  mov r1, #0x65
+0x00010010  str r1, [r0]
+0x00010014  mov r1, #0x6c
+0x00010018  str r1, [r0]
+0x0001001c  mov r1, #0x6f
+0x00010020  str r1, [r0]
+0x00010024  mov r2, #0xd
+0x00010028  str r2, [r0]
+0x0001002c  mov r2, #0xa
+0x00010030  str r2, [r0]
+0x00010034  b [r15, #-0x8]
+0x00010038  00 10 1f 10
 
- */
+*/
+
+/*
+ 画面表示 hello.bin
+
+0x00010000  ldr r0, [r15, #0x24]
+0x00010004  ldr r1, [r15, #0x24]
+0x00010008  00 30 d1 e5
+0x0001000c  00 30 80 e5
+0x00010010  01 10 81 e2
+0x00010014  00 30 d1 e5
+0x00010018  00 00 53 e3
+0x0001001c  fa ff ff 1a
+0x00010020  fe ff ff ea
+0x00010024  68 65 6c 6c
+0x00010028  6f 0a 00 00
+0x0001002c  00 10 1f 10
+0x00010030  24 00 01 00
+
+*/
