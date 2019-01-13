@@ -47,7 +47,12 @@ int print_asm(int word) {
         return 1;
 
     } else {
-        printf("No Implementation");
+        // 16進数ダンプ
+        for (int i = 0; i < 4; ++i) {
+            int two_digit_word = word & 0xff;
+            printf("%02x ", two_digit_word);
+            word = word >> 2*4;
+        }
     }
     return 0;
 }
@@ -215,9 +220,13 @@ int main() {
     }
 
     fread(&buf, 4, 1, fp);
+
+    int memory_address = 0x00010000;
     do {
+        printf("0x%x  ", memory_address);
         print_asm(buf);
         printf("\n");
+        memory_address += 4;
 
     } while (fread(&buf, 4, 1, fp) == 1);
 
@@ -225,3 +234,24 @@ int main() {
 
     return 0;
 }
+
+/*
+ 画面の表示
+
+0x10000  ldr r0,[r15, #0x30]
+0x10004  mov r1, #0x68
+0x10008  str r1, [r0]
+0x1000c  mov r1, #0x65
+0x10010  str r1, [r0]
+0x10014  mov r1, #0x6c
+0x10018  str r1, [r0]
+0x1001c  mov r1, #0x6f
+0x10020  str r1, [r0]
+0x10024  mov r2, #0xd
+0x10028  str r2, [r0]
+0x1002c  mov r2, #0xa
+0x10030  str r2, [r0]
+0x10034  b [r15, #-0x8]
+0x10038  00 10 1f 10
+
+ */
