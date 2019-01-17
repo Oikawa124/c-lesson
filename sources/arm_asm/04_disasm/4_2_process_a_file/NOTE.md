@@ -90,4 +90,15 @@ int a = 0xfffffd;
 int b = (~a & 0xffffff) + 0b1;  
 printf("%x", b);  
 
-    
+
+## cmake　PowerShellでの実行(ダメだった)
+
+1. PS C:\Users\devel\CLionProjects\disasm> cd .\cmake-build-debug\
+でbuildフォルダに移動
+2. cmake ..
+で1つ上の階層の実行(CMakeLists.txtがあるファルダ)
+3. .exe
+を実行する
+
+上の方法ではうまくいかない・・・
+普通にgccを使うことにする。

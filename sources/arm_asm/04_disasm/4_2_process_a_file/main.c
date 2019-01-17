@@ -57,7 +57,11 @@ void print_hex_dump(int word){
     // 16進数ダンプ
     for (int i = 0; i < 4; ++i) {
         int two_digit_word = word & 0xff;
-        cl_printf("%02x ", two_digit_word);
+        if (i != 3) {
+            cl_printf("%02x ", two_digit_word);
+        } else {
+            cl_printf("%02x", two_digit_word);
+        }
         word = word >> 2*4;
     }
 }
