@@ -2,23 +2,24 @@
 gcc -c .\cl_utils.c; gcc -c .\main.c
 gcc .\cl_utils.o .\main.o -o test
 
-.\test.exe > actual.txt
+.\test.exe hello_arm.bin > actual.txt
 
 # Read files
-$expect = Get-Content .\test\test_expect\expect.txt
+$expect = Get-Content .\test\test_expect\hello_arm.txt
 $actual = Get-Content actual.txt
 
 
 # Compare strings
 0..($expect.Count-1) | ForEach-Object{
-    $cmp = $expect[$_] -eq $actual[$_]
+    $isEqual = $expect[$_] -eq $actual[$_]
 
-    if (-Not($cmp))
+    if (-Not($isEqual))
     {
         Write-Host -NONewline  $expect[$_]' | '$actual[$_].Substring($actual[$_].Length -12, 12)
         return # Not at "break"
     }
 }
+
 
 # Delete file
 Remove-Item *.o

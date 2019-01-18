@@ -66,6 +66,40 @@ void print_hex_dump(int word){
     }
 }
 
+int read_binary_file(FILE *fp) {
+    int buf;
+    if (fp == NULL) {
+        printf("Not open this file");
+        return 1;
+    }
+
+    fread(&buf, 4, 1, fp);
+
+    int memory_address = 0x00010000;
+    int is_instruction = 1;
+
+    do {
+        cl_printf("0x%08x  ", memory_address);
+
+        if (is_instruction) {
+            is_instruction = print_asm(buf);
+            if (is_instruction != 1) {
+                print_hex_dump(buf);
+            }
+        } else {
+            print_hex_dump(buf);
+        }
+
+        cl_printf("\n");
+        memory_address += 4;
+
+    } while (fread(&buf, 4, 1, fp) == 1);
+
+    return 0;
+
+}
+
+
 
 int streq(char *s1, char *s2) { return 0 == strcmp(s1, s2); }
 
@@ -216,81 +250,13 @@ static void unit_test() {
 }
 
 
-int main() {
+int main(int argc, char *argv[]) {
     //unit_test();
 
-    FILE *fp;
-    int buf;
-
-    fp = fopen("hello_arm.bin", "rb");
-    if (fp == NULL) {
-        printf("Not open this file");
-        return 1;
-    }
-
-    fread(&buf, 4, 1, fp);
-
-    int memory_address = 0x00010000;
-    int is_instruction = 1;
-
-    do {
-        cl_printf("0x%08x  ", memory_address);
-
-        if (is_instruction) {
-            is_instruction = print_asm(buf);
-            if (is_instruction != 1) {
-                print_hex_dump(buf);
-            }
-        } else {
-            print_hex_dump(buf);
-        }
-
-        cl_printf("\n");
-        memory_address += 4;
-
-    } while (fread(&buf, 4, 1, fp) == 1);
+    FILE *fp = fopen(argv[1], "rb");
+    read_binary_file(fp);
 
     fclose(fp);
 
     return 0;
 }
-
-/*
- 画面の表示 hello_arm.bin
-
-0x00010000  ldr r0, [r15, #0x30]
-0x00010004  mov r1, #0x68
-0x00010008  str r1, [r0]
-0x0001000c  mov r1, #0x65
-0x00010010  str r1, [r0]
-0x00010014  mov r1, #0x6c
-0x00010018  str r1, [r0]
-0x0001001c  mov r1, #0x6f
-0x00010020  str r1, [r0]
-0x00010024  mov r2, #0xd
-0x00010028  str r2, [r0]
-0x0001002c  mov r2, #0xa
-0x00010030  str r2, [r0]
-0x00010034  b [r15, #-0x8]
-0x00010038  00 10 1f 10
-
-*/
-
-/*
- 画面表示 hello.bin
-
-0x00010000  ldr r0, [r15, #0x24]
-0x00010004  ldr r1, [r15, #0x24]
-0x00010008  00 30 d1 e5
-0x0001000c  00 30 80 e5
-0x00010010  01 10 81 e2
-0x00010014  00 30 d1 e5
-0x00010018  00 00 53 e3
-0x0001001c  fa ff ff 1a
-0x00010020  fe ff ff ea
-0x00010024  68 65 6c 6c
-0x00010028  6f 0a 00 00
-0x0001002c  00 10 1f 10
-0x00010030  24 00 01 00
-
-*/
