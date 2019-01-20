@@ -1,30 +1,44 @@
-# Compile and run
-gcc -c .\cl_utils.c; gcc -c .\main.c
-gcc .\cl_utils.o .\main.o -o test
+function compare_two_files($filename)
+{
+    # Compile and run
+    gcc -c .\cl_utils.c; gcc -c .\main.c
+    gcc .\cl_utils.o .\main.o -o test
 
-.\test.exe hello_arm.bin > actual.txt
+    $bin_file = $filename + ".bin"
 
-# Read files
-$expect = Get-Content .\test\test_expect\hello_arm.txt
-$actual = Get-Content actual.txt
+    .\test.exe  $bin_file > actual.txt
+
+    # Read files
+    $expect_file_name = $file_name + ".txt"
+    $expect_file_path = Join-Path .\test\test_expect\ $expect_file_name
+
+    $expect = Get-Content $expect_file_path
+    $actual = Get-Content actual.txt
 
 
-# Compare strings
-0..($expect.Count-1) | ForEach-Object{
-    $isEqual = $expect[$_] -eq $actual[$_]
+    # Compare strings
+    0..($expect.Count - 1) | ForEach-Object{
+        $isEqual = $expect[$_] -eq $actual[$_]
 
-    if (-Not($isEqual))
-    {
-        Write-Host -NONewline  $expect[$_]' | '$actual[$_].Substring($actual[$_].Length -12, 12)
-        return # Not at "break"
+        if (-Not($isEqual))
+        {
+            Write-Host -NONewline  $expect[$_]' | '$actual[$_].Substring($actual[$_].Length - 12, 12)
+            return # Not at "break"
+        }
     }
+
+
+    # Delete file
+    Remove-Item *.o
+    Remove-Item test.exe
+    Remove-Item actual.txt
+
 }
 
 
-# Delete file
-Remove-Item *.o
-Remove-Item test.exe
-Remove-Item actual.txt
+# input filenames
+$input_file_names = @("hello_arm", "print_loop")
 
-
-# print example >> 0x00010038  00 10 1f 11  |  00 10 1f 10
+foreach($file_name in $input_file_names){
+    compare_two_files $file_name
+}
