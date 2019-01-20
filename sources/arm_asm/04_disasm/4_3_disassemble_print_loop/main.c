@@ -32,7 +32,17 @@ int print_asm(int word) {
         cl_printf("ldr r%x, [r%d, #0x%x]", transfer_souse_register, base_register, offset);
         return 1;
 
-    } else if (word == 0xE5801000 || word == 0xE5802000) {
+    } else if (0xe5D13000 == (word & 0xe5D13000)){
+        // ldrbの実装
+        int offset = word & 0x00000fff;
+        int transfer_souse_register = (word >> 12) & 0x0000f;
+        int base_register = (word >> 16) & 0x0000f;
+
+        cl_printf("ldrb r%x, [r%d]", transfer_souse_register, base_register);
+        return 1;
+
+    } else if (0xE5800000 == (word & 0xE5800000)) {
+
         // str の実装
         int offset = word & 0x00000fff;
         int transfer_souse_register = (word >> 12) & 0x0000f;
@@ -44,6 +54,24 @@ int print_asm(int word) {
             cl_printf("str r%x, [r%d, #0x%x]", transfer_souse_register, base_register, offset);
         }
 
+        return 1;
+
+    } else if (word == 0xE2811001) {
+
+        // addの実装
+        cl_printf("add r1, r1, #1");
+        return 1;
+
+    } else if (word == 0xE3530000 ) {
+
+        // cmpを実装
+        cl_printf("cmp r3, #0");
+        return 1;
+
+    } else if (word == 0x1AFFFFFA) {
+
+        // bneの実装
+        cl_printf("bne [r15, #0xc]");
         return 1;
 
     } else {
@@ -152,7 +180,7 @@ static void test_print_asm_branch() {
 }
 
 static void test_print_asm_ldr() {
-    char *expect = "ldr r0,[r15, #0x30]";
+    char *expect = "ldr r0, [r15, #0x30]";
     int input = 0xE59F0030;
 
     int is_instruction = print_asm(input);
@@ -163,6 +191,21 @@ static void test_print_asm_ldr() {
 
     cl_clear_output();
 }
+
+static void test_print_asm_ldrb() {
+    char *expect = "ldrb r3, [r1]";
+    int input = 0xE5D13000;
+
+    int is_instruction = print_asm(input);
+    char *actual = cl_get_result(0);
+
+    assert(is_instruction == 1);
+    assert_streq(expect, actual);
+
+    cl_clear_output();
+}
+
+
 
 static void test_print_asm_str_reg1() {
     char *expect = "str r1, [r0]";
@@ -238,6 +281,16 @@ static void unit_test() {
 
     // 命令: ldr
     test_print_asm_ldr();
+
+    // 命令: ldrb
+    test_print_asm_ldrb();
+
+    // 命令: add
+
+    // 命令: cmp
+
+    // 命令: bne
+
 
     // 命令: str
     test_print_asm_str_reg1();
