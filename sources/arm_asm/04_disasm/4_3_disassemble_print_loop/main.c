@@ -205,6 +205,45 @@ static void test_print_asm_ldrb() {
     cl_clear_output();
 }
 
+static void test_print_asm_add() {
+    char *expect = "add r1, r1, #1";
+    int input = 0xE2811001;
+
+    int is_instruction = print_asm(input);
+    char *actual = cl_get_result(0);
+
+    assert(is_instruction == 1);
+    assert_streq(expect, actual);
+
+    cl_clear_output();
+}
+
+static void test_print_asm_cmp() {
+    char *expect = "cmp r3, #0";
+    int input = 0xE3530000;
+
+    int is_instruction = print_asm(input);
+    char *actual = cl_get_result(0);
+
+    assert(is_instruction == 1);
+    assert_streq(expect, actual);
+
+    cl_clear_output();
+}
+
+
+static void test_print_asm_bne() {
+    char *expect = "bne [r15, #0xc]";
+    int input = 0x1AFFFFFA;
+
+    int is_instruction = print_asm(input);
+    char *actual = cl_get_result(0);
+
+    assert(is_instruction == 1);
+    assert_streq(expect, actual);
+
+    cl_clear_output();
+}
 
 
 static void test_print_asm_str_reg1() {
@@ -286,11 +325,13 @@ static void unit_test() {
     test_print_asm_ldrb();
 
     // 命令: add
+    test_print_asm_add();
 
     // 命令: cmp
+    test_print_asm_cmp();
 
     // 命令: bne
-
+    test_print_asm_bne();
 
     // 命令: str
     test_print_asm_str_reg1();
@@ -304,7 +345,7 @@ static void unit_test() {
 
 
 int main(int argc, char *argv[]) {
-    //unit_test();
+    unit_test();
 
     FILE *fp = fopen(argv[1], "rb");
     read_binary_file(fp);
