@@ -1,15 +1,20 @@
 function compare_two_files($filename)
 {
-    # Compile and run
+
+    # Compile
     gcc -c .\cl_utils.c; gcc -c .\main.c
     gcc .\cl_utils.o .\main.o -o test
 
-    $bin_file = $filename + ".bin"
+    # Read input file
+    $bin_file_name = $filename + ".bin"
+    $bin_file_path = Join-Path .\test\test_input\ $bin_file_name
 
-    .\test.exe  $bin_file > actual.txt
+    # Run
+    .\test.exe  $bin_file_path > actual.txt
 
-    # Read files
-    $expect_file_name = $file_name + ".txt"
+
+    # Read expect file
+    $expect_file_name = $filename + ".txt"
     $expect_file_path = Join-Path .\test\test_expect\ $expect_file_name
 
     $expect = Get-Content $expect_file_path
@@ -39,6 +44,6 @@ function compare_two_files($filename)
 # input filenames
 $input_file_names = @("hello_arm", "print_loop")
 
-foreach($file_name in $input_file_names){
-    compare_two_files $file_name
+$input_file_names | ForEach-Object{
+    compare_two_files $_
 }
