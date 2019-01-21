@@ -3,6 +3,10 @@
 #include <mem.h>
 #include "disasm.h"
 
+void print_data_transfer(char* mnemonic, int word);
+
+int streq(char *s1, char *s2) { return 0 == strcmp(s1, s2); }
+
 
 int print_asm(int word) {
     if (0xe3a00000 == (word & 0xe3a00000)) {
@@ -24,36 +28,15 @@ int print_asm(int word) {
         return 1;
 
     } else if (0xe59f0000 == (word & 0xe59f0000)) {
-        // ldrの実装
-        int offset = word & 0x00000fff;
-        int transfer_souse_register = (word >> 12) & 0x0000f;
-        int base_register = (word >> 16) & 0x0000f;
-
-        cl_printf("ldr r%x, [r%d, #0x%x]", transfer_souse_register, base_register, offset);
+        print_data_transfer("ldr", word);
         return 1;
 
     } else if (0xe5D13000 == (word & 0xe5D13000)){
-        // ldrbの実装
-        int offset = word & 0x00000fff;
-        int transfer_souse_register = (word >> 12) & 0x0000f;
-        int base_register = (word >> 16) & 0x0000f;
-
-        cl_printf("ldrb r%x, [r%d]", transfer_souse_register, base_register);
+        print_data_transfer("ldrb", word);
         return 1;
 
     } else if (0xE5800000 == (word & 0xE5800000)) {
-
-        // str の実装
-        int offset = word & 0x00000fff;
-        int transfer_souse_register = (word >> 12) & 0x0000f;
-        int base_register = (word >> 16) & 0x0000f;
-
-        if (offset == 0) {
-            cl_printf("str r%x, [r%d]", transfer_souse_register, base_register);
-        } else {
-            cl_printf("str r%x, [r%d, #0x%x]", transfer_souse_register, base_register, offset);
-        }
-
+        print_data_transfer("str", word);
         return 1;
 
     } else if (word == 0xE2811001) {
@@ -80,6 +63,30 @@ int print_asm(int word) {
 
     return 0;
 }
+
+
+
+void print_data_transfer(char* mnemonic, int word) {
+    int offset = word & 0x00000fff;
+    int transfer_souse_register = (word >> 12) & 0x0000f;
+    int base_register = (word >> 16) & 0x0000f;
+
+    if (streq("ldr", mnemonic)){
+        cl_printf("ldr r%x, [r%d, #0x%x]", transfer_souse_register, base_register, offset);
+
+    } else if (streq("ldrb", mnemonic)) {
+        cl_printf("ldrb r%x, [r%d]", transfer_souse_register, base_register);
+
+    } else if (streq("str", mnemonic)) {
+        if (offset == 0) {
+            cl_printf("str r%x, [r%d]", transfer_souse_register, base_register);
+        } else {
+            cl_printf("str r%x, [r%d, #0x%x]", transfer_souse_register, base_register, offset);
+        }
+    }
+}
+
+
 
 void print_hex_dump(int word){
     // 16進数ダンプ
@@ -124,12 +131,11 @@ int read_binary_file(FILE *fp) {
     } while (fread(&buf, 4, 1, fp) == 1);
 
     return 0;
-
 }
 
 
 
-int streq(char *s1, char *s2) { return 0 == strcmp(s1, s2); }
+
 
 static void assert_streq(char *expect, char *actual) {
     assert(streq(expect, actual));
@@ -307,6 +313,23 @@ static void test_print_asm_get_result() {
     cl_clear_output();
 }
 
+
+static void test_print_data_transfer() {
+    char *expect1 = "ldr r0, [r15, #0x30]";
+
+    int input_word1 = 0xE59F0030;
+    char *input_mnemonic1 = "ldr";
+
+    print_data_transfer(input_mnemonic1, input_word1);
+
+    char *actual1 = cl_get_result(0);
+
+    assert_streq(expect1, actual1);
+
+    cl_clear_output();
+}
+
+
 static void unit_test() {
 
     cl_enable_buffer_mode();
@@ -339,18 +362,18 @@ static void unit_test() {
 
     //命令以外
     test_print_asm_not_an_order();
-
     test_print_asm_get_result();
+    test_print_data_transfer();
 }
 
 
 int main(int argc, char *argv[]) {
     unit_test();
 
-    FILE *fp = fopen(argv[1], "rb");
-    read_binary_file(fp);
-
-    fclose(fp);
+//    FILE *fp = fopen(argv[1], "rb");
+//    read_binary_file(fp);
+//
+//    fclose(fp);
 
     return 0;
 }
