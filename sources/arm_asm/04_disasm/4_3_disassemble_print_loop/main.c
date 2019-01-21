@@ -316,15 +316,30 @@ static void test_print_asm_get_result() {
 
 static void test_print_data_transfer() {
     char *expect1 = "ldr r0, [r15, #0x30]";
+    char *expect2 = "ldrb r3, [r1]";
+    char *expect3 = "str r1, [r0]";
+
 
     int input_word1 = 0xE59F0030;
+    int input_word2 = 0xE5D13000;
+    int input_word3 = 0xE5801000;
+
+
     char *input_mnemonic1 = "ldr";
+    char *input_mnemonic2 = "ldrb";
+    char *input_mnemonic3 = "str";
 
     print_data_transfer(input_mnemonic1, input_word1);
+    print_data_transfer(input_mnemonic2, input_word2);
+    print_data_transfer(input_mnemonic3, input_word3);
 
     char *actual1 = cl_get_result(0);
+    char *actual2 = cl_get_result(1);
+    char *actual3 = cl_get_result(2);
 
     assert_streq(expect1, actual1);
+    assert_streq(expect2, actual2);
+    assert_streq(expect3, actual3);
 
     cl_clear_output();
 }
