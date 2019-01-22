@@ -17,7 +17,7 @@ int print_asm(int word) {
         cl_printf("mov r%x, #0x%x", _register, offset);
         return 1;
 
-    } else if (word == 0xEAFFFFFE) {
+    } else if (0xEA000000 == (word & 0xEA000000)) {
         // bの実装
         int offset = word & 0x00ffffff;
         int convert_offset = (~offset & 0xffffff) + 0b1;
@@ -71,6 +71,7 @@ void print_data_transfer(char* mnemonic, int word) {
     int transfer_souse_register = (word >> 12) & 0x0000f;
     int base_register = (word >> 16) & 0x0000f;
 
+
     if (offset != 0) {
         cl_printf("%s r%x, [r%d, #0x%x]", mnemonic, transfer_souse_register, base_register, offset);
 
@@ -78,10 +79,7 @@ void print_data_transfer(char* mnemonic, int word) {
         cl_printf("%s r%x, [r%d]", mnemonic, transfer_souse_register, base_register);
 
     }
-
 }
-
-
 
 void print_hex_dump(int word){
     // 16進数ダンプ
@@ -378,12 +376,12 @@ static void unit_test() {
 
 
 int main(int argc, char *argv[]) {
-    unit_test();
+    //unit_test();
 
-//    FILE *fp = fopen(argv[1], "rb");
-//    read_binary_file(fp);
-//
-//    fclose(fp);
+    FILE *fp = fopen(argv[1], "rb");
+    read_binary_file(fp);
+
+    fclose(fp);
 
     return 0;
 }
