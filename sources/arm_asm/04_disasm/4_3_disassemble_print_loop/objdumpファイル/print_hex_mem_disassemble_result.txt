@@ -1,0 +1,38 @@
+Disassembly of section .data:
+
+00000000 <.data>:
+   0:   e3a0d302        mov     sp, #134217728  ; 0x8000000
+   4:   e1a0000f        mov     r0, pc
+   8:   eb000007        bl      0x2c
+   c:   e3a00068        mov     r0, #104        ; 0x68
+  10:   eb000005        bl      0x2c
+  14:   eafffffe        b       0x14
+  18:   e92d4002        push    {r1, lr}
+  1c:   e59f1064        ldr     r1, [pc, #100]  ; 0x88
+  20:   e5810000        str     r0, [r1]
+  24:   e8bd4002        pop     {r1, lr}
+  28:   e1a0f00e        mov     pc, lr
+  2c:   e92d4006        push    {r1, r2, lr}
+  30:   e92d0001        stmfd   sp!, {r0}
+  34:   e3a00030        mov     r0, #48 ; 0x30
+  38:   ebfffff6        bl      0x18
+  3c:   e3a00078        mov     r0, #120        ; 0x78
+  40:   ebfffff4        bl      0x18
+  44:   e8bd0001        ldmfd   sp!, {r0}
+  48:   e3a0201c        mov     r2, #28
+  4c:   e1a01000        mov     r1, r0
+  50:   e1a00231        lsr     r0, r1, r2
+  54:   e200000f        and     r0, r0, #15
+  58:   e350000a        cmp     r0, #10
+  5c:   ba000000        blt     0x64
+  60:   e2800007        add     r0, r0, #7
+  64:   e2800030        add     r0, r0, #48     ; 0x30
+  68:   ebffffea        bl      0x18
+  6c:   e2422004        sub     r2, r2, #4
+  70:   e3520000        cmp     r2, #0
+  74:   aafffff5        bge     0x50
+  78:   e3a0000a        mov     r0, #10
+  7c:   ebffffe5        bl      0x18
+  80:   e8bd4006        pop     {r1, r2, lr}
+  84:   e1a0f00e        mov     pc, lr
+  88:   101f1000        andsne  r1, pc, r0

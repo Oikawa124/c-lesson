@@ -84,6 +84,9 @@ void print_data_transfer(char* mnemonic, int word) {
             cl_printf("str r%x, [r%d, #0x%x]", transfer_souse_register, base_register, offset);
         }
     }
+
+    if (streq("ldr", mnemonic) || streq("")) {}
+
 }
 
 

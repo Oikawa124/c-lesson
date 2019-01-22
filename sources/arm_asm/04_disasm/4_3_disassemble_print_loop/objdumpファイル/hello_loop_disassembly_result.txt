@@ -1,8 +1,8 @@
 Disassembly of section .data:
 
 00000000 <.data>:
-   0:   e59f0024        ldr     r0, [pc, #36]   ; 0x2c
-   4:   e59f1024        ldr     r1, [pc, #36]   ; 0x30
+   0:   e59f002c        ldr     r0, [pc, #44]   ; 0x34
+   4:   e59f102c        ldr     r1, [pc, #44]   ; 0x38
    8:   e5d13000        ldrb    r3, [r1]
    c:   e5803000        str     r3, [r0]
   10:   e2811001        add     r1, r1, #1
@@ -11,6 +11,8 @@ Disassembly of section .data:
   1c:   1afffffa        bne     0xc
   20:   eafffffe        b       0x20
   24:   6c6c6568        cfstr64vs       mvdx6, [ip], #-416      ; 0xfffffe60
-  28:   00000a6f        andeq   r0, r0, pc, ror #20
-  2c:   101f1000        andsne  r1, pc, r0
-  30:   00010024        andeq   r0, r1, r4, lsr #32
+  28:   77202c6f        strvc   r2, [r0, -pc, ror #24]!
+  2c:   646c726f        strbtvs r7, [ip], #-623 ; 0xfffffd91
+  30:   0000000a        andeq   r0, r0, sl
+  34:   101f1000        andsne  r1, pc, r0
+  38:   00010024        andeq   r0, r1, r4, lsr #32

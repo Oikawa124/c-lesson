@@ -1,0 +1,26 @@
+Disassembly of section .data:
+
+00000000 <.data>:
+   0:   e59f0048        ldr     r0, [pc, #72]   ; 0x50
+   4:   eb000002        bl      0x14
+   8:   e59f0044        ldr     r0, [pc, #68]   ; 0x54
+   c:   eb000000        bl      0x14
+  10:   eafffffe        b       0x10
+  14:   e5d03000        ldrb    r3, [r0]
+  18:   e59f1038        ldr     r1, [pc, #56]   ; 0x58
+  1c:   e5813000        str     r3, [r1]
+  20:   e2800001        add     r0, r0, #1
+  24:   e5d03000        ldrb    r3, [r0]
+  28:   e3530000        cmp     r3, #0
+  2c:   1afffffa        bne     0x1c
+  30:   e1a0f00e        mov     pc, lr
+  34:   73726946        cmnvc   r2, #1146880    ; 0x118000
+  38:   65742074        ldrbvs  r2, [r4, #-116]!        ; 0xffffff8c
+  3c:   0a2e7478        beq     0xb9d224
+  40:   63655300        cmnvs   r5, #0, 6
+  44:   20646e6f        rsbcs   r6, r4, pc, ror #28
+  48:   74786574        ldrbtvc r6, [r8], #-1396        ; 0xfffffa8c
+  4c:   00000a21        andeq   r0, r0, r1, lsr #20
+  50:   00010034        andeq   r0, r1, r4, lsr r0
+  54:   00010041        andeq   r0, r1, r1, asr #32
+  58:   101f1000        andsne  r1, pc, r0
