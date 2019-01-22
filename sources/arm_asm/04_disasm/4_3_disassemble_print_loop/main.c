@@ -71,21 +71,13 @@ void print_data_transfer(char* mnemonic, int word) {
     int transfer_souse_register = (word >> 12) & 0x0000f;
     int base_register = (word >> 16) & 0x0000f;
 
-    if (streq("ldr", mnemonic)){
-        cl_printf("ldr r%x, [r%d, #0x%x]", transfer_souse_register, base_register, offset);
+    if (offset != 0) {
+        cl_printf("%s r%x, [r%d, #0x%x]", mnemonic, transfer_souse_register, base_register, offset);
 
-    } else if (streq("ldrb", mnemonic)) {
-        cl_printf("ldrb r%x, [r%d]", transfer_souse_register, base_register);
+    } else {
+        cl_printf("%s r%x, [r%d]", mnemonic, transfer_souse_register, base_register);
 
-    } else if (streq("str", mnemonic)) {
-        if (offset == 0) {
-            cl_printf("str r%x, [r%d]", transfer_souse_register, base_register);
-        } else {
-            cl_printf("str r%x, [r%d, #0x%x]", transfer_souse_register, base_register, offset);
-        }
     }
-
-    if (streq("ldr", mnemonic) || streq("")) {}
 
 }
 
