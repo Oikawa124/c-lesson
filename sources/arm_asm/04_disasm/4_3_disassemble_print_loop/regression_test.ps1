@@ -42,7 +42,7 @@ function compare_two_files($filename)
 
 
 # input filenames
-$input_file_names = @("hello_arm", "print_loop")
+$input_file_names = @("hello_arm", "print_loop", "print_hex")
 
 $input_file_names | ForEach-Object{
     compare_two_files $_
