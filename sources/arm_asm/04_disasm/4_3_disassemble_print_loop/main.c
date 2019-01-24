@@ -11,27 +11,45 @@ int streq(char *s1, char *s2) { return 0 == strcmp(s1, s2); }
 int print_asm(int word) {
     if (0xE3A00000 == (word & 0xE3A00000)) {
         // movの実装
-        int _register = (word >> 12) & 0xF; // 3桁右にシフトさせてマスク（必要なところを抜き出す）する
-        int offset = word & 0xFFF;
+        int destination_reg = (word >> 12) & 0xF; // 3桁右にシフトさせてマスク（必要なところを抜き出す）する
+        int immediate_value = word & 0xFFF;
 
-        cl_printf("mov r%x, #0x%x", _register, offset);
+        cl_printf("mov r%x, #0x%x", destination_reg, immediate_value);
         return 1;
 
-    } else if (0xEA000000 == (word & 0xEA000000)) {
-        // bの実装
-        int offset = word & 0xFFFFFF;
-        int convert_offset = (~offset & 0xFFFFFF) + 0b1;
-        // 実際のオフセットは、2bit左にシフトした値
-        int actual_offset = convert_offset << 2;
+    } else if (0xEA000000 == (word & 0xEA000000)
+               || 0xEB000000 == (word & 0xEB000000)) {
 
-        cl_printf("b [r15, #-0x%x]", actual_offset);
+        // b, blの実装
+        int actual_offset;
+        int is_Link_bit = (word >> 24) & 0b1;
+        int is_twos_complement = (word >> 23) & 0b1;
+        char *sign = "0x";
+
+        int offset = word & 0xFFFFFF;
+
+        if (is_twos_complement) {
+            // 実際のオフセットは、2bit左にシフトした値
+            // 二の補数は、bit反転させて0b1を足してマスクすることで得られる
+            actual_offset = ((~offset + 0b1) & 0xFFFFFF) << 2;
+            sign = "-0x";
+
+        } else {
+            actual_offset = offset << 2;
+        }
+
+        if (is_Link_bit) {
+            cl_printf("bl [r15, #%s%x]", sign, actual_offset);
+        } else {
+            cl_printf("b [r15, #%s%x]", sign, actual_offset);
+        }
         return 1;
 
     } else if (0xE59F0000 == (word & 0xE59F0000)) {
         print_data_transfer("ldr", word);
         return 1;
 
-    } else if (0xe5D13000 == (word & 0xe5D13000)){
+    } else if (0xe5D13000 == (word & 0xe5D13000)) {
         print_data_transfer("ldrb", word);
         return 1;
 
@@ -44,7 +62,7 @@ int print_asm(int word) {
         // addの実装
         int destination_reg = (word >> 12) & 0xF;
         int operand_reg_1st = (word >> 16) & 0xF;
-        int immediate_value =  word & 0xFF;
+        int immediate_value = word & 0xFFF;
 
         cl_printf("add r%x, r%x, #%x", destination_reg, operand_reg_1st, immediate_value);
         return 1;
@@ -53,9 +71,9 @@ int print_asm(int word) {
 
         // cmpを実装
         int _register = (word >> 16) & 0xF;
-        int offset = word & 0xFFF;
+        int immediate_value = word & 0xFFF;
 
-        cl_printf("cmp r%x, #%x", _register, offset);
+        cl_printf("cmp r%x, #%x", _register, immediate_value);
         return 1;
 
     } else if (word == 0x1AFFFFFA) {
@@ -94,6 +112,12 @@ int print_asm(int word) {
         cl_printf("bge 0x20");
         return 1;
 
+    } else if (word == 0xE1A0000F) {
+
+        // mov（operand2がレジスタの場合）の実装
+        cl_printf("mov r0, pc");
+        return 1;
+
     } else {
 
         // 実装なし
@@ -106,15 +130,15 @@ int print_asm(int word) {
 
 void print_data_transfer(char* mnemonic, int word) {
     int offset = word & 0xFFF;
-    int transfer_souse_register = (word >> 12) & 0xF;
-    int base_register = (word >> 16) & 0xF;
+    int source_or_destination_reg = (word >> 12) & 0xF;
+    int base_reg = (word >> 16) & 0xF;
 
 
     if (offset != 0) {
-        cl_printf("%s r%x, [r%d, #0x%x]", mnemonic, transfer_souse_register, base_register, offset);
+        cl_printf("%s r%x, [r%d, #0x%x]", mnemonic, source_or_destination_reg, base_reg, offset);
 
     } else {
-        cl_printf("%s r%x, [r%d]", mnemonic, transfer_souse_register, base_register);
+        cl_printf("%s r%x, [r%d]", mnemonic, source_or_destination_reg, base_reg);
 
     }
 }
@@ -202,7 +226,21 @@ static void test_print_asm_mov_immediate65() {
 }
 
 
-static void test_print_asm_branch() {
+static void test_print_asm_mov_reg() {
+    char *expect = "mov r0, pc";
+    int input = 0xE1A0000F;
+
+
+    int is_instruction = print_asm(input);
+    char *actual = cl_get_result(0);
+
+    assert(is_instruction == 1);
+    assert_streq(expect, actual);
+
+    cl_clear_output();
+}
+
+static void test_print_asm_branch_minus() {
     char *expect = "b [r15, #-0x8]";
     int input = 0xEAFFFFFE;
 
@@ -215,6 +253,37 @@ static void test_print_asm_branch() {
 
     cl_clear_output();
 }
+
+static void test_print_asm_branch_plus() {
+    char *expect = "b [r15, #0x44]";
+    int input = 0xEA000011;
+
+
+    int is_instruction = print_asm(input);
+    char *actual = cl_get_result(0);
+
+    assert(is_instruction == 1);
+    assert_streq(expect, actual);
+
+    cl_clear_output();
+}
+
+
+static void test_print_asm_bl() {
+    char *expect = "bl [r15, #0x8]";
+    int input = 0xEB000002;
+
+
+    int is_instruction = print_asm(input);
+    char *actual = cl_get_result(0);
+
+    assert(is_instruction == 1);
+    assert_streq(expect, actual);
+
+    cl_clear_output();
+}
+
+
 
 static void test_print_asm_ldr() {
     char *expect = "ldr r0, [r15, #0x30]";
@@ -449,9 +518,14 @@ static void unit_test() {
     // 命令: mov
     test_print_asm_mov_immediate68();
     test_print_asm_mov_immediate65();
+    //test_print_asm_mov_reg();
 
     // 命令: b
-    test_print_asm_branch();
+    test_print_asm_branch_minus();
+    test_print_asm_branch_plus();
+
+    // 命令: bl
+    test_print_asm_bl();
 
     // 命令: ldr
     test_print_asm_ldr();
@@ -500,10 +574,12 @@ int main(int argc, char *argv[]) {
 
     //todo print_hex_blを実装していく
 
-//    FILE *fp = fopen(argv[1], "rb");
-//    read_binary_file(fp);
-//
-//    fclose(fp);
+    //todo bとblの実装
+
+    FILE *fp = fopen(argv[1], "rb");
+    read_binary_file(fp);
+
+    fclose(fp);
 
     return 0;
 }

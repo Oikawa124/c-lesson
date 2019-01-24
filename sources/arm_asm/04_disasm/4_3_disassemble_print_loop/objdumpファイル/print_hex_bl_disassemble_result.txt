@@ -3,7 +3,7 @@ Disassembly of section .data:
 00000000 <.data>:
    0:   e59f105c        ldr     r1, [pc, #92]   ; 0x64
    4:   e1a0000f        mov     r0, pc
-   8:   eb000002        bl      0x18
+   8:   eb000002        bl      0x18     // 18番地移動ということ
    c:   e3a00068        mov     r0, #104        ; 0x68
   10:   eb000000        bl      0x18
   14:   ea000011        b       0x60
