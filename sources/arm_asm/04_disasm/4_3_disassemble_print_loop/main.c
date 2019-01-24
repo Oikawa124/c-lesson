@@ -9,25 +9,25 @@ int streq(char *s1, char *s2) { return 0 == strcmp(s1, s2); }
 
 
 int print_asm(int word) {
-    if (0xe3a00000 == (word & 0xe3a00000)) {
+    if (0xE3A00000 == (word & 0xE3A00000)) {
         // movの実装
-        int _register = (word >> 12) & 0x0000f; // 3桁右にシフトさせてマスク（必要なところを抜き出す）する
-        int offset = word & 0x00000fff;
+        int _register = (word >> 12) & 0xF; // 3桁右にシフトさせてマスク（必要なところを抜き出す）する
+        int offset = word & 0xFFF;
 
         cl_printf("mov r%x, #0x%x", _register, offset);
         return 1;
 
     } else if (0xEA000000 == (word & 0xEA000000)) {
         // bの実装
-        int offset = word & 0x00ffffff;
-        int convert_offset = (~offset & 0xffffff) + 0b1;
+        int offset = word & 0xFFFFFF;
+        int convert_offset = (~offset & 0xFFFFFF) + 0b1;
         // 実際のオフセットは、2bit左にシフトした値
         int actual_offset = convert_offset << 2;
 
         cl_printf("b [r15, #-0x%x]", actual_offset);
         return 1;
 
-    } else if (0xe59f0000 == (word & 0xe59f0000)) {
+    } else if (0xE59F0000 == (word & 0xE59F0000)) {
         print_data_transfer("ldr", word);
         return 1;
 
@@ -42,9 +42,9 @@ int print_asm(int word) {
     } else if (0xE2800000 == (word & 0xE2800000)) {
 
         // addの実装
-        int destination_reg = (word >> 12) & 0xf;
-        int operand_reg_1st = (word >> 16) & 0xf;
-        int immediate_value =  word & 0xff;
+        int destination_reg = (word >> 12) & 0xF;
+        int operand_reg_1st = (word >> 16) & 0xF;
+        int immediate_value =  word & 0xFF;
 
         cl_printf("add r%x, r%x, #%x", destination_reg, operand_reg_1st, immediate_value);
         return 1;
@@ -52,8 +52,8 @@ int print_asm(int word) {
     } else if (0xE3500000 == (word & 0xE3500000)) {
 
         // cmpを実装
-        int _register = (word >> 16) & 0x0000f;
-        int offset = word & 0x00000fff;
+        int _register = (word >> 16) & 0xF;
+        int offset = word & 0xFFF;
 
         cl_printf("cmp r%x, #%x", _register, offset);
         return 1;
@@ -105,9 +105,9 @@ int print_asm(int word) {
 
 
 void print_data_transfer(char* mnemonic, int word) {
-    int offset = word & 0x00000fff;
-    int transfer_souse_register = (word >> 12) & 0x0000f;
-    int base_register = (word >> 16) & 0x0000f;
+    int offset = word & 0xFFF;
+    int transfer_souse_register = (word >> 12) & 0xF;
+    int base_register = (word >> 16) & 0xF;
 
 
     if (offset != 0) {
@@ -122,7 +122,7 @@ void print_data_transfer(char* mnemonic, int word) {
 void print_hex_dump(int word){
     // 16進数ダンプ
     for (int i = 0; i < 4; ++i) {
-        int two_digit_word = word & 0xff;
+        int two_digit_word = word & 0xFF;
         if (i != 3) {
             cl_printf("%02x ", two_digit_word);
         } else {
@@ -496,14 +496,14 @@ static void unit_test() {
 
 
 int main(int argc, char *argv[]) {
-    //unit_test();
+    unit_test();
 
     //todo print_hex_blを実装していく
 
-    FILE *fp = fopen(argv[1], "rb");
-    read_binary_file(fp);
-
-    fclose(fp);
+//    FILE *fp = fopen(argv[1], "rb");
+//    read_binary_file(fp);
+//
+//    fclose(fp);
 
     return 0;
 }
