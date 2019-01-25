@@ -27,6 +27,7 @@ function compare_two_files($filename)
 
         if (-Not($isEqual))
         {
+            Write-Host $filename
             Write-Host -NONewline  $expect[$_]' | '$actual[$_].Substring($actual[$_].Length - 12, 12)
             return # Not at "break"
         }
@@ -42,7 +43,9 @@ function compare_two_files($filename)
 
 
 # input filenames
-$input_file_names = @("hello_arm", "print_loop", "print_hex")
+$input_file_names = @("hello_arm", "print_loop",
+                      "print_hex", "print_hex_bl",
+                      "print_nomem", "putchar_bad")
 
 $input_file_names | ForEach-Object{
     compare_two_files $_

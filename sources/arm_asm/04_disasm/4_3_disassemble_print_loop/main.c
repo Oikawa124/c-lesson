@@ -1,42 +1,25 @@
 #include <stdio.h>
 #include <assert.h>
 #include <mem.h>
+#include <stdlib.h>
 #include "disasm.h"
 
 void print_data_transfer(char *mnemonic, int word);
 void print_branch_and_branch_with_link(char *mnemonic, int word);
-
-int streq(char *s1, char *s2) { return 0 == strcmp(s1, s2); }
+void print_block_data_transfer(char *mnemonic, int word);
+void print_data_process(char *mnemonic, int word);
 
 
 int print_asm(int word) {
 
-    if (0xE3A00000 == (word & 0xE3A00000)
-        || 0xE1A00000 == (word & 0xE1A00000)) {
+    if (0xE3A00000 == (word & 0xFFF00000)){
 
-        // mov, lsrの実装
+        print_data_process("mov", word);
+        return 1;
 
-        int is_immediate = (word >> 25) & 0b1;
+    } else if (0xE1A00000 == (word & 0xFFF00000)) {
 
-        int destination_reg = (word >> 12) & 0xF; // 3桁右にシフトさせてマスク（必要なところを抜き出す）する
-
-        if (is_immediate) {
-            int immediate_value = word & 0xFFF;
-            cl_printf("mov r%d, #0x%x", destination_reg, immediate_value);
-
-        } else {
-            int operand_2nd_reg = word & 0xf;
-            int shift_type = (word >> 5) & 0b11;
-            int shift_reg =  (word >> 8) &0xf;
-
-            if (shift_type == 0x01) {
-                cl_printf("lsr r%d, r%d, r%d", destination_reg, operand_2nd_reg, shift_reg);
-            } else {
-                cl_printf("mov r%d, r%d", destination_reg, operand_2nd_reg);
-            }
-
-        }
-
+        print_data_process("lsr", word);
         return 1;
 
     } else if (0xEA000000 == (word & 0xFF000000)) {
@@ -45,38 +28,33 @@ int print_asm(int word) {
         return 1;
 
     } else if (0xEB000000 == (word & 0xFF000000)) {
+
         print_branch_and_branch_with_link("bl", word);
         return 1;
 
-    } else if (0xE59F0000 == (word & 0xE59F0000)) {
+    } else if (0xE59F0000 == (word & 0xFFFF0000)) {
+
         print_data_transfer("ldr", word);
         return 1;
 
-    } else if (0xe5D00000 == (word & 0xe5D00000)) {
+    } else if (0xE5D00000 == (word & 0xFFF00000)) {
+
         print_data_transfer("ldrb", word);
         return 1;
 
-    } else if (0xE5800000 == (word & 0xE5800000)) {
+    } else if (0xE5800000 == (word & 0xFFF00000)) {
+
         print_data_transfer("str", word);
         return 1;
 
-    } else if (0xE2800000 == (word & 0xE2800000)) {
+    } else if (0xE2800000 == (word & 0xFFF00000)) {
 
-        // addの実装
-        int destination_reg = (word >> 12) & 0xF;
-        int operand_1st_reg = (word >> 16) & 0xF;
-        int immediate_value = word & 0xFFF;
-
-        cl_printf("add r%d, r%d, #%x", destination_reg, operand_1st_reg, immediate_value);
+        print_data_process("add", word);
         return 1;
 
     } else if (0xE3500000 == (word & 0xE3500000)) {
 
-        // cmpを実装
-        int _register = (word >> 16) & 0xF;
-        int immediate_value = word & 0xFFF;
-
-        cl_printf("cmp r%d, #%x", _register, immediate_value);
+        print_data_process("cmp", word);
         return 1;
 
     } else if (0x1A000000 == (word & 0xFF000000)) {
@@ -84,10 +62,9 @@ int print_asm(int word) {
         print_branch_and_branch_with_link("bne", word);
         return 1;
 
-    } else if (word == 0xE202200F) {
+    } else if (0xE2000000 == (word & 0xFFF00000)) {
 
-        // andの実装
-        cl_printf("and r2, r2, #15");
+        print_data_process("and", word);
         return 1;
 
     } else if (0xBA000000 == (word & 0xFF000000)) {
@@ -95,15 +72,25 @@ int print_asm(int word) {
         print_branch_and_branch_with_link("blt", word);
         return 1;
 
-    } else if (word == 0xE2433004) {
 
-        // subの実装
-        cl_printf("sub r3, r3, #4");
+    } else if (0xE2400000 == (word & 0xFFF00000)) {
+
+        print_data_process("sub", word);
         return 1;
 
     } else if (0xAA000000 == (word & 0xFF000000)) {
 
         print_branch_and_branch_with_link("bge", word);
+        return 1;
+
+    } else if (0xE92D0000 == (word & 0xE92D0000)) {
+
+        print_block_data_transfer("push", word);
+        return 1;
+
+    } else if (0xE8BD0000 == (word & 0xE8BD0000)) {
+
+        print_block_data_transfer("pop", word);
         return 1;
 
     } else {
@@ -153,10 +140,89 @@ void print_branch_and_branch_with_link(char *mnemonic, int word) {
 }
 
 
+void print_block_data_transfer(char *mnemonic, int word){
+
+    int register_list = word & 0xFFFF;
+
+    struct register_array reg_arr = {.len=0};
+
+    // スタックに渡すor取り出すレジスタを探し、配列に渡す
+    for (int i = 0; i < 16; ++i) {
+        int is_one = (register_list >> i) & 0b1;
+
+        if (is_one) {
+            reg_arr.list[reg_arr.len] = i;
+            reg_arr.len++;
+        }
+    }
+
+    char output_word[100];
+    strcpy(output_word, "{");
+
+
+    for (int j = 0; j < reg_arr.len; ++j) {
+        char buf[10];
+        itoa(reg_arr.list[j], buf, 10);
+
+        strcat(output_word, "r");
+        strcat(output_word, buf);
+
+        if (j != (reg_arr.len - 1)) {
+            strcat(output_word, ", ");
+        }
+    }
+    strcat(output_word, "}");
+
+    cl_printf("%s %s",mnemonic, output_word);
+}
+
+
+void print_data_process(char *mnemonic, int word){
+
+    int is_immediate = (word >> 25) & 0b1;
+    int op_code = (word >> 21) & 0xF;
+    int operand_1st_reg = (word >> 16) & 0xF;
+    int destination_reg = (word >> 12) & 0xF; // 3桁右にシフトさせてマスク（必要なところを抜き出す）する
+
+    if (is_immediate) {
+        int immediate_value = word & 0xFFF;
+
+        if (op_code == 0xD) {
+
+            cl_printf("%s r%d, #0x%x", mnemonic, destination_reg, immediate_value);
+
+        } else if (op_code == 0xA) {
+
+            cl_printf("%s r%d, #0x%x", mnemonic, operand_1st_reg, immediate_value);
+
+        } else if (op_code == 0x0) {
+
+            cl_printf("%s r%d, r%d, #0x%x", mnemonic, destination_reg, operand_1st_reg, immediate_value);
+
+        } else {
+            cl_printf("%s r%d, r%d, #0x%x", mnemonic, destination_reg, operand_1st_reg, immediate_value);
+        }
+
+    } else {
+        int operand_2nd_reg = word & 0xf;
+        int shift_type = (word >> 5) & 0b11;
+        int shift_reg =  (word >> 8) & 0xf;
+
+        if (shift_type == 0x01) {
+            cl_printf("lsr r%d, r%d, r%d", destination_reg, operand_2nd_reg, shift_reg);
+        } else {
+            cl_printf("mov r%d, r%d", destination_reg, operand_2nd_reg);
+        }
+    }
+}
+
+
+
 void print_hex_dump(int word){
     // 16進数ダンプ
     for (int i = 0; i < 4; ++i) {
         int two_digit_word = word & 0xFF;
+
         if (i != 3) {
             cl_printf("%02x ", two_digit_word);
         } else {
@@ -200,7 +266,7 @@ int read_binary_file(FILE *fp) {
 
 
 
-
+int streq(char *s1, char *s2) { return 0 == strcmp(s1, s2); }
 
 static void assert_streq(char *expect, char *actual) {
     assert(streq(expect, actual));
@@ -322,7 +388,7 @@ static void test_print_asm_ldrb() {
 }
 
 static void test_print_asm_add() {
-    char *expect = "add r1, r1, #1";
+    char *expect = "add r1, r1, #0x1";
     int input = 0xE2811001;
 
     int is_instruction = print_asm(input);
@@ -335,7 +401,7 @@ static void test_print_asm_add() {
 }
 
 static void test_print_asm_cmp() {
-    char *expect = "cmp r3, #0";
+    char *expect = "cmp r3, #0x0";
     int input = 0xE3530000;
 
     int is_instruction = print_asm(input);
@@ -415,7 +481,7 @@ static void test_print_asm_blt() {
 }
 
 static void test_print_asm_and() {
-    char *expect = "and r2, r2, #15";
+    char *expect = "and r2, r2, #0xf";
     int input = 0xE202200F;
 
     int is_instruction = print_asm(input);
@@ -428,7 +494,7 @@ static void test_print_asm_and() {
 }
 
 static void test_print_asm_sub() {
-    char *expect = "sub r3, r3, #4";
+    char *expect = "sub r3, r3, #0x4";
     int input = 0xE2433004;
 
     int is_instruction = print_asm(input);
@@ -453,6 +519,18 @@ static void test_print_asm_bge() {
     cl_clear_output();
 }
 
+static void test_print_asm_pop() {
+    char *expect = "pop {r1, r14}";
+    int input = 0xE8BD4002;
+
+    int is_instruction = print_asm(input);
+    char *actual = cl_get_result(0);
+
+    assert(is_instruction == 1);
+    assert_streq(expect, actual);
+
+    cl_clear_output();
+}
 
 
 static void test_print_asm_not_an_order() {
@@ -520,6 +598,7 @@ static void test_print_data_transfer() {
     cl_clear_output();
 }
 
+
 static void test_print_branch_and_branch_with_link() {
 
     char *expect1 = "b [r15, #-0x8]";
@@ -544,6 +623,28 @@ static void test_print_branch_and_branch_with_link() {
     cl_clear_output();
 }
 
+static void test_print_block_data_transfer() {
+    char *expect1 = "push {r1, r14}";
+    char *expect2 = "pop {r1, r14}";
+
+    int input_word1 = 0xE92D4002;
+    int input_word2 = 0xE8BD4002;
+
+    char *input_mnemonic1 = "push";
+    char *input_mnemonic2 = "pop";
+
+    print_block_data_transfer(input_mnemonic1, input_word1);
+    print_block_data_transfer(input_mnemonic2, input_word2);
+
+    char *actual1 = cl_get_result(0);
+    char *actual2 = cl_get_result(1);
+
+    assert_streq(expect1, actual1);
+    assert_streq(expect2, actual2);
+
+
+    cl_clear_output();
+}
 
 
 static void unit_test() {
@@ -596,20 +697,24 @@ static void unit_test() {
     // 命令: bge
     test_print_asm_bge();
 
+    // 命令: pop
+    test_print_asm_pop();
+
 
     //命令以外
     test_print_asm_not_an_order();
     test_print_asm_get_result();
     test_print_data_transfer();
     test_print_branch_and_branch_with_link();
+    test_print_block_data_transfer();
 }
 
 
 int main(int argc, char *argv[]) {
-    unit_test();
+    //unit_test();
 
-    // todo print_hex_blを実装していく
-    //
+    // todo print_hex_memを実装していく
+    // 4bit　ローテートの対応
 
     FILE *fp = fopen(argv[1], "rb");
     read_binary_file(fp);
