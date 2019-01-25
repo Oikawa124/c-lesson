@@ -3,12 +3,14 @@
 #include <mem.h>
 #include "disasm.h"
 
-void print_data_transfer(char* mnemonic, int word);
+void print_data_transfer(char *mnemonic, int word);
+void print_branch_and_branch_with_link(char *mnemonic, int word);
 
 int streq(char *s1, char *s2) { return 0 == strcmp(s1, s2); }
 
 
 int print_asm(int word) {
+
     if (0xE3A00000 == (word & 0xE3A00000)
         || 0xE1A00000 == (word & 0xE1A00000)) {
 
@@ -37,32 +39,13 @@ int print_asm(int word) {
 
         return 1;
 
-    } else if (0xEA000000 == (word & 0xEA000000)
-               || 0xEB000000 == (word & 0xEB000000)) {
+    } else if (0xEA000000 == (word & 0xFF000000)) {
 
-        // b, blの実装
-        int actual_offset;
-        int is_Link_bit = (word >> 24) & 0b1;
-        int is_twos_complement = (word >> 23) & 0b1;
-        char *sign = "0x";
+        print_branch_and_branch_with_link("b", word);
+        return 1;
 
-        int offset = word & 0xFFFFFF;
-
-        if (is_twos_complement) {
-            // 実際のオフセットは、2bit左にシフトした値
-            // 二の補数は、bit反転させて0b1を足してマスクすることで得られる
-            actual_offset = ((~offset + 0b1) & 0xFFFFFF) << 2;
-            sign = "-0x";
-
-        } else {
-            actual_offset = offset << 2;
-        }
-
-        if (is_Link_bit) {
-            cl_printf("bl [r15, #%s%x]", sign, actual_offset);
-        } else {
-            cl_printf("b [r15, #%s%x]", sign, actual_offset);
-        }
+    } else if (0xEB000000 == (word & 0xFF000000)) {
+        print_branch_and_branch_with_link("bl", word);
         return 1;
 
     } else if (0xE59F0000 == (word & 0xE59F0000)) {
@@ -71,7 +54,7 @@ int print_asm(int word) {
 
     } else if (0xe5D00000 == (word & 0xe5D00000)) {
         print_data_transfer("ldrb", word);
-
+        return 1;
 
     } else if (0xE5800000 == (word & 0xE5800000)) {
         print_data_transfer("str", word);
@@ -96,10 +79,9 @@ int print_asm(int word) {
         cl_printf("cmp r%d, #%x", _register, immediate_value);
         return 1;
 
-    } else if (word == 0x1AFFFFFA) {
+    } else if (0x1A000000 == (word & 0xFF000000)) {
 
-        // bneの実装
-        cl_printf("bne [r15, #0xc]");
+        print_branch_and_branch_with_link("bne", word);
         return 1;
 
     } else if (word == 0xE202200F) {
@@ -108,13 +90,9 @@ int print_asm(int word) {
         cl_printf("and r2, r2, #15");
         return 1;
 
-    } else if (word == 0xBA000000) {
+    } else if (0xBA000000 == (word & 0xFF000000)) {
 
-        //bltの実装
-        int offset = word & 0xFFFFFF;
-        int actual_offset = offset << 2;
-
-        cl_printf("blt [r15, #0x%x]", actual_offset);
+        print_branch_and_branch_with_link("blt", word);
         return 1;
 
     } else if (word == 0xE2433004) {
@@ -123,10 +101,9 @@ int print_asm(int word) {
         cl_printf("sub r3, r3, #4");
         return 1;
 
-    } else if (word == 0xAAFFFFF5) {
+    } else if (0xAA000000 == (word & 0xFF000000)) {
 
-        // bgeの実装
-        cl_printf("bge 0x20");
+        print_branch_and_branch_with_link("bge", word);
         return 1;
 
     } else {
@@ -151,6 +128,28 @@ void print_data_transfer(char* mnemonic, int word) {
         cl_printf("%s r%x, [r%d]", mnemonic, source_or_destination_reg, base_reg);
 
     }
+}
+
+
+void print_branch_and_branch_with_link(char *mnemonic, int word) {
+
+    int actual_offset;
+    int is_twos_complement = (word >> 23) & 0b1;
+    char *sign = "0x";
+
+    int offset = word & 0xFFFFFF;
+
+    if (is_twos_complement) {
+        // 実際のオフセットは、2bit左にシフトした値
+        // 二の補数は、bit反転させて0b1を足してマスクすることで得られる
+        actual_offset = ((~offset + 0b1) & 0xFFFFFF) << 2;
+        sign = "-0x";
+
+    } else {
+        actual_offset = offset << 2;
+    }
+
+    cl_printf("%s [r15, #%s%x]",mnemonic, sign, actual_offset);
 }
 
 
@@ -350,7 +349,7 @@ static void test_print_asm_cmp() {
 
 
 static void test_print_asm_bne() {
-    char *expect = "bne [r15, #0xc]";
+    char *expect = "bne [r15, #-0x18]";
     int input = 0x1AFFFFFA;
 
     int is_instruction = print_asm(input);
@@ -442,7 +441,7 @@ static void test_print_asm_sub() {
 }
 
 static void test_print_asm_bge() {
-    char *expect = "bge 0x20";
+    char *expect = "bge [r15, #-0x2c]";
     int input = 0xAAFFFFF5;
 
     int is_instruction = print_asm(input);
@@ -521,6 +520,31 @@ static void test_print_data_transfer() {
     cl_clear_output();
 }
 
+static void test_print_branch_and_branch_with_link() {
+
+    char *expect1 = "b [r15, #-0x8]";
+    char *expect2 = "bl [r15, #0x8]";
+
+    int input_word1 = 0xEAFFFFFE;
+    int input_word2 = 0xEB000002;
+
+    char *input_mnemonic1 = "b";
+    char *input_mnemonic2 = "bl";
+
+    print_branch_and_branch_with_link(input_mnemonic1, input_word1);
+    print_branch_and_branch_with_link(input_mnemonic2, input_word2);
+
+    char *actual1 = cl_get_result(0);
+    char *actual2 = cl_get_result(1);
+
+    assert_streq(expect1, actual1);
+    assert_streq(expect2, actual2);
+
+
+    cl_clear_output();
+}
+
+
 
 static void unit_test() {
 
@@ -577,11 +601,12 @@ static void unit_test() {
     test_print_asm_not_an_order();
     test_print_asm_get_result();
     test_print_data_transfer();
+    test_print_branch_and_branch_with_link();
 }
 
 
 int main(int argc, char *argv[]) {
-    //unit_test();
+    unit_test();
 
     // todo print_hex_blを実装していく
     //
