@@ -12,14 +12,12 @@ void print_data_process(char *mnemonic, int word);
 
 int print_asm(int word) {
 
-    if (0xE3A00000 == (word & 0xFFF00000)){
+    if (0xE3A00000 == (word & 0xFFF00000) ||
+        0xE1A00000 == (word & 0xFFF00000)){
 
+        // movまたはlsr
+        // lsr命令はレジスタオペランドがシフトされるmov命令と同じ
         print_data_process("mov", word);
-        return 1;
-
-    } else if (0xE1A00000 == (word & 0xFFF00000)) {
-
-        print_data_process("lsr", word);
         return 1;
 
     } else if (0xEA000000 == (word & 0xFF000000)) {
@@ -71,7 +69,6 @@ int print_asm(int word) {
 
         print_branch_and_branch_with_link("blt", word);
         return 1;
-
 
     } else if (0xE2400000 == (word & 0xFFF00000)) {
 
@@ -182,24 +179,31 @@ void print_data_process(char *mnemonic, int word){
     int is_immediate = (word >> 25) & 0b1;
     int op_code = (word >> 21) & 0xF;
     int operand_1st_reg = (word >> 16) & 0xF;
-    int destination_reg = (word >> 12) & 0xF; // 3桁右にシフトさせてマスク（必要なところを抜き出す）する
+    int destination_reg = (word >> 12) & 0xF;
 
     if (is_immediate) {
         int immediate_value = word & 0xFFF;
+        int rotate_times = ((immediate_value >> 8) & 0xF) * 2;
+
+        if (rotate_times != 0) {
+            unsigned int lower_8bit = (unsigned int) immediate_value & 0xFF;
+
+            // 4bitローテート
+            immediate_value = (lower_8bit >> rotate_times)
+                                | (lower_8bit << (32-rotate_times));
+        }
+
 
         if (op_code == 0xD) {
-
+            // mov
             cl_printf("%s r%d, #0x%x", mnemonic, destination_reg, immediate_value);
 
         } else if (op_code == 0xA) {
-
+            // cmp
             cl_printf("%s r%d, #0x%x", mnemonic, operand_1st_reg, immediate_value);
 
-        } else if (op_code == 0x0) {
-
-            cl_printf("%s r%d, r%d, #0x%x", mnemonic, destination_reg, operand_1st_reg, immediate_value);
-
         } else {
+            // and, add, sub
             cl_printf("%s r%d, r%d, #0x%x", mnemonic, destination_reg, operand_1st_reg, immediate_value);
         }
 
@@ -211,11 +215,10 @@ void print_data_process(char *mnemonic, int word){
         if (shift_type == 0x01) {
             cl_printf("lsr r%d, r%d, r%d", destination_reg, operand_2nd_reg, shift_reg);
         } else {
-            cl_printf("mov r%d, r%d", destination_reg, operand_2nd_reg);
+            cl_printf("%s r%d, r%d", mnemonic, destination_reg, operand_2nd_reg);
         }
     }
 }
-
 
 
 void print_hex_dump(int word){
@@ -647,6 +650,32 @@ static void test_print_block_data_transfer() {
 }
 
 
+static void test_print_data_process() {
+
+    char *expect1 = "mov r1, #0x68";
+    char *expect2 = "add r1, r1, #0x1";
+
+    int input_word1 = 0xE3A01068;
+    int input_word2 = 0xE2811001;
+
+
+    char *input_mnemonic1 = "mov";
+    char *input_mnemonic2 = "add";
+
+    print_data_process(input_mnemonic1, input_word1);
+    print_data_process(input_mnemonic2, input_word2);
+
+    char *actual1 = cl_get_result(0);
+    char *actual2 = cl_get_result(1);
+
+    assert_streq(expect1, actual1);
+    assert_streq(expect2, actual2);
+
+
+    cl_clear_output();
+}
+
+
 static void unit_test() {
 
     cl_enable_buffer_mode();
@@ -707,14 +736,16 @@ static void unit_test() {
     test_print_data_transfer();
     test_print_branch_and_branch_with_link();
     test_print_block_data_transfer();
+    test_print_data_process();
 }
 
 
 int main(int argc, char *argv[]) {
-    //unit_test();
+    // unit_test();
 
-    // todo print_hex_memを実装していく
-    // 4bit　ローテートの対応
+    // 課題
+    // print_asm(0xE3A0D902); -> mov r13, #0x8000
+
 
     FILE *fp = fopen(argv[1], "rb");
     read_binary_file(fp);
