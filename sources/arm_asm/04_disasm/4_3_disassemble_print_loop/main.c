@@ -4,6 +4,11 @@
 #include <stdlib.h>
 #include "disasm.h"
 
+struct register_array{
+    int list[16];
+    int len;
+};
+
 void print_data_transfer(char *mnemonic, int word);
 void print_branch_and_branch_with_link(char *mnemonic, int word);
 void print_block_data_transfer(char *mnemonic, int word);
@@ -20,6 +25,27 @@ int print_asm(int word) {
         print_data_process("mov", word);
         return 1;
 
+    } else if (0xE2800000 == (word & 0xFFF00000)) {
+
+        print_data_process("add", word);
+        return 1;
+
+    } else if (0xE3500000 == (word & 0xE3500000)) {
+
+        print_data_process("cmp", word);
+        return 1;
+
+    } else if (0xE2000000 == (word & 0xFFF00000)) {
+
+        print_data_process("and", word);
+        return 1;
+
+    } else if (0xE2400000 == (word & 0xFFF00000)) {
+
+        print_data_process("sub", word);
+        return 1;
+
+
     } else if (0xEA000000 == (word & 0xFF000000)) {
 
         print_branch_and_branch_with_link("b", word);
@@ -28,6 +54,21 @@ int print_asm(int word) {
     } else if (0xEB000000 == (word & 0xFF000000)) {
 
         print_branch_and_branch_with_link("bl", word);
+        return 1;
+
+    } else if (0xAA000000 == (word & 0xFF000000)) {
+
+        print_branch_and_branch_with_link("bge", word);
+        return 1;
+
+    } else if (0xBA000000 == (word & 0xFF000000)) {
+
+        print_branch_and_branch_with_link("blt", word);
+        return 1;
+
+    } else if (0x1A000000 == (word & 0xFF000000)) {
+
+        print_branch_and_branch_with_link("bne", word);
         return 1;
 
     } else if (0xE59F0000 == (word & 0xFFFF0000)) {
@@ -45,40 +86,6 @@ int print_asm(int word) {
         print_data_transfer("str", word);
         return 1;
 
-    } else if (0xE2800000 == (word & 0xFFF00000)) {
-
-        print_data_process("add", word);
-        return 1;
-
-    } else if (0xE3500000 == (word & 0xE3500000)) {
-
-        print_data_process("cmp", word);
-        return 1;
-
-    } else if (0x1A000000 == (word & 0xFF000000)) {
-
-        print_branch_and_branch_with_link("bne", word);
-        return 1;
-
-    } else if (0xE2000000 == (word & 0xFFF00000)) {
-
-        print_data_process("and", word);
-        return 1;
-
-    } else if (0xBA000000 == (word & 0xFF000000)) {
-
-        print_branch_and_branch_with_link("blt", word);
-        return 1;
-
-    } else if (0xE2400000 == (word & 0xFFF00000)) {
-
-        print_data_process("sub", word);
-        return 1;
-
-    } else if (0xAA000000 == (word & 0xFF000000)) {
-
-        print_branch_and_branch_with_link("bge", word);
-        return 1;
 
     } else if (0xE92D0000 == (word & 0xE92D0000)) {
 
@@ -101,12 +108,12 @@ int print_asm(int word) {
 
 
 void print_data_transfer(char* mnemonic, int word) {
-    int offset = word & 0xFFF;
+    int immediate_value = word & 0xFFF;
     int source_or_destination_reg = (word >> 12) & 0xF;
     int base_reg = (word >> 16) & 0xF;
 
-    if (offset != 0) {
-        cl_printf("%s r%x, [r%d, #0x%x]", mnemonic, source_or_destination_reg, base_reg, offset);
+    if (immediate_value != 0) {
+        cl_printf("%s r%x, [r%d, #0x%x]", mnemonic, source_or_destination_reg, base_reg, immediate_value);
 
     } else {
         cl_printf("%s r%x, [r%d]", mnemonic, source_or_destination_reg, base_reg);
@@ -741,7 +748,7 @@ static void unit_test() {
 
 
 int main(int argc, char *argv[]) {
-    // unit_test();
+    unit_test();
 
     // 課題
     // print_asm(0xE3A0D902); -> mov r13, #0x8000

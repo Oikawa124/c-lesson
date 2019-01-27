@@ -8,7 +8,7 @@ function compare_two_files($filename)
 
     # Read input file
     $bin_file_name = $filename + ".bin"
-    $bin_file_path = Join-Path .\test\test_input\ $bin_file_name
+    $bin_file_path = Join-Path ..\test_input\ $bin_file_name
 
     # Run
     .\test.exe  $bin_file_path > actual.txt
@@ -16,7 +16,7 @@ function compare_two_files($filename)
 
     # Read expect file
     $expect_file_name = $filename + ".txt"
-    $expect_file_path = Join-Path .\test\test_expect\ $expect_file_name
+    $expect_file_path = Join-Path ..\test_expect\ $expect_file_name
 
     $expect = Get-Content $expect_file_path
     $actual = Get-Content actual.txt
