@@ -44,22 +44,21 @@ int parse_one(char *str, int start, struct substring* out_sub_str){
     int str_pos = start;
     int ch;
 
-    if ((ch = str[str_pos]) == ':'
-         || ch == ',') {
-        out_sub_str->str = &str[start];
-        out_sub_str->len = 1;
-        str_pos++;
-
-        return str_pos;
-    }
-
     // 空白スキップ
     while (str[str_pos] == ' ') {
         str_pos++;
     }
 
-
     int sub_str_first_pos = str_pos;
+
+    if ((ch = str[str_pos]) == ':'
+         || ch == ',') {
+        out_sub_str->str = &str[sub_str_first_pos];
+        out_sub_str->len = 1;
+        str_pos++;
+
+        return str_pos;
+    }
 
     while ((ch = str[str_pos]) !='\0'
             && ch != ' '
@@ -209,7 +208,7 @@ static void test_parse_one() {
 }
 
 static void test_parse_one_colon(){
-    char *input = ":";
+    char *input = " :";
     int start = 0;
 
     char *expect = ":";
