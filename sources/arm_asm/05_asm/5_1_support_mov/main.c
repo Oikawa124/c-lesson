@@ -39,14 +39,14 @@ int cl_getline(char **out_buf, FILE *fp) {
 
 
 // 先頭のシンボルを切り出す (ラベルや.rawは後で実装していく)
-int parse_one(int out_buf_pos, char *str, struct substring* out_sub_str){
+int parse_one(char *str, int start, struct substring* out_sub_str){
 
-    int str_pos = out_buf_pos;
+    int str_pos = start;
     int ch;
 
     if ((ch = str[str_pos]) == ':'
          || ch == ',') {
-        out_sub_str->str = &str[out_buf_pos];
+        out_sub_str->str = &str[start];
         out_sub_str->len = 1;
         str_pos++;
 
@@ -129,7 +129,7 @@ int asm_one(FILE *fp){
     // 一行読み込み
     char *out_buf;
     int out_buf_len = 0;
-    int out_buf_pos = 0;
+    int start = 0;
 
 
     out_buf_len = cl_getline(&out_buf, fp);
@@ -139,7 +139,7 @@ int asm_one(FILE *fp){
     struct substring sub_str;
 
 
-    out_buf_pos = parse_one(out_buf_pos, out_buf, &sub_str);
+    start = parse_one(out_buf, start, &sub_str);
 
 
 //    // レジスタ切り出し
@@ -176,7 +176,7 @@ void assert_substring_eq(char *expect, struct substring* actual){
 static void test_parse_one() {
 
     char *input = "loop: mov r1, r2";
-    int input_pos = 0;
+    int start = 0;
 
     char *expect1 = "loop";
     char *expect2 = ":";
@@ -193,12 +193,12 @@ static void test_parse_one() {
     struct substring actual6;
 
 
-    input_pos = parse_one(input_pos,input, &actual1);
-    input_pos = parse_one(input_pos,input, &actual2);
-    input_pos = parse_one(input_pos,input, &actual3);
-    input_pos = parse_one(input_pos,input, &actual4);
-    input_pos = parse_one(input_pos,input, &actual5);
-    input_pos = parse_one(input_pos,input, &actual6);
+    start = parse_one(input,start, &actual1);
+    start = parse_one(input,start, &actual2);
+    start = parse_one(input,start, &actual3);
+    start = parse_one(input,start, &actual4);
+    start = parse_one(input,start, &actual5);
+    start = parse_one(input,start, &actual6);
 
     assert_substring_eq(expect1, &actual1);
     assert_substring_eq(expect2, &actual2);
@@ -206,6 +206,19 @@ static void test_parse_one() {
     assert_substring_eq(expect4, &actual4);
     assert_substring_eq(expect5, &actual5);
     assert_substring_eq(expect6, &actual6);
+}
+
+static void test_parse_one_colon(){
+    char *input = ":";
+    int start = 0;
+
+    char *expect = ":";
+
+    struct substring actual;
+
+    start = parse_one(input, start, &actual);
+
+    assert_substring_eq(expect, &actual);
 }
 
 
@@ -233,7 +246,9 @@ static void test_parse_register() {
 static void unit_tests() {
 
     test_parse_one();
+    test_parse_one_colon();
     test_parse_register();
+
 }
 
 
