@@ -15,7 +15,8 @@ struct substring {
 
 
 // 1行読み込んだ文字列のバッファ
-static char buf[BUF_SIZE];
+// g_は"global"
+static char g_buf[BUF_SIZE];
 
 // 一行読み込み
 int cl_getline(char **out_buf, FILE *fp) {
@@ -25,14 +26,14 @@ int cl_getline(char **out_buf, FILE *fp) {
     if ((ch = getc(fp)) == EOF) {return EOF;}
 
     do {
-        buf[len] = (char)ch;
+        g_buf[len] = (char)ch;
         len++;
 
     } while ((ch = getc(fp)) != '\n' && ch != EOF);
 
-    buf[len] = '\0';
+    g_buf[len] = '\0';
 
-    *out_buf = buf;
+    *out_buf = g_buf;
 
     return len;
 }
@@ -75,9 +76,9 @@ int parse_one(char *str, int start, struct substring* out_sub_str){
 }
 
 
-int parse_register(int str_pos, char *str, int *out_register){
+int parse_register(char *str, int start, int *out_register){
     int ch;
-    int pos = str_pos;
+    int pos = start;
     int reg_mun = 0;
 
     // 空白・文字"r"読み飛ばし
@@ -100,18 +101,18 @@ int parse_register(int str_pos, char *str, int *out_register){
     return PRASE_FAIL;
 }
 
-int skip_comma(int str_pos, char *str){
+int skip_comma(char *str, int start){
 
     // コンマ読み飛ばし
     int ch;
-    int pos = str_pos;
+    int pos = start;
 
     do {
         ch = str[pos];
         pos++;
     } while (ch == ',');
 
-    if (str_pos < pos) {
+    if (start < pos) {
         return pos;
     } else {
         return PRASE_FAIL;
@@ -126,19 +127,19 @@ int skip_comma(int str_pos, char *str){
 int asm_one(FILE *fp){
 
     // 一行読み込み
-    char *out_buf;
-    int out_buf_len = 0;
+    char *buf;
+    int buf_len = 0;
     int start = 0;
 
 
-    out_buf_len = cl_getline(&out_buf, fp);
+    buf_len = cl_getline(&buf, fp);
 
 
     // 命令切り出し
     struct substring sub_str;
 
 
-    start = parse_one(out_buf, start, &sub_str);
+    start = parse_one(buf, start, &sub_str);
 
 
 //    // レジスタ切り出し
