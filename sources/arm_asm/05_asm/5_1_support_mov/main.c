@@ -7,7 +7,50 @@
 #define PRASE_FAIL -1
 
 
+// 入力関係
 
+static char *input = NULL;
+static int pos = 0;
+
+static FILE *fp;
+
+void cl_getc_set_src(char *str) {
+    input = str;
+    pos = 0;
+}
+
+int cl_getc() {
+    if (fp) {
+        return fgetc(fp);
+    } else {
+        if (strlen(input) == pos)
+            return EOF;
+        return input[pos++];
+    }
+}
+
+
+
+// 配列関係
+static unsigned int g_asm_result[1000];
+
+unsigned int cl_get_asm_result(int num) {
+    return g_asm_result[num];
+}
+
+struct Emitter {
+    unsigned int *array;
+    int pos;
+};
+
+void emit_word(struct Emitter* emitter, unsigned int oneword){
+    emitter->array[emitter->pos] = oneword;
+    emitter->pos++;
+}
+
+
+
+// 文字列切り出し
 struct substring {
     char *str;
     int len;
@@ -19,17 +62,17 @@ struct substring {
 static char g_buf[BUF_SIZE];
 
 // 一行読み込み
-int cl_getline(char **out_buf, FILE *fp) {
+int cl_getline(char **out_buf) {
     int len = 0;
     int ch;
 
-    if ((ch = getc(fp)) == EOF) {return EOF;}
+    if ((ch = cl_getc()) == EOF) {return EOF;}
 
     do {
         g_buf[len] = (char)ch;
         len++;
 
-    } while ((ch = getc(fp)) != '\n' && ch != EOF);
+    } while ((ch = cl_getc()) != '\n' && ch != EOF);
 
     g_buf[len] = '\0';
 
@@ -124,7 +167,7 @@ int skip_comma(char *str, int start){
 
 
 // 先頭のトークンを読み出して，結果によって分岐する
-int asm_one(FILE *fp){
+int asm_one(){
 
     // 一行読み込み
     char *buf;
@@ -132,7 +175,15 @@ int asm_one(FILE *fp){
     int start = 0;
 
 
-    buf_len = cl_getline(&buf, fp);
+    buf_len = cl_getline(&buf);
+
+
+    // 結果を渡す配列を準備
+
+    struct Emitter emitter;
+    emitter.array = g_asm_result;
+    emitter.pos = 0;
+
 
 
     // 命令切り出し
@@ -141,21 +192,37 @@ int asm_one(FILE *fp){
 
     start = parse_one(buf, start, &sub_str);
 
+    // int expect = 0xE1A01002;
 
-//    // レジスタ切り出し
-//    int reg_1st, reg_2nd;
-//
-//    out_buf_pos = parse_register(out_buf_pos, out_buf, &reg_1st);
-//
-//    if (out_buf_pos == PRASE_FAIL) { return out_buf_pos;}
-//
-//    out_buf_pos = skip_comma(out_buf_pos, out_buf);
-//
-//    if (out_buf_pos == PRASE_FAIL) { return out_buf_pos;}
-//
-//    out_buf_pos = parse_register(out_buf_pos, out_buf, &reg_2nd);
-//
-//    if (out_buf_pos == PRASE_FAIL) { return out_buf_pos;}
+    unsigned int oneword = 0;
+
+
+    if (strncmp(sub_str.str,"mov", 3) == 0) {
+
+        oneword += 0xE1A00000;
+
+        // レジスタ切り出し
+        int reg_1st, reg_2nd;
+
+        start = parse_register(buf, start, &reg_1st);
+
+        if (start == PRASE_FAIL) { return start; }
+
+        start = skip_comma(buf, start);
+
+        if (start == PRASE_FAIL) { return start; }
+
+        start = parse_register(buf, start, &reg_2nd);
+
+        if (start == PRASE_FAIL) { return start; }
+
+        oneword += reg_1st << 12 ;
+
+        oneword += reg_2nd;
+
+        emit_word(&emitter, oneword);
+    }
+
 
 
     return 0;
@@ -224,7 +291,7 @@ static void test_parse_one_colon(){
 
 static void test_parse_register() {
     char *input = " r1, r2";
-    int input_pos = 0;
+    int start = 0;
 
     int expect_reg_1 = 1;
     int expect_reg_2 = 2;
@@ -232,14 +299,27 @@ static void test_parse_register() {
     int actual_reg_1, actual_reg_2;
 
 
-    input_pos = parse_register(input_pos, input, &actual_reg_1);
+    start = parse_register(input,start, &actual_reg_1);
 
-    input_pos = skip_comma(input_pos, input);
+    start = skip_comma(input, start);
 
-    input_pos = parse_register(input_pos, input, &actual_reg_2);
+    start = parse_register(input, start, &actual_reg_2);
 
     assert(expect_reg_1 == actual_reg_1);
     assert(expect_reg_2 == actual_reg_2);
+}
+
+static void test_asm_one(){
+    char *input = "mov r1, r2";
+    unsigned int expect = 0xE1A01002;
+
+    cl_getc_set_src(input);
+
+    asm_one();
+
+    unsigned int actual = cl_get_asm_result(0);
+
+    assert(expect == actual);
 }
 
 
@@ -248,7 +328,7 @@ static void unit_tests() {
     test_parse_one();
     test_parse_one_colon();
     test_parse_register();
-
+    test_asm_one();
 }
 
 
@@ -256,9 +336,9 @@ int main() {
 
     unit_tests();
 
-//    FILE *fp = fopen("mov_op.ks", "r");
+//    fp = fopen("mov_op.ks", "r");
 //
-//    asm_one(fp);
+//    asm_one();
 //
 //    fclose(fp);
 

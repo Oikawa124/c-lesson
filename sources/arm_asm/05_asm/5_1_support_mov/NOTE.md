@@ -26,6 +26,11 @@ int expect = 0xE1A01002;
 
 2 桁で 1 Byte
 
+### 1word
+
+今回は，32bitで1word
+
+
 
 ### Unit Test用
 int streq(char *s1, char *s2) { return 0 == strcmp(s1, s2); }
