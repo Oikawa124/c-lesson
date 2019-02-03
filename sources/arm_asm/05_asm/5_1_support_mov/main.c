@@ -34,9 +34,6 @@ int cl_getc() {
 // 配列関係
 static unsigned int g_asm_result[1000];
 
-unsigned int cl_get_asm_result(int num) {
-    return g_asm_result[num];
-}
 
 struct Emitter {
     unsigned int *array;
@@ -122,22 +119,24 @@ int parse_one(char *str, int start, struct substring* out_sub_str){
 int parse_register(char *str, int start, int *out_register){
     int ch;
     int pos = start;
-    int reg_mun = 0;
+    int reg_num = 0;
+
 
     // 空白・文字"r"読み飛ばし
-    do {
-        ch = str[pos];
-        pos++;
-    } while (isspace(ch) || isalpha(ch));
-
-    // 数字取得
-    for (; isdigit(ch); ch = str[pos]) {
-        reg_mun = reg_mun * 10 + (ch - '0');
+    while ((ch = str[pos]) == ' '
+            || isalpha(ch))
+    {
         pos++;
     }
 
-    if (0 <= reg_mun && reg_mun <= 15) {
-        *out_register = reg_mun;
+    // 数字取得
+    for (; isdigit(ch); ch = str[pos]) {
+        reg_num = reg_num * 10 + (ch - '0');
+        pos++;
+    }
+
+    if (0 <= reg_num && reg_num <= 15) {
+        *out_register = reg_num;
         return pos;
     }
 
@@ -146,14 +145,19 @@ int parse_register(char *str, int start, int *out_register){
 
 int skip_comma(char *str, int start){
 
-    // コンマ読み飛ばし
     int ch;
     int pos = start;
 
-    do {
-        ch = str[pos];
+
+    //　スペース読み飛ばし
+    while ((ch = str[pos]) == ' ') {
         pos++;
-    } while (ch == ',');
+    }
+
+    // コンマ読み飛ばし
+    if (ch == ',') {
+        pos++;
+    }
 
     if (start < pos) {
         return pos;
@@ -167,7 +171,7 @@ int skip_comma(char *str, int start){
 
 
 // 先頭のトークンを読み出して，結果によって分岐する
-int asm_one(){
+int asm_one(struct Emitter *emitter){
 
     // 一行読み込み
     char *buf;
@@ -178,24 +182,14 @@ int asm_one(){
     buf_len = cl_getline(&buf);
 
 
-    // 結果を渡す配列を準備
-
-    struct Emitter emitter;
-    emitter.array = g_asm_result;
-    emitter.pos = 0;
-
-
-
     // 命令切り出し
     struct substring sub_str;
 
 
     start = parse_one(buf, start, &sub_str);
 
-    // int expect = 0xE1A01002;
 
     unsigned int oneword = 0;
-
 
     if (strncmp(sub_str.str,"mov", 3) == 0) {
 
@@ -220,10 +214,8 @@ int asm_one(){
 
         oneword += reg_2nd;
 
-        emit_word(&emitter, oneword);
+        emit_word(emitter, oneword);
     }
-
-
 
     return 0;
 }
@@ -240,8 +232,28 @@ void assert_substring_eq(char *expect, struct substring* actual){
     assert(strneq(expect, actual->str, actual->len));
 }
 
-static void test_parse_one() {
 
+static void test_parse_one_when_call_once(){
+
+    // SetUp
+    char *input = "mov r1, r2";
+    int start = 0;
+
+    char *expect = "mov";
+
+    struct substring actual1;
+
+    // Exercise
+    start = parse_one(input, start, &actual1);
+
+    // Verify
+    assert_substring_eq(expect, &actual1);
+}
+
+
+static void test_parse_one_when_everything_parse() {
+
+    // SetUp
     char *input = "loop: mov r1, r2";
     int start = 0;
 
@@ -259,7 +271,7 @@ static void test_parse_one() {
     struct substring actual5;
     struct substring actual6;
 
-
+    // Exercise
     start = parse_one(input,start, &actual1);
     start = parse_one(input,start, &actual2);
     start = parse_one(input,start, &actual3);
@@ -267,6 +279,7 @@ static void test_parse_one() {
     start = parse_one(input,start, &actual5);
     start = parse_one(input,start, &actual6);
 
+    // Verify
     assert_substring_eq(expect1, &actual1);
     assert_substring_eq(expect2, &actual2);
     assert_substring_eq(expect3, &actual3);
@@ -275,7 +288,9 @@ static void test_parse_one() {
     assert_substring_eq(expect6, &actual6);
 }
 
-static void test_parse_one_colon(){
+static void test_parse_when_parse_one_colon(){
+
+    // SetUp
     char *input = " :";
     int start = 0;
 
@@ -283,13 +298,33 @@ static void test_parse_one_colon(){
 
     struct substring actual;
 
+    // Exercise
     start = parse_one(input, start, &actual);
 
+    // Verify
     assert_substring_eq(expect, &actual);
 }
 
+static void test_parse_register_when_call_once() {
 
-static void test_parse_register() {
+    // SetUp
+    char *input = "r1, r2";
+    int start = 0;
+
+    int expect_reg_1 = 1;
+
+    int actual_reg_1;
+
+    // Exercise
+    start = parse_register(input,start, &actual_reg_1);
+
+    // Verify
+    assert(expect_reg_1 == actual_reg_1);
+}
+
+static void test_parse_register_when_parse_two_registers() {
+
+    // SetUp
     char *input = " r1, r2";
     int start = 0;
 
@@ -298,37 +333,47 @@ static void test_parse_register() {
 
     int actual_reg_1, actual_reg_2;
 
-
+    // Exercise
     start = parse_register(input,start, &actual_reg_1);
 
     start = skip_comma(input, start);
 
     start = parse_register(input, start, &actual_reg_2);
 
+    // Verify
     assert(expect_reg_1 == actual_reg_1);
     assert(expect_reg_2 == actual_reg_2);
 }
 
-static void test_asm_one(){
+static void test_asm_when_symbol_is_mov(){
+
+    // SetUp
     char *input = "mov r1, r2";
     unsigned int expect = 0xE1A01002;
 
     cl_getc_set_src(input);
 
-    asm_one();
+    struct Emitter emitter;
+    emitter.array = g_asm_result;
+    emitter.pos = 0;
 
-    unsigned int actual = cl_get_asm_result(0);
+    // Exercise
+    asm_one(&emitter);
+    unsigned int actual = emitter.array[0];
 
+    // Verify
     assert(expect == actual);
 }
 
 
 static void unit_tests() {
 
-    test_parse_one();
-    test_parse_one_colon();
-    test_parse_register();
-    test_asm_one();
+    test_parse_one_when_call_once();
+    test_parse_one_when_everything_parse();
+    test_parse_when_parse_one_colon();
+    test_parse_register_when_call_once();
+    test_parse_register_when_parse_two_registers();
+    test_asm_when_symbol_is_mov();
 }
 
 
@@ -336,9 +381,15 @@ int main() {
 
     unit_tests();
 
+    // 結果を渡す配列を準備
+
+    struct Emitter emitter;
+    emitter.array = g_asm_result;
+    emitter.pos = 0;
+
 //    fp = fopen("mov_op.ks", "r");
 //
-//    asm_one();
+//    asm_one(&emitter);
 //
 //    fclose(fp);
 
