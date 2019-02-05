@@ -240,7 +240,7 @@ static void test_parse_one_when_everything_parse() {
     assert_substring_eq(expect6, &actual6);
 }
 
-static void test_parse_when_parse_one_colon(){
+static void test_parse_one_when_parse_one_colon(){
 
     // SetUp
     char *input = " :";
@@ -322,7 +322,7 @@ static void unit_tests() {
 
     test_parse_one_when_call_once();
     test_parse_one_when_everything_parse();
-    test_parse_when_parse_one_colon();
+    test_parse_one_when_parse_one_colon();
     test_parse_register_when_call_once();
     test_parse_register_when_parse_two_registers();
     test_asm_when_symbol_is_mov();

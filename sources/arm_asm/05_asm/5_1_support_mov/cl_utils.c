@@ -19,8 +19,9 @@ static int cl_getc() {
     if (fp) {
         return fgetc(fp);
     } else {
-        if (strlen(input) == pos)
+        if (strlen(input) == pos) {
             return EOF;
+        }
         return input[pos++];
     }
 }
