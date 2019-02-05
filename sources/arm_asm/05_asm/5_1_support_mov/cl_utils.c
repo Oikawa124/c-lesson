@@ -49,3 +49,18 @@ int cl_getline(char **out_buf) {
 
     return len;
 }
+
+
+// 16進数ダンプ
+void cl_print_hex_dump(unsigned int word){
+    for (int i = 0; i < 4; ++i) {
+        int two_digit_word = word & 0xFF;
+
+        if (i != 3) {
+            printf("%02x ", two_digit_word);
+        } else {
+            printf("%02x", two_digit_word);
+        }
+        word = word >> 2*4;
+    }
+}
