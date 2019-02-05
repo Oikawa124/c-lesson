@@ -133,6 +133,8 @@ int asm_one(struct Emitter *emitter){
 
     buf_len = cl_getline(&buf);
 
+    if (buf_len == EOF) { return EOF;}
+
 
     // 命令切り出し
     struct substring sub_str;
@@ -320,11 +322,16 @@ static void test_asm_when_symbol_is_mov(){
 
 static void unit_tests() {
 
+    // parse_one
     test_parse_one_when_call_once();
     test_parse_one_when_everything_parse();
     test_parse_one_when_parse_one_colon();
+
+    // parse_register
     test_parse_register_when_call_once();
     test_parse_register_when_parse_two_registers();
+
+    // asm
     test_asm_when_symbol_is_mov();
 }
 
@@ -341,7 +348,19 @@ int main() {
 
     fp = fopen("mov_op.ks", "r");
 
-    asm_one(&emitter);
+    if (fp == NULL) {printf("Not exist file");}
+
+
+    int res;
+    int line_num = 0;
+
+    while (1){
+        res = asm_one(&emitter);
+        line_num++;
+
+        if (res == EOF) { break;}
+    }
+
 
     fclose(fp);
 
