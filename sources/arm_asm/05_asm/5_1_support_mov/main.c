@@ -7,8 +7,6 @@
 
 
 #define PRASE_FAIL -1
-FILE *fp;
-
 
 // 配列関係
 static unsigned int g_asm_result[1000];
@@ -83,10 +81,11 @@ int parse_register(char *str, int start, int *out_register){
     }
 
     // 数字取得
-    for (; isdigit(ch); ch = str[pos]) {
-        reg_num = reg_num * 10 + (ch - '0');
+    while(isdigit(str[pos])){
+        reg_num = reg_num * 10 + (str[pos] - '0');
         pos++;
     }
+
 
     if (0 <= reg_num && reg_num <= 15) {
         *out_register = reg_num;
@@ -346,9 +345,11 @@ int main() {
     emitter.array = g_asm_result;
     emitter.pos = 0;
 
+    FILE *fp;
     fp = fopen("mov_op.ks", "r");
 
     if (fp == NULL) {printf("Not exist file");}
+    cl_getc_set_fp(fp);
 
 
     int res;
