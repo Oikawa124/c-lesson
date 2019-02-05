@@ -3,37 +3,15 @@
 #include <ctype.h>
 #include <assert.h>
 
-#define BUF_SIZE 100
+#include "asm.h"
+
+
 #define PRASE_FAIL -1
-
-
-// 入力関係
-
-static char *input = NULL;
-static int pos = 0;
-
-static FILE *fp;
-
-void cl_getc_set_src(char *str) {
-    input = str;
-    pos = 0;
-}
-
-int cl_getc() {
-    if (fp) {
-        return fgetc(fp);
-    } else {
-        if (strlen(input) == pos)
-            return EOF;
-        return input[pos++];
-    }
-}
-
+FILE *fp;
 
 
 // 配列関係
 static unsigned int g_asm_result[1000];
-
 
 struct Emitter {
     unsigned int *array;
@@ -54,32 +32,7 @@ struct substring {
 };
 
 
-// 1行読み込んだ文字列のバッファ
-// g_は"global"
-static char g_buf[BUF_SIZE];
-
-// 一行読み込み
-int cl_getline(char **out_buf) {
-    int len = 0;
-    int ch;
-
-    if ((ch = cl_getc()) == EOF) {return EOF;}
-
-    do {
-        g_buf[len] = (char)ch;
-        len++;
-
-    } while ((ch = cl_getc()) != '\n' && ch != EOF);
-
-    g_buf[len] = '\0';
-
-    *out_buf = g_buf;
-
-    return len;
-}
-
-
-// 先頭のシンボルを切り出す (ラベルや.rawは後で実装していく)
+// トークン切り出し
 int parse_one(char *str, int start, struct substring* out_sub_str){
 
     int str_pos = start;
@@ -147,7 +100,6 @@ int skip_comma(char *str, int start){
 
     int ch;
     int pos = start;
-
 
     //　スペース読み飛ばし
     while ((ch = str[pos]) == ' ') {
@@ -387,11 +339,11 @@ int main() {
     emitter.array = g_asm_result;
     emitter.pos = 0;
 
-//    fp = fopen("mov_op.ks", "r");
-//
-//    asm_one(&emitter);
-//
-//    fclose(fp);
+    fp = fopen("mov_op.ks", "r");
+
+    asm_one(&emitter);
+
+    fclose(fp);
 
     return 0;
 }
