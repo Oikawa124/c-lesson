@@ -122,18 +122,9 @@ int skip_comma(char *str, int start){
 
 
 // 先頭のトークンを読み出して，結果によって分岐する
-int asm_one(struct Emitter *emitter){
+int asm_one(char *buf, struct Emitter *emitter){
 
-    // 一行読み込み
-    char *buf;
-    int buf_len = 0;
-    int start = 0;
-
-
-    buf_len = cl_getline(&buf);
-
-    if (buf_len == EOF) { return EOF;}
-
+    int start=0;
 
     // 命令切り出し
     struct substring sub_str;
@@ -304,14 +295,13 @@ static void test_asm_when_symbol_is_mov(){
     char *input = "mov r1, r2";
     unsigned int expect = 0xE1A01002;
 
-    cl_getc_set_src(input);
 
     struct Emitter emitter;
     emitter.array = g_asm_result;
     emitter.pos = 0;
 
     // Exercise
-    asm_one(&emitter);
+    asm_one(input, &emitter);
     unsigned int actual = emitter.array[0];
 
     // Verify
@@ -354,16 +344,26 @@ int main() {
 
     int res;
     int line_num = 0;
+    char *buf;
 
     while (1){
-        res = asm_one(&emitter);
-        line_num++;
 
-        if (res == EOF) { break;}
+        // 一行読み込み
+        int buf_len = 0;
+
+        buf_len = cl_getline(&buf);
+
+        if (buf_len == EOF) { break;}
+
+        res = asm_one(buf, &emitter);
+
+        line_num++;
     }
+
 
 
     fclose(fp);
 
     return 0;
 }
+
