@@ -70,7 +70,7 @@ int parse_one(char *str, int start, struct substring* out_sub_str){
 int parse_register(char *str, int start, int *out_register){
     int ch;
     int pos = start;
-    int reg_num = 0;
+    int reg_num = -1;
 
 
     // 空白・文字"r"読み飛ばし
@@ -116,9 +116,6 @@ int skip_comma(char *str, int start){
         return PRASE_FAIL;
     }
 }
-
-
-
 
 
 // 先頭のトークンを読み出して，結果によって分岐する
@@ -327,7 +324,7 @@ static void unit_tests() {
 
 int main() {
 
-    unit_tests();
+    //unit_tests();
 
     // 結果を渡す配列を準備
 
@@ -357,6 +354,11 @@ int main() {
 
         res = asm_one(buf, &emitter);
 
+        if (res == PRASE_FAIL) {
+            printf("PARSE FAIL");
+            break;
+        }
+
         line_num++;
     }
 
@@ -367,3 +369,6 @@ int main() {
     return 0;
 }
 
+//todo パース失敗したときの処理を修正する。
+// 現状では正しく失敗できない
+// reg_numの初期値を-1にした。
