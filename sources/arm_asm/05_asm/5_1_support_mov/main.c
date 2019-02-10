@@ -70,7 +70,7 @@ int parse_one(char *str, int start, struct substring* out_sub_str){
 int parse_register(char *str, int start, int *out_register){
     int pos = start;
     int reg_num = 0;
-    int is_parse_disit = 0;
+    int is_parse_digit = 0;
 
     // 空白スキップ
     while (str[pos] == ' ') {
@@ -87,11 +87,11 @@ int parse_register(char *str, int start, int *out_register){
         reg_num = reg_num * 10 + (str[pos] - '0');
         pos++;
 
-        is_parse_disit = 1;
+        is_parse_digit = 1;
     }
 
 
-    if ((0 <= reg_num && reg_num <= 15) && is_parse_disit) {
+    if ((0 <= reg_num && reg_num <= 15) && is_parse_digit) {
         *out_register = reg_num;
         return pos;
     } else {
@@ -100,11 +100,40 @@ int parse_register(char *str, int start, int *out_register){
 
 }
 
-int parse_immediate(char *str, int start, int *out_register){
+int parse_immediate(char *str, int start, int *out_imm_value){
+    int pos = start;
+    int imm_num = 0;
+    int is_parse_digit = 0;
 
-    return PRASE_FAIL;
+    // 空白スキップ
+    while (str[pos] == ' ') { pos++; }
+
+    // "#"読み飛ばし
+    if (str[pos] == '#') { pos++; }
+
+    // "0"読み飛ばし
+    if (str[pos] == '0') { pos++; }
+
+    // "x"読み飛ばし
+    if (str[pos] == 'x') { pos++; }
+
+
+    // 数字取得
+    while(isdigit(str[pos])){
+        imm_num = imm_num * 10 + (str[pos] - '0');
+        pos++;
+
+        is_parse_digit = 1;
+    }
+
+    if (is_parse_digit) {
+        *out_imm_value = imm_num;
+        return pos;
+    } else {
+        return PRASE_FAIL;
+    }
 }
-//todo parse_immediateを実装
+
 
 
 int skip_comma(char *str, int start){
@@ -317,6 +346,45 @@ static void test_parse_register_when_parse_fail() {
     assert(expect_res == actual_res);
 }
 
+
+static void test_parse_immediate_when_call_once() {
+
+    // SetUp
+    char *input = "#0x01";
+    int start = 0;
+
+    int expect_imm_value = 1;
+
+    int actual_imm_value;
+
+    // Exercise
+    start = parse_immediate(input, start, &actual_imm_value);
+
+    // Verify
+    assert(expect_imm_value == actual_imm_value);
+}
+
+
+static void test_parse_immediate_when_call_once_with_leading_space() {
+
+    // SetUp
+    char *input = "  #0x05";
+    int start = 0;
+
+    int expect_imm_value = 5;
+
+    int actual_imm_value;
+
+    // Exercise
+    start = parse_immediate(input, start, &actual_imm_value);
+
+    // Verify
+    assert(expect_imm_value == actual_imm_value);
+}
+
+
+
+
 static void test_asm_when_symbol_is_mov(){
 
     // SetUp
@@ -348,6 +416,10 @@ static void unit_tests() {
     test_parse_register_when_call_once();
     test_parse_register_when_parse_two_registers();
     test_parse_register_when_parse_fail();
+
+    // parse_immediate
+    test_parse_immediate_when_call_once();
+    test_parse_immediate_when_call_once_with_leading_space();
 
     // asm
     test_asm_when_symbol_is_mov();
