@@ -2,11 +2,12 @@
 #include <mem.h>
 #include <ctype.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #include "asm.h"
 
 
-#define PRASE_FAIL -1
+#define PARSE_FAIL -1
 
 // 配列関係
 static unsigned int g_asm_result[1000];
@@ -33,44 +34,44 @@ struct substring {
 // トークン切り出し
 int parse_one(char *str, int start, struct substring* out_sub_str){
 
-    int str_pos = start;
+    int pos = start;
     int ch;
 
     // 空白スキップ
-    while (str[str_pos] == ' ') {
-        str_pos++;
+    while (str[pos] == ' ') {
+        pos++;
     }
 
-    int sub_str_first_pos = str_pos;
+    int sub_str_start_pos = pos;
 
-    if ((ch = str[str_pos]) == ':'
+    // トークン取得
+    if ((ch = str[pos]) == ':'
          || ch == ',') {
-        out_sub_str->str = &str[sub_str_first_pos];
+        out_sub_str->str = &str[sub_str_start_pos];
         out_sub_str->len = 1;
-        str_pos++;
+        pos++;
 
-        return str_pos;
+        return pos;
     }
 
-    while ((ch = str[str_pos]) !='\0'
+    while ((ch = str[pos]) !='\0'
             && ch != ' '
             && ch != ':'
             && ch != ',')
     {
-        str_pos++;
+        pos++;
     }
 
-    out_sub_str->str = &str[sub_str_first_pos];
-    out_sub_str->len = str_pos - sub_str_first_pos;
+    out_sub_str->str = &str[sub_str_start_pos];
+    out_sub_str->len = pos - sub_str_start_pos;
 
-    return str_pos;
+    return pos;
 }
 
 
 int parse_register(char *str, int start, int *out_register){
     int pos = start;
     int reg_num = 0;
-    int is_parse_digit = 0;
 
     // 空白スキップ
     while (str[pos] == ' ') {
@@ -78,60 +79,68 @@ int parse_register(char *str, int start, int *out_register){
     }
 
     // "r"読み飛ばし
-    if (str[pos] == 'r') {
-        pos++;
-    }
+    if (str[pos] != 'r') { return PARSE_FAIL;}
+    pos++;
+
 
     // 数字取得
     while(isdigit(str[pos])){
         reg_num = reg_num * 10 + (str[pos] - '0');
         pos++;
-
-        is_parse_digit = 1;
     }
 
-
-    if ((0 <= reg_num && reg_num <= 15) && is_parse_digit) {
+    if ((0 <= reg_num && reg_num <= 15)) {
         *out_register = reg_num;
         return pos;
     } else {
-        return PRASE_FAIL;
+        return PARSE_FAIL;
     }
-
 }
 
 int parse_immediate(char *str, int start, int *out_imm_value){
     int pos = start;
-    int imm_num = 0;
     int is_parse_digit = 0;
 
     // 空白スキップ
     while (str[pos] == ' ') { pos++; }
 
     // "#"読み飛ばし
-    if (str[pos] == '#') { pos++; }
+    if (str[pos] != '#') { return PARSE_FAIL; }
+    pos++;
 
     // "0"読み飛ばし
-    if (str[pos] == '0') { pos++; }
+    if (str[pos] != '0') { return PARSE_FAIL;}
+    pos++;
 
     // "x"読み飛ばし
-    if (str[pos] == 'x') { pos++; }
+    if (str[pos] != 'x') { return PARSE_FAIL;}
+    pos++;
 
 
-    // 数字取得
-    while(isdigit(str[pos])){
-        imm_num = imm_num * 10 + (str[pos] - '0');
+    // 文字列の中の数字部分の範囲を取得
+    char hex_num[5];
+    struct substring sub_hex = {.str=&str[pos], .len=0};
+
+    while(isxdigit(str[pos])){
         pos++;
+        sub_hex.len++;
 
         is_parse_digit = 1;
     }
 
     if (is_parse_digit) {
-        *out_imm_value = imm_num;
+        // 文字列の数字部分切り出し
+        strncpy(hex_num, sub_hex.str, sub_hex.len);
+
+        // 文字列を16進数変換
+        char *endp;
+        *out_imm_value = strtol(hex_num, &endp, 16);
+
         return pos;
     } else {
-        return PRASE_FAIL;
+        return PARSE_FAIL;
     }
+
 }
 
 
@@ -141,21 +150,14 @@ int skip_comma(char *str, int start){
     int ch;
     int pos = start;
 
-    //　スペース読み飛ばし
-    while ((ch = str[pos]) == ' ') {
-        pos++;
-    }
+    // スペース読み飛ばし
+    while ((ch = str[pos]) == ' ') { pos++;}
 
     // コンマ読み飛ばし
-    if (ch == ',') {
-        pos++;
-    }
+    if (ch != ',') { return PARSE_FAIL; }
+    pos++;
 
-    if (start < pos) {
-        return pos;
-    } else {
-        return PRASE_FAIL;
-    }
+    return pos;
 }
 
 
@@ -182,15 +184,15 @@ int asm_one(char *buf, struct Emitter *emitter){
 
         start = parse_register(buf, start, &reg_1st);
 
-        if (start == PRASE_FAIL) { return start; }
+        if (start == PARSE_FAIL) { return start; }
 
         start = skip_comma(buf, start);
 
-        if (start == PRASE_FAIL) { return start; }
+        if (start == PARSE_FAIL) { return start; }
 
         start = parse_register(buf, start, &reg_2nd);
 
-        if (start == PRASE_FAIL) { return start; }
+        if (start == PARSE_FAIL) { return start; }
 
         oneword += reg_1st << 12 ;
 
@@ -199,7 +201,7 @@ int asm_one(char *buf, struct Emitter *emitter){
         emit_word(emitter, oneword);
     }
 
-    return 0;
+    return 1;
 }
 
 
@@ -334,7 +336,7 @@ static void test_parse_register_when_parse_fail() {
     char *input = "d1";
     int start = 0;
 
-    int expect_res = PRASE_FAIL;
+    int expect_res = PARSE_FAIL;
 
     int actual_reg_1;
     int actual_res;
@@ -382,6 +384,45 @@ static void test_parse_immediate_when_call_once_with_leading_space() {
     assert(expect_imm_value == actual_imm_value);
 }
 
+void test_parse_immediate_when_hexadecimal(){
+
+    // SetUp
+    char *input = "#0x0f";
+    int start = 0;
+
+    int expect_imm_value = 0xf;
+
+    int actual_imm_value;
+
+    // Exercise
+    start = parse_immediate(input, start, &actual_imm_value);
+
+    // Verify
+    assert(expect_imm_value == actual_imm_value);
+}
+
+void test_parse_immediate_when_imm0x64(){
+
+    // SetUp
+    char *input = "#0x64";
+    int start = 0;
+
+    int expect_imm_value = 0x64;
+
+    int actual_imm_value;
+
+    // Exercise
+    start = parse_immediate(input, start, &actual_imm_value);
+
+    // Verify
+    assert(expect_imm_value == actual_imm_value);
+}
+
+
+
+
+
+
 
 
 
@@ -420,6 +461,8 @@ static void unit_tests() {
     // parse_immediate
     test_parse_immediate_when_call_once();
     test_parse_immediate_when_call_once_with_leading_space();
+    test_parse_immediate_when_hexadecimal();
+    test_parse_immediate_when_imm0x64();
 
     // asm
     test_asm_when_symbol_is_mov();
@@ -439,7 +482,7 @@ int main() {
     FILE *fp;
     fp = fopen("mov_op.ks", "r");
 
-    if (fp == NULL) {printf("Not exist file");}
+    if (fp == NULL) { printf("Not exist file");}
     cl_getc_set_fp(fp);
 
 
@@ -457,7 +500,7 @@ int main() {
 
         res = asm_one(buf, &emitter);
 
-        if (res == PRASE_FAIL) {
+        if (res == PARSE_FAIL) {
             printf("PARSE FAIL");
             break;
         }
