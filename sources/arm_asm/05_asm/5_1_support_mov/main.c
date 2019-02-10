@@ -68,15 +68,17 @@ int parse_one(char *str, int start, struct substring* out_sub_str){
 
 
 int parse_register(char *str, int start, int *out_register){
-    int ch;
     int pos = start;
-    int reg_num = -1;
+    int reg_num = 0;
+    int is_parse_disit = 0;
 
+    // 空白スキップ
+    while (str[pos] == ' ') {
+        pos++;
+    }
 
-    // 空白・文字"r"読み飛ばし
-    while ((ch = str[pos]) == ' '
-            || isalpha(ch))
-    {
+    // "r"読み飛ばし
+    if (str[pos] == 'r') {
         pos++;
     }
 
@@ -84,16 +86,26 @@ int parse_register(char *str, int start, int *out_register){
     while(isdigit(str[pos])){
         reg_num = reg_num * 10 + (str[pos] - '0');
         pos++;
+
+        is_parse_disit = 1;
     }
 
 
-    if (0 <= reg_num && reg_num <= 15) {
+    if ((0 <= reg_num && reg_num <= 15) && is_parse_disit) {
         *out_register = reg_num;
         return pos;
+    } else {
+        return PRASE_FAIL;
     }
+
+}
+
+int parse_immediate(char *str, int start, int *out_register){
 
     return PRASE_FAIL;
 }
+//todo parse_immediateを実装
+
 
 int skip_comma(char *str, int start){
 
@@ -286,6 +298,25 @@ static void test_parse_register_when_parse_two_registers() {
     assert(expect_reg_2 == actual_reg_2);
 }
 
+
+static void test_parse_register_when_parse_fail() {
+
+    // SetUp
+    char *input = "d1";
+    int start = 0;
+
+    int expect_res = PRASE_FAIL;
+
+    int actual_reg_1;
+    int actual_res;
+
+    // Exercise
+    actual_res = parse_register(input,start, &actual_reg_1);
+
+    // Verify
+    assert(expect_res == actual_res);
+}
+
 static void test_asm_when_symbol_is_mov(){
 
     // SetUp
@@ -316,6 +347,7 @@ static void unit_tests() {
     // parse_register
     test_parse_register_when_call_once();
     test_parse_register_when_parse_two_registers();
+    test_parse_register_when_parse_fail();
 
     // asm
     test_asm_when_symbol_is_mov();
@@ -324,7 +356,7 @@ static void unit_tests() {
 
 int main() {
 
-    //unit_tests();
+    unit_tests();
 
     // 結果を渡す配列を準備
 
@@ -347,7 +379,6 @@ int main() {
 
         // 一行読み込み
         int buf_len = 0;
-
         buf_len = cl_getline(&buf);
 
         if (buf_len == EOF) { break;}
@@ -362,13 +393,8 @@ int main() {
         line_num++;
     }
 
-
-
     fclose(fp);
 
     return 0;
 }
 
-//todo パース失敗したときの処理を修正する。
-// 現状では正しく失敗できない
-// reg_numの初期値を-1にした。
