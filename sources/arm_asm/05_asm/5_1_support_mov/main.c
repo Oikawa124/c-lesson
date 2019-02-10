@@ -147,18 +147,30 @@ int parse_immediate(char *str, int start, int *out_imm_value){
 
 
 int skip_comma(char *str, int start){
-
-    int ch;
     int pos = start;
 
     // スペース読み飛ばし
-    while ((ch = str[pos]) == ' ') { pos++;}
+    while (str[pos] == ' ') { pos++;}
 
     // コンマ読み飛ばし
-    if (ch != ',') { return PARSE_FAIL; }
+    if (str[pos] != ',') { return PARSE_FAIL; }
     pos++;
 
     return pos;
+}
+
+int parse_register_or_immediate(char *str, int start) {
+    int pos = start;
+
+    // スペース読み飛ばし
+    while (str[pos] == ' ') { pos++;}
+
+    if (str[pos] == 'r') {
+        return 1;
+    }
+    else {
+        return 0;
+    }
 }
 
 
@@ -169,8 +181,6 @@ int asm_one(char *buf, struct Emitter *emitter){
 
     // 命令切り出し
     struct substring sub_str;
-
-
     start = parse_one(buf, start, &sub_str);
 
 
@@ -178,10 +188,8 @@ int asm_one(char *buf, struct Emitter *emitter){
 
     if (strncmp(sub_str.str,"mov", 3) == 0) {
 
-        oneword += 0xE1A00000;
-
-        // レジスタ切り出し
-        int reg_1st, reg_2nd;
+        // 1stレジスタ切り出し
+        int reg_1st;
 
         start = parse_register(buf, start, &reg_1st);
 
@@ -191,13 +199,30 @@ int asm_one(char *buf, struct Emitter *emitter){
 
         if (start == PARSE_FAIL) { return start; }
 
-        start = parse_register(buf, start, &reg_2nd);
 
-        if (start == PARSE_FAIL) { return start; }
+        // 即値かどうか判定
+        int is_register = parse_register_or_immediate(buf, start);
 
-        oneword += reg_1st << 12 ;
+        if (is_register) {
+            int reg_2nd;
+            start = parse_register(buf, start, &reg_2nd);
 
-        oneword += reg_2nd;
+            if (start == PARSE_FAIL) { return start; }
+
+            oneword += 0xE1A00000;
+            oneword += reg_1st << 12 ;
+            oneword += reg_2nd;
+
+        } else { // 即値の場合
+            int imm_value;
+            start = parse_immediate(buf, start, &imm_value);
+
+            if (start == PARSE_FAIL) { return start; }
+
+            oneword += 0xE3A00000;
+            oneword += reg_1st << 12 ;
+            oneword += imm_value;
+        }
 
         emit_word(emitter, oneword);
     }
@@ -428,7 +453,7 @@ void test_parse_immediate_when_imm0x64(){
 
 
 
-static void test_asm_when_symbol_is_mov(){
+static void test_asm_when_symbol_is_mov_with_reg(){
 
     // SetUp
     char *input = "mov r1, r2";
@@ -447,6 +472,24 @@ static void test_asm_when_symbol_is_mov(){
     assert(expect == actual);
 }
 
+static void test_asm_when_symbol_is_mov_with_immediate(){
+
+    // SetUp
+    char *input = "mov r1, #0x6c";
+    unsigned int expect = 0xE3A0106c;
+
+
+    struct Emitter emitter;
+    emitter.array = g_asm_result;
+    emitter.pos = 0;
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+
+    // Verify
+    assert(expect == actual);
+}
 
 static void unit_tests() {
 
@@ -467,7 +510,9 @@ static void unit_tests() {
     test_parse_immediate_when_imm0x64();
 
     // asm
-    test_asm_when_symbol_is_mov();
+    test_asm_when_symbol_is_mov_with_reg();
+    test_asm_when_symbol_is_mov_with_immediate();
+
 }
 
 
