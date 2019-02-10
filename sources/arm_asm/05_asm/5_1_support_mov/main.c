@@ -38,15 +38,15 @@ int parse_one(char *str, int start, struct substring* out_sub_str){
     int ch;
 
     // 空白スキップ
-    while (str[pos] == ' ') {
-        pos++;
-    }
+    while (str[pos] == ' ') { pos++; }
+
 
     int sub_str_start_pos = pos;
 
-    // トークン取得
+    // ":"または，","の場合
     if ((ch = str[pos]) == ':'
-         || ch == ',') {
+         || ch == ',')
+    {
         out_sub_str->str = &str[sub_str_start_pos];
         out_sub_str->len = 1;
         pos++;
@@ -54,6 +54,7 @@ int parse_one(char *str, int start, struct substring* out_sub_str){
         return pos;
     }
 
+    // シンボル取得
     while ((ch = str[pos]) !='\0'
             && ch != ' '
             && ch != ':'
@@ -99,7 +100,7 @@ int parse_register(char *str, int start, int *out_register){
 
 int parse_immediate(char *str, int start, int *out_imm_value){
     int pos = start;
-    int is_parse_digit = 0;
+    int is_digit = 0;
 
     // 空白スキップ
     while (str[pos] == ' ') { pos++; }
@@ -125,10 +126,10 @@ int parse_immediate(char *str, int start, int *out_imm_value){
         pos++;
         sub_hex.len++;
 
-        is_parse_digit = 1;
+        is_digit = 1;
     }
 
-    if (is_parse_digit) {
+    if (is_digit) {
         // 文字列の数字部分切り出し
         strncpy(hex_num, sub_hex.str, sub_hex.len);
 
@@ -207,8 +208,9 @@ int asm_one(char *buf, struct Emitter *emitter){
 
 
 
-/**************** Unit Tests ****************/
 
+
+/**************** Unit Tests ************************************************/
 
 int strneq(char *s1, char *s2, int len) { return 0 == strncmp(s1, s2, len); }
 
