@@ -6,7 +6,7 @@
 #include "asm.h"
 
 
-#define PARSE_FAIL -1
+#define PARSE_FAIL -2
 
 // 配列関係
 static unsigned int g_asm_result[1000];
@@ -22,14 +22,16 @@ void emit_word(struct Emitter* emitter, unsigned int oneword){
 }
 
 int single_atoi_hex(char *str) {
+
     if (('0' <= *str) && (*str <= '9')) {
         return *str - 48;
     } else if (('a' <= *str) && (*str <= 'f')) {
         return *str - 87;
     } else if (('A' <= *str) && (*str <= 'F')) {
         return *str - 55;
+    } else {
+        return PARSE_FAIL;
     }
-    return PARSE_FAIL;
 }
 
 // 文字列切り出し
@@ -146,6 +148,44 @@ int parse_immediate(char *str, int start, int *out_imm_value){
 }
 
 
+int parse_raw(char *str, int start, unsigned int *out_raw_value){
+    int pos = start;
+
+    // 空白スキップ
+    while (str[pos] == ' ') { pos++; }
+
+    // "0"読み飛ばし
+    if (str[pos] != '0') { return PARSE_FAIL;}
+    pos++;
+
+    // "x"読み飛ばし
+    if (str[pos] != 'x') { return PARSE_FAIL;}
+    pos++;
+
+
+    // 文字列の中の数字部分の範囲を取得
+    unsigned int hex_num = 0;
+
+    while(isxdigit(str[pos])){
+
+        if (hex_num != 0) {
+            hex_num = hex_num << 4;
+        }
+
+        hex_num += single_atoi_hex(&str[pos]);
+
+        if (hex_num == PARSE_FAIL) {
+            return PARSE_FAIL;
+        }
+
+        pos++;
+    }
+
+    *out_raw_value = hex_num;
+    return pos;
+}
+
+
 
 int skip_comma(char *str, int start){
     int pos = start;
@@ -222,8 +262,16 @@ int asm_one(char *buf, struct Emitter *emitter){
             oneword += imm_value;
         }
 
-        emit_word(emitter, oneword);
+    } else if (strncmp(sub_str.str,".raw", 4) == 0) {
+        unsigned int raw_val;
+        start = parse_raw(buf, start, &raw_val);
+
+        if (start == PARSE_FAIL) { return start;}
+
+        oneword = raw_val;
     }
+
+    emit_word(emitter, oneword);
 
     return 1;
 }
@@ -233,7 +281,7 @@ int asm_one(char *buf, struct Emitter *emitter){
 
 
 
-/**************** Unit Tests ************************************************/
+/**************** Unit Tests ************************************/
 
 int strneq(char *s1, char *s2, int len) { return 0 == strncmp(s1, s2, len); }
 
@@ -241,6 +289,7 @@ void assert_substring_eq(char *expect, struct substring* actual){
     assert(strneq(expect, actual->str, actual->len));
 }
 
+/**************** parse one ******************************/
 
 static void test_parse_one_when_call_once(){
 
@@ -314,6 +363,27 @@ static void test_parse_one_when_parse_one_colon(){
     assert_substring_eq(expect, &actual);
 }
 
+static void test_parse_one_with_raw(){
+
+    // SetUp
+    char *input = ".raw 0x12345678";
+    int start = 0;
+
+    char *expect = ".raw";
+
+    struct substring actual;
+
+    // Exercise
+    start = parse_one(input, start, &actual);
+
+    // Verify
+    assert_substring_eq(expect, &actual);
+}
+
+
+
+/**************** parse register ***************************/
+
 static void test_parse_register_when_call_once() {
 
     // SetUp
@@ -374,6 +444,8 @@ static void test_parse_register_when_parse_fail() {
 }
 
 
+/**************** parse immediate ***************************/
+
 static void test_parse_immediate_when_call_once() {
 
     // SetUp
@@ -426,7 +498,7 @@ void test_parse_immediate_with_hexadecimal(){
     assert(expect_imm_value == actual_imm_value);
 }
 
-void test_parse_immediate_with_imm0x64(){
+static void test_parse_immediate_with_imm0x64(){
 
     // SetUp
     char *input = "#0x64";
@@ -443,7 +515,7 @@ void test_parse_immediate_with_imm0x64(){
     assert(expect_imm_value == actual_imm_value);
 }
 
-void test_parse_immediate_with_imm0xFA(){
+static void test_parse_immediate_with_imm0xFA(){
 
     // SetUp
     char *input = "#0xFA";
@@ -460,11 +532,46 @@ void test_parse_immediate_with_imm0xFA(){
     assert(expect_imm_value == actual_imm_value);
 }
 
+/**************** parse raw **********************************/
+
+static void test_parse_raw_when_number_only(){
+
+    // SetUp
+    char *input = "0x12345678";
+    int start = 0;
+
+    unsigned int expect_imm_value = 0x12345678;
+
+    unsigned int actual_raw_value;
+
+    // Exercise
+    start = parse_raw(input, start, &actual_raw_value);
+
+    // Verify
+    assert(expect_imm_value == actual_raw_value);
+}
+
+static void test_parse_raw_when_number_max(){
+
+    // SetUp
+    char *input = "0xFFFFFFFF";
+    int start = 0;
+
+    unsigned expect_imm_value = 0xFFFFFFFF;
+
+    unsigned int actual_raw_value;
+
+    // Exercise
+    start = parse_raw(input, start, &actual_raw_value);
+
+    // Verify
+    assert(expect_imm_value == actual_raw_value);
+}
 
 
 
 
-
+/**************** asm one ************************************/
 
 static void test_asm_when_symbol_is_mov_with_reg(){
 
@@ -504,8 +611,29 @@ static void test_asm_when_symbol_is_mov_with_immediate(){
     assert(expect == actual);
 }
 
+static void test_asm_when_symbol_is_raw_number_only(){
 
-void test_single_atoi_hex_with_a() {
+    // SetUp
+    char *input = ".raw 0x12345678";
+    unsigned int expect = 0x12345678;
+
+
+    struct Emitter emitter;
+    emitter.array = g_asm_result;
+    emitter.pos = 0;
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+
+    // Verify
+    assert(expect == actual);
+}
+
+
+/**************** single atoi hex ************************************/
+
+static void test_single_atoi_hex_with_a() {
 
     // SetUP
     char *input = "a";
@@ -519,7 +647,7 @@ void test_single_atoi_hex_with_a() {
     assert(expect == actual);
 }
 
-void test_single_atoi_hex_with_A() {
+static void test_single_atoi_hex_with_A() {
 
     // SetUP
     char *input = "A";
@@ -533,7 +661,7 @@ void test_single_atoi_hex_with_A() {
     assert(expect == actual);
 }
 
-void test_single_atoi_hex_with_1() {
+static void test_single_atoi_hex_with_1() {
 
     // SetUP
     char *input = "1";
@@ -553,6 +681,7 @@ static void unit_tests() {
     test_parse_one_when_call_once();
     test_parse_one_when_everything_parse();
     test_parse_one_when_parse_one_colon();
+    test_parse_one_with_raw();
 
     // parse_register
     test_parse_register_when_call_once();
@@ -566,9 +695,15 @@ static void unit_tests() {
     test_parse_immediate_with_imm0x64();
     test_parse_immediate_with_imm0xFA();
 
+    // parse_raw
+    test_parse_raw_when_number_only();
+    test_parse_raw_when_number_max();
+
+
     // asm
     test_asm_when_symbol_is_mov_with_reg();
     test_asm_when_symbol_is_mov_with_immediate();
+    test_asm_when_symbol_is_raw_number_only();
 
     // single_atoi_hex
     test_single_atoi_hex_with_a();

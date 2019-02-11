@@ -58,8 +58,11 @@ e3a0106c
 
 ### .raw命令
 
-
-
+.raw 0xFFFFFFFF
+の時に、
+hex_numは”-1”と解釈されてしまう。
+そのため、
+PARSE_FAILを"-2"に変更
 
 
 
