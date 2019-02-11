@@ -393,7 +393,7 @@ static void test_parse_immediate_when_call_once() {
 }
 
 
-static void test_parse_immediate_when_call_once_with_leading_space() {
+static void test_parse_immediate_with_leading_space() {
 
     // SetUp
     char *input = "  #0x05";
@@ -410,7 +410,7 @@ static void test_parse_immediate_when_call_once_with_leading_space() {
     assert(expect_imm_value == actual_imm_value);
 }
 
-void test_parse_immediate_when_hexadecimal(){
+void test_parse_immediate_with_hexadecimal(){
 
     // SetUp
     char *input = "#0x0f";
@@ -427,7 +427,7 @@ void test_parse_immediate_when_hexadecimal(){
     assert(expect_imm_value == actual_imm_value);
 }
 
-void test_parse_immediate_when_imm0x64(){
+void test_parse_immediate_with_imm0x64(){
 
     // SetUp
     char *input = "#0x64";
@@ -444,7 +444,7 @@ void test_parse_immediate_when_imm0x64(){
     assert(expect_imm_value == actual_imm_value);
 }
 
-void test_parse_immediate_when_imm0xFA(){
+void test_parse_immediate_with_imm0xFA(){
 
     // SetUp
     char *input = "#0xFA";
@@ -562,10 +562,10 @@ static void unit_tests() {
 
     // parse_immediate
     test_parse_immediate_when_call_once();
-    test_parse_immediate_when_call_once_with_leading_space(); // 名前変更
-    test_parse_immediate_when_hexadecimal();
-    test_parse_immediate_when_imm0x64();
-    test_parse_immediate_when_imm0xFA();
+    test_parse_immediate_with_leading_space(); // 名前変更
+    test_parse_immediate_with_hexadecimal();
+    test_parse_immediate_with_imm0x64();
+    test_parse_immediate_with_imm0xFA();
 
     // asm
     test_asm_when_symbol_is_mov_with_reg();
