@@ -110,6 +110,7 @@ int parse_register(char *str, int start, int *out_register){
 
 int parse_immediate(char *str, int start, int *out_imm_value){
     int pos = start;
+    int is_negative_num = 0;
 
     // 空白スキップ
     while (str[pos] == ' ') { pos++; }
@@ -117,6 +118,12 @@ int parse_immediate(char *str, int start, int *out_imm_value){
     // "#"読み飛ばし
     if (str[pos] != '#') { return PARSE_FAIL; }
     pos++;
+
+    // "-"判定
+    if (str[pos] == '-') {
+        is_negative_num = 1;
+        pos++;
+    }
 
     // "0"読み飛ばし
     if (str[pos] != '0') { return PARSE_FAIL;}
@@ -143,7 +150,12 @@ int parse_immediate(char *str, int start, int *out_imm_value){
         pos++;
     }
 
+    if (is_negative_num) {
+        hex_num = -1*hex_num;
+    }
+
     *out_imm_value = hex_num;
+
     return pos;
 }
 
@@ -239,11 +251,26 @@ int is_register(char *str, int start) {
     }
 }
 
+int is_comma(char *str, int start) {
+    int pos = start;
+
+    // スペース読み飛ばし
+    while (str[pos] == ' ') { pos++;}
+
+    if (str[pos] == ',') {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
+
 
 // 先頭のトークンを読み出して，結果によって分岐する
-int asm_one(char *buf, struct Emitter *emitter){
+int asm_one(char *buf, struct Emitter *emitter) {
 
-    int start=0;
+    int start = 0;
 
     // 命令切り出し
     struct substring sub_str;
@@ -252,7 +279,7 @@ int asm_one(char *buf, struct Emitter *emitter){
 
     unsigned int oneword = 0;
 
-    if (strncmp(sub_str.str,"mov", 3) == 0) { // mov命令
+    if (strncmp(sub_str.str, "mov", 3) == 0) { // mov命令
 
         // 1stレジスタ切り出し
         int reg_1st;
@@ -267,31 +294,106 @@ int asm_one(char *buf, struct Emitter *emitter){
 
 
         if (is_register(buf, start)) { // レジスタの場合
+
             int reg_2nd;
             start = parse_register(buf, start, &reg_2nd);
 
             if (start == PARSE_FAIL) { return start; }
 
             oneword = 0xE1A00000;
-            oneword += reg_1st << 12 ;
+            oneword += reg_1st << 12;
             oneword += reg_2nd;
 
         } else { // 即値の場合
+
             int imm_value;
             start = parse_immediate(buf, start, &imm_value);
 
             if (start == PARSE_FAIL) { return start; }
 
             oneword = 0xE3A00000;
-            oneword += reg_1st << 12 ;
+            oneword += reg_1st << 12;
             oneword += imm_value;
         }
 
-    } else if (strncmp(sub_str.str,".raw", 4) == 0) {
+    } else if (strncmp(sub_str.str, "ldr", 3) == 0) {
+
+        oneword = 0xE0000000;
+
+        // sourseレジスタ切り出し
+        int sourse_reg;
+
+        start = parse_register(buf, start, &sourse_reg);
+
+        if (start == PARSE_FAIL) { return start; }
+
+        start = skip_comma(buf, start);
+
+        if (start == PARSE_FAIL) { return start; }
+
+        start = parse_left_sbracket(buf, start);
+
+        if (start == PARSE_FAIL) { return start; }
+
+        // baseレジスタ切り出し
+        int base_reg;
+
+        start = parse_register(buf, start, &base_reg);
+
+        if (start == PARSE_FAIL) { return start; }
+
+
+        // 即値とレジスタ、または、レジスタのみ
+        if (is_comma(buf, start)) { // 即値
+            oneword += 0x5 << 24;
+
+            start = skip_comma(buf, start);
+
+            int imm_value;
+            start = parse_immediate(buf, start, &imm_value);
+
+            if (start == PARSE_FAIL) { return start; }
+
+            start = parse_right_sbracket(buf, start);
+
+            if (start == PARSE_FAIL) { return start; }
+
+
+            if (imm_value < 0) { // 負のオフセット
+
+                oneword += 0x1 << 20;
+                oneword += base_reg << 16;
+                oneword += sourse_reg << 12;
+                oneword += -1 * imm_value;
+
+            } else {
+
+                oneword += 0x9 << 20;
+                oneword += base_reg << 16;
+                oneword += sourse_reg << 12;
+                oneword += imm_value;
+
+            }
+
+        } else { // レジスタのみ
+            oneword += 0x5 << 24;
+            oneword += 0x9 << 20;
+
+            start = parse_right_sbracket(buf, start);
+
+            if (start == PARSE_FAIL) { return start; }
+
+            oneword += base_reg << 16;
+            oneword += sourse_reg << 12;
+
+        }
+
+
+    } else if (strncmp(sub_str.str, ".raw", 4) == 0) { //.raw
         unsigned int raw_val;
         start = parse_raw(buf, start, &raw_val);
 
-        if (start == PARSE_FAIL) { return start;}
+        if (start == PARSE_FAIL) { return start; }
 
         oneword = raw_val;
     }
@@ -629,9 +731,50 @@ static void test_parse_right_sbracket(){
     assert(expect == actual);
 }
 
+
+
+
+
+
+/**************** is_XXX  ************************************/
+
+static void test_is_register(){
+
+    // SetUp
+    char *input = "r1";
+    int start = 0;
+
+    int expect = 1;
+
+    // Exercise
+    int actual = is_register(input, start);
+
+    // Verify
+    assert(expect == actual);
+}
+
+static void test_is_comma(){
+
+    // SetUp
+    char *input = ",";
+    int start = 0;
+
+    int expect = 1;
+
+    // Exercise
+    int actual = is_comma(input, start);
+
+    // Verify
+    assert(expect == actual);
+}
+
+
+
+
+
 /**************** asm one ************************************/
 
-static void test_asm_when_symbol_is_mov_with_reg(){
+static void test_asm_one_when_symbol_is_mov_with_reg(){
 
     // SetUp
     char *input = "mov r1, r2";
@@ -650,7 +793,7 @@ static void test_asm_when_symbol_is_mov_with_reg(){
     assert(expect == actual);
 }
 
-static void test_asm_when_symbol_is_mov_with_immediate(){
+static void test_asm_one_when_symbol_is_mov_with_immediate(){
 
     // SetUp
     char *input = "mov r1, #0x6c";
@@ -669,7 +812,7 @@ static void test_asm_when_symbol_is_mov_with_immediate(){
     assert(expect == actual);
 }
 
-static void test_asm_when_symbol_is_raw_number_only(){
+static void test_asm_one_when_symbol_is_raw_number_only(){
 
     // SetUp
     char *input = ".raw 0x12345678";
@@ -687,6 +830,63 @@ static void test_asm_when_symbol_is_raw_number_only(){
     // Verify
     assert(expect == actual);
 }
+
+static void test_asm_one_when_symbol_is_ldr_with_immediate(){
+
+    // SetUp
+    char *input = "ldr r0, [r15, #0x30]";
+    unsigned int expect = 0xE59F0030;
+
+
+    struct Emitter emitter;
+    emitter.array = g_asm_result;
+    emitter.pos = 0;
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+
+    // Verify
+    assert(expect == actual);
+}
+
+static void test_asm_one_when_symbol_is_ldr_with_minus_immediate(){
+
+    // SetUp
+    char *input = "ldr r0, [r15, #-0x30]";
+    unsigned int expect = 0xE51F0030;
+
+
+    struct Emitter emitter;
+    emitter.array = g_asm_result;
+    emitter.pos = 0;
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+
+    // Verify
+    assert(expect == actual);
+}
+
+static void test_asm_one_when_symbol_is_ldr_with_no_immediate(){
+
+    // SetUp
+    char *input = "ldr r0, [r15]";
+    unsigned int expect = 0xE59F0000;
+
+    struct Emitter emitter;
+    emitter.array = g_asm_result;
+    emitter.pos = 0;
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+
+    // Verify
+    assert(expect == actual);
+}
+
 
 
 /**************** single atoi hex ************************************/
@@ -763,11 +963,25 @@ static void unit_tests() {
     // parse right square bracket
     test_parse_right_sbracket();
 
+    // is_XXX
+    test_is_register();
+    test_is_comma();
+
 
     // asm
-    test_asm_when_symbol_is_mov_with_reg();
-    test_asm_when_symbol_is_mov_with_immediate();
-    test_asm_when_symbol_is_raw_number_only();
+
+    //// mov
+    test_asm_one_when_symbol_is_mov_with_reg();
+    test_asm_one_when_symbol_is_mov_with_immediate();
+
+    //// raw
+    test_asm_one_when_symbol_is_raw_number_only();
+
+    //// ldr
+    test_asm_one_when_symbol_is_ldr_with_immediate();
+    test_asm_one_when_symbol_is_ldr_with_minus_immediate();
+    test_asm_one_when_symbol_is_ldr_with_no_immediate();
+
 
     // single_atoi_hex
     test_single_atoi_hex_with_a();
