@@ -22,7 +22,16 @@ void emit_word(struct Emitter* emitter, unsigned int oneword){
     emitter->pos++;
 }
 
-
+int single_atoi_hex(char *str) {
+    if (('0' <= *str) && (*str <= '9')) {
+        return *str - 48;
+    } else if (('a' <= *str) && (*str <= 'f')) {
+        return *str - 87;
+    } else if (('A' <= *str) && (*str <= 'F')) {
+        return *str - 55;
+    }
+    return PARSE_FAIL;
+}
 
 // 文字列切り出し
 struct substring {
@@ -100,7 +109,6 @@ int parse_register(char *str, int start, int *out_register){
 
 int parse_immediate(char *str, int start, int *out_imm_value){
     int pos = start;
-    int is_digit = 0;
 
     // 空白スキップ
     while (str[pos] == ' ') { pos++; }
@@ -119,29 +127,23 @@ int parse_immediate(char *str, int start, int *out_imm_value){
 
 
     // 文字列の中の数字部分の範囲を取得
-    char hex_num[5];
-    struct substring sub_hex = {.str=&str[pos], .len=0};
+    unsigned int hex_num = 0;
 
     while(isxdigit(str[pos])){
+
+        if (hex_num != 0) {
+            hex_num = hex_num << 4;
+        }
+
+        hex_num += single_atoi_hex(&str[pos]);
+
+        if (hex_num == PARSE_FAIL) { return PARSE_FAIL;}
+
         pos++;
-        sub_hex.len++;
-
-        is_digit = 1;
     }
 
-    if (is_digit) {
-        // 文字列の数字部分切り出し
-        strncpy(hex_num, sub_hex.str, sub_hex.len);
-
-        // 文字列を16進数変換
-        char *endp;
-        *out_imm_value = strtol(hex_num, &endp, 16);
-
-        return pos;
-    } else {
-        return PARSE_FAIL;
-    }
-
+    *out_imm_value = hex_num;
+    return pos;
 }
 
 
@@ -206,7 +208,7 @@ int asm_one(char *buf, struct Emitter *emitter){
 
             if (start == PARSE_FAIL) { return start; }
 
-            oneword += 0xE1A00000;
+            oneword = 0xE1A00000;
             oneword += reg_1st << 12 ;
             oneword += reg_2nd;
 
@@ -216,7 +218,7 @@ int asm_one(char *buf, struct Emitter *emitter){
 
             if (start == PARSE_FAIL) { return start; }
 
-            oneword += 0xE3A00000;
+            oneword = 0xE3A00000;
             oneword += reg_1st << 12 ;
             oneword += imm_value;
         }
@@ -442,7 +444,22 @@ void test_parse_immediate_when_imm0x64(){
     assert(expect_imm_value == actual_imm_value);
 }
 
+void test_parse_immediate_when_imm0xFA(){
 
+    // SetUp
+    char *input = "#0xFA";
+    int start = 0;
+
+    int expect_imm_value = 0xFA;
+
+    int actual_imm_value;
+
+    // Exercise
+    start = parse_immediate(input, start, &actual_imm_value);
+
+    // Verify
+    assert(expect_imm_value == actual_imm_value);
+}
 
 
 
@@ -488,6 +505,49 @@ static void test_asm_when_symbol_is_mov_with_immediate(){
     assert(expect == actual);
 }
 
+
+void test_single_atoi_hex_with_a() {
+
+    // SetUP
+    char *input = "a";
+    unsigned int expect = 0xa;
+    int actual;
+
+    // Exercise
+    actual = single_atoi_hex(input);
+
+    // Verify
+    assert(expect == actual);
+}
+
+void test_single_atoi_hex_with_A() {
+
+    // SetUP
+    char *input = "A";
+    unsigned int expect = 0xa;
+    int actual;
+
+    // Exercise
+    actual = single_atoi_hex(input);
+
+    // Verify
+    assert(expect == actual);
+}
+
+void test_single_atoi_hex_with_1() {
+
+    // SetUP
+    char *input = "1";
+    unsigned int expect = 0x1;
+    int actual;
+
+    // Exercise
+    actual = single_atoi_hex(input);
+
+    // Verify
+    assert(expect == actual);
+}
+
 static void unit_tests() {
 
     // parse_one
@@ -502,13 +562,19 @@ static void unit_tests() {
 
     // parse_immediate
     test_parse_immediate_when_call_once();
-    test_parse_immediate_when_call_once_with_leading_space();
+    test_parse_immediate_when_call_once_with_leading_space(); // 名前変更
     test_parse_immediate_when_hexadecimal();
     test_parse_immediate_when_imm0x64();
+    test_parse_immediate_when_imm0xFA();
 
     // asm
     test_asm_when_symbol_is_mov_with_reg();
     test_asm_when_symbol_is_mov_with_immediate();
+
+    // my_atoi_hex
+    test_single_atoi_hex_with_a();
+    test_single_atoi_hex_with_A();
+    test_single_atoi_hex_with_1();
 
 }
 
