@@ -6,7 +6,7 @@
 #include "asm.h"
 
 
-#define PARSE_FAIL -2
+#define PARSE_FAIL -1
 
 // 配列関係
 static unsigned int g_asm_result[1000];
@@ -21,14 +21,17 @@ void emit_word(struct Emitter* emitter, unsigned int oneword){
     emitter->pos++;
 }
 
-int single_atoi_hex(char *str) {
+int single_atoi_hex(char *str, int *out_num) {
 
     if (('0' <= *str) && (*str <= '9')) {
-        return *str - 48;
+        *out_num = *str - 48;
+        return 1;
     } else if (('a' <= *str) && (*str <= 'f')) {
-        return *str - 87;
+        *out_num = *str - 87;
+        return 1;
     } else if (('A' <= *str) && (*str <= 'F')) {
-        return *str - 55;
+        *out_num = *str - 55;
+        return 1;
     } else {
         return PARSE_FAIL;
     }
@@ -136,6 +139,8 @@ int parse_immediate(char *str, int start, int *out_imm_value){
 
     // 文字列の中の数字部分の範囲を取得
     unsigned int hex_num = 0;
+    int res;
+    int tmp_num;
 
     while(isxdigit(str[pos])){
 
@@ -143,9 +148,11 @@ int parse_immediate(char *str, int start, int *out_imm_value){
             hex_num = hex_num << 4;
         }
 
-        hex_num += single_atoi_hex(&str[pos]);
+        res = single_atoi_hex(&str[pos], &tmp_num);
 
-        if (hex_num == PARSE_FAIL) { return PARSE_FAIL;}
+        if (res == PARSE_FAIL) {return PARSE_FAIL; }
+
+        hex_num += tmp_num;
 
         pos++;
     }
@@ -163,7 +170,7 @@ int parse_immediate(char *str, int start, int *out_imm_value){
 int parse_raw(char *str, int start, unsigned int *out_raw_value){
     int pos = start;
 
-    // 空白スキップ
+    // スペース読み飛ばし
     while (str[pos] == ' ') { pos++; }
 
     // "0"読み飛ばし
@@ -177,6 +184,8 @@ int parse_raw(char *str, int start, unsigned int *out_raw_value){
 
     // 文字列の中の数字部分の範囲を取得
     unsigned int hex_num = 0;
+    int res;
+    int tmp_num;
 
     while(isxdigit(str[pos])){
 
@@ -184,11 +193,11 @@ int parse_raw(char *str, int start, unsigned int *out_raw_value){
             hex_num = hex_num << 4;
         }
 
-        hex_num += single_atoi_hex(&str[pos]);
+        res = single_atoi_hex(&str[pos], &tmp_num);
 
-        if (hex_num == PARSE_FAIL) {
-            return PARSE_FAIL;
-        }
+        if (res == PARSE_FAIL) {return PARSE_FAIL; }
+
+        hex_num += tmp_num;
 
         pos++;
     }
@@ -203,7 +212,7 @@ int parse_left_sbracket(char *str, int start){
     // スペース読み飛ばし
     while (str[pos] == ' ') { pos++;}
 
-    // コンマ読み飛ばし
+    // 左角括弧読み飛ばし
     if (str[pos] != '[') { return PARSE_FAIL; }
     pos++;
 
@@ -216,7 +225,7 @@ int parse_right_sbracket(char *str, int start){
     // スペース読み飛ばし
     while (str[pos] == ' ') { pos++;}
 
-    // コンマ読み飛ばし
+    // 右角括弧読み飛ばし
     if (str[pos] != ']') { return PARSE_FAIL; }
     pos++;
 
@@ -319,7 +328,7 @@ int asm_one(char *buf, struct Emitter *emitter) {
     } else if ((strncmp(sub_str.str, "ldr", 3) == 0)
                 || (strncmp(sub_str.str, "str", 3) == 0)) {
 
-        oneword = 0xE0000000;
+        oneword = 0xE5000000;
 
         // sourseレジスタ切り出し
         int sourse_reg;
@@ -344,9 +353,7 @@ int asm_one(char *buf, struct Emitter *emitter) {
         if (start == PARSE_FAIL) { return start; }
 
 
-        // 即値とレジスタ、または、レジスタのみ
-        if (is_comma(buf, start)) { // 即値
-            oneword += 0x5 << 24;
+        if (is_comma(buf, start)) { // 即値あり
 
             start = skip_comma(buf, start);
 
@@ -377,11 +384,11 @@ int asm_one(char *buf, struct Emitter *emitter) {
             }
 
         } else { // レジスタのみ
-            oneword += 0x5 << 24;
 
+            // ldrかstr判定
             if (strncmp(sub_str.str, "ldr", 3) == 0) {
                 oneword += 0x9 << 20;
-            } else { // "strの場合"
+            } else {
                 oneword += 0x8 << 20;
             }
 
@@ -920,10 +927,12 @@ static void test_single_atoi_hex_with_a() {
     // SetUP
     char *input = "a";
     unsigned int expect = 0xa;
+
     int actual;
+    int res;
 
     // Exercise
-    actual = single_atoi_hex(input);
+    res = single_atoi_hex(input, &actual);
 
     // Verify
     assert(expect == actual);
@@ -934,10 +943,12 @@ static void test_single_atoi_hex_with_A() {
     // SetUP
     char *input = "A";
     unsigned int expect = 0xa;
+
     int actual;
+    int res;
 
     // Exercise
-    actual = single_atoi_hex(input);
+    res = single_atoi_hex(input, &actual);
 
     // Verify
     assert(expect == actual);
@@ -948,10 +959,12 @@ static void test_single_atoi_hex_with_1() {
     // SetUP
     char *input = "1";
     unsigned int expect = 0x1;
+
     int actual;
+    int res;
 
     // Exercise
-    actual = single_atoi_hex(input);
+    res = single_atoi_hex(input, &actual);
 
     // Verify
     assert(expect == actual);
