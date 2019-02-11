@@ -316,7 +316,8 @@ int asm_one(char *buf, struct Emitter *emitter) {
             oneword += imm_value;
         }
 
-    } else if (strncmp(sub_str.str, "ldr", 3) == 0) {
+    } else if ((strncmp(sub_str.str, "ldr", 3) == 0)
+                || (strncmp(sub_str.str, "str", 3) == 0)) {
 
         oneword = 0xE0000000;
 
@@ -377,7 +378,13 @@ int asm_one(char *buf, struct Emitter *emitter) {
 
         } else { // レジスタのみ
             oneword += 0x5 << 24;
-            oneword += 0x9 << 20;
+
+            if (strncmp(sub_str.str, "ldr", 3) == 0) {
+                oneword += 0x9 << 20;
+            } else { // "strの場合"
+                oneword += 0x8 << 20;
+            }
+
 
             start = parse_right_sbracket(buf, start);
 
@@ -888,6 +895,23 @@ static void test_asm_one_when_symbol_is_ldr_with_no_immediate(){
 }
 
 
+static void test_asm_one_when_symbol_is_str(){
+
+    // SetUp
+    char *input = "str r1, [r0]";
+    unsigned int expect = 0xE5801000;
+
+    struct Emitter emitter;
+    emitter.array = g_asm_result;
+    emitter.pos = 0;
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+
+    // Verify
+    assert(expect == actual);
+}
 
 /**************** single atoi hex ************************************/
 
@@ -968,7 +992,7 @@ static void unit_tests() {
     test_is_comma();
 
 
-    // asm
+    // asm one
 
     //// mov
     test_asm_one_when_symbol_is_mov_with_reg();
@@ -981,6 +1005,9 @@ static void unit_tests() {
     test_asm_one_when_symbol_is_ldr_with_immediate();
     test_asm_one_when_symbol_is_ldr_with_minus_immediate();
     test_asm_one_when_symbol_is_ldr_with_no_immediate();
+
+    //// str
+    test_asm_one_when_symbol_is_str();
 
 
     // single_atoi_hex
