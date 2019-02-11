@@ -185,6 +185,31 @@ int parse_raw(char *str, int start, unsigned int *out_raw_value){
     return pos;
 }
 
+int parse_left_sbracket(char *str, int start){
+    int pos = start;
+
+    // スペース読み飛ばし
+    while (str[pos] == ' ') { pos++;}
+
+    // コンマ読み飛ばし
+    if (str[pos] != '[') { return PARSE_FAIL; }
+    pos++;
+
+    return pos;
+}
+
+int parse_right_sbracket(char *str, int start){
+    int pos = start;
+
+    // スペース読み飛ばし
+    while (str[pos] == ' ') { pos++;}
+
+    // コンマ読み飛ばし
+    if (str[pos] != ']') { return PARSE_FAIL; }
+    pos++;
+
+    return pos;
+}
 
 
 int skip_comma(char *str, int start){
@@ -569,7 +594,40 @@ static void test_parse_raw_when_number_max(){
 }
 
 
+/**************** parse left square bracket ***********************/
 
+static void test_parse_left_sbracket(){
+
+    // SetUp
+    char *input = "[";
+    int start = 0;
+
+    int expect = 1;
+
+    // Exercise
+    int actual = parse_left_sbracket(input, start);
+
+    // Verify
+    assert(expect == actual);
+}
+
+
+/**************** parse right square bracket ***********************/
+
+static void test_parse_right_sbracket(){
+
+    // SetUp
+    char *input = "]";
+    int start = 0;
+
+    int expect = 1;
+
+    // Exercise
+    int actual = parse_right_sbracket(input, start);
+
+    // Verify
+    assert(expect == actual);
+}
 
 /**************** asm one ************************************/
 
@@ -699,6 +757,12 @@ static void unit_tests() {
     test_parse_raw_when_number_only();
     test_parse_raw_when_number_max();
 
+    // parse left square bracket
+    test_parse_left_sbracket();
+
+    // parse right square bracket
+    test_parse_right_sbracket();
+
 
     // asm
     test_asm_when_symbol_is_mov_with_reg();
@@ -756,6 +820,3 @@ int main() {
 
     return 0;
 }
-
-// todo 埋め込み用の疑似命令をサポート
-//  parse_oneの結果が「.raw」だったら数字をパースして埋め込む
