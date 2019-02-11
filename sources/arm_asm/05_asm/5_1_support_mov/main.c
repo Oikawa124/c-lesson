@@ -159,7 +159,7 @@ int skip_comma(char *str, int start){
     return pos;
 }
 
-int parse_register_or_immediate(char *str, int start) {
+int is_register(char *str, int start) {
     int pos = start;
 
     // スペース読み飛ばし
@@ -200,10 +200,7 @@ int asm_one(char *buf, struct Emitter *emitter){
         if (start == PARSE_FAIL) { return start; }
 
 
-        // 即値かどうか判定
-        int is_register = parse_register_or_immediate(buf, start);
-
-        if (is_register) {
+        if (is_register(buf, start)) { // レジスタの場合
             int reg_2nd;
             start = parse_register(buf, start, &reg_2nd);
 
