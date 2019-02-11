@@ -2,7 +2,6 @@
 #include <mem.h>
 #include <ctype.h>
 #include <assert.h>
-#include <stdlib.h>
 
 #include "asm.h"
 
@@ -188,7 +187,7 @@ int asm_one(char *buf, struct Emitter *emitter){
 
     unsigned int oneword = 0;
 
-    if (strncmp(sub_str.str,"mov", 3) == 0) {
+    if (strncmp(sub_str.str,"mov", 3) == 0) { // mov命令
 
         // 1stレジスタ切り出し
         int reg_1st;
@@ -562,7 +561,7 @@ static void unit_tests() {
 
     // parse_immediate
     test_parse_immediate_when_call_once();
-    test_parse_immediate_with_leading_space(); // 名前変更
+    test_parse_immediate_with_leading_space();
     test_parse_immediate_with_hexadecimal();
     test_parse_immediate_with_imm0x64();
     test_parse_immediate_with_imm0xFA();
@@ -571,7 +570,7 @@ static void unit_tests() {
     test_asm_when_symbol_is_mov_with_reg();
     test_asm_when_symbol_is_mov_with_immediate();
 
-    // my_atoi_hex
+    // single_atoi_hex
     test_single_atoi_hex_with_a();
     test_single_atoi_hex_with_A();
     test_single_atoi_hex_with_1();
@@ -623,3 +622,5 @@ int main() {
     return 0;
 }
 
+// todo 埋め込み用の疑似命令をサポート
+//  parse_oneの結果が「.raw」だったら数字をパースして埋め込む
