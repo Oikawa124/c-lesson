@@ -1025,8 +1025,6 @@ void write_binary_file(struct Emitter *emitter){
 
     fp = fopen("test.bin", "wb");
 
-    printf("##################arr size: %d", sizeof(emitter->array));
-
     fwrite(emitter->array, sizeof(unsigned int), emitter->pos, fp);
 
     fclose(fp);

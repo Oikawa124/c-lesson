@@ -141,10 +141,26 @@ py -3 .\regression_test.py
 
 ### なぜ、clionで実行したときと、PSのgccで実行したときに、emmit.arrayの大きさが違ったか？
 
-PSのgccで実行すると、サイズが2倍になった。
+cmdのgccで実行すると、サイズが2倍になった。
 
+最初は、  
+fwrite(emitter->array, sizeof(emitter.array), emitter->pos, fp);
+としていた。  
+Clionで実行する分では問題がなかった。  
+しかし、cmdでgccを実行すると、バイナリの最後の方に、00000000が追加されていた。  
 
+sizeof(emitter.array)
+をすると、  
+Clionで実行では、大きさは、"4"だった。  
+cmdで実行すると、大きさは、"8"となった。  
 
+アライメント？が関係しているか？
+
+そのため、  
+
+fwrite(emitter->array, sizeof(unsigned int), emitter->pos, fp);
+
+に変更した。  
 
 
 

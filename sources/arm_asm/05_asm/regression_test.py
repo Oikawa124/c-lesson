@@ -48,7 +48,7 @@ def main():
     os.remove("./main.o")
     os.remove("./cl_utils.o")
     os.remove("./test.exe")
-    #os.remove("./test.bin")
+    os.remove("./test.bin")
 
 
 
