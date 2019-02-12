@@ -98,6 +98,51 @@ str
    
 ```
 
+## cl_ulits.cの"cl"は何の略か。
+
+c-lessonの略。  
+
+
+## regression test
+
+Pythonを使ってバイナリを比較する。  
+Python実行は、Powershellを使う。  
+
+
+```
+main.cのコンパイルは、Pythonの実行はPowershellを使う。
+バイナリ比較だけをPyhtonで。
+```
+いや、さすがにこれならば、全部Powershellでやったほうがよい。
+
+
+Pythonからコマンドを呼び出すようにする。
+
+
+
+```
+ex. > python .\hello.py
+```
+のように実行する。  
+
+必要そうなこと  
+- ファイルの読み込み方
+- バイナリの読み込み方
+- ディレクトリからファイルの見つけ方
+
+### 実行方法
+
+powershellで
+```
+py -3 .\regression_test.py
+```
+と打つ。
+
+
+### なぜ、clionで実行したときと、PSのgccで実行したときに、emmit.arrayの大きさが違ったか？
+
+PSのgccで実行すると、サイズが2倍になった。
+
 
 
 

@@ -992,7 +992,7 @@ static void unit_tests() {
 
 }
 
-void read_simple_assembler(FILE *fp, struct Emitter *emitter){
+void read_simple_assembly_file(FILE *fp, struct Emitter *emitter){
 
     cl_getc_set_fp(fp);
 
@@ -1011,7 +1011,8 @@ void read_simple_assembler(FILE *fp, struct Emitter *emitter){
         res = asm_one(buf, emitter);
 
         if (res == PARSE_FAIL) {
-            printf("PARSE FAIL");
+            printf("PARSE FAIL\n");
+            printf("line num: %d", line_num);
             break;
         }
 
@@ -1019,25 +1020,38 @@ void read_simple_assembler(FILE *fp, struct Emitter *emitter){
     }
 }
 
-int main() {
+void write_binary_file(struct Emitter *emitter){
+    FILE *fp;
 
-    unit_tests();
+    fp = fopen("test.bin", "wb");
 
-    // 結果を渡す配列を準備
+    printf("##################arr size: %d", sizeof(emitter->array));
+
+    fwrite(emitter->array, sizeof(unsigned int), emitter->pos, fp);
+
+    fclose(fp);
+}
+
+int main(int argc, char **argv) {
+
+    //unit_tests();
+
+    // アセンブル結果を渡す配列を準備
     struct Emitter emitter;
     initialize_result_arr(&emitter);
 
     FILE *fp;
-    fp = fopen("mov_op.ks", "r");
+    fp = fopen(argv[1], "r");
 
     if (fp == NULL) { printf("Not exist file");}
 
-    read_simple_assembler(fp, &emitter);
+    // .ksファイルをアセンブルする
+    read_simple_assembly_file(fp, &emitter);
 
     fclose(fp);
 
+    // バイナリ書き込み
+    write_binary_file(&emitter);
+
     return 0;
 }
-
-// todo
-//  Next -> 結果の配列をファイルに出力する処理を作る
