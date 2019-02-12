@@ -37,6 +37,29 @@ int single_atoi_hex(char *str, int *out_num) {
     }
 }
 
+int skip_space(char *str, int start){
+    int pos = start;
+
+    // スペース読み飛ばし
+    while (str[pos] == ' ') { pos++;}
+
+    return pos;
+}
+
+int skip_comma(char *str, int start){
+    int pos = start;
+
+    // スペース読み飛ばし
+    while (str[pos] == ' ') { pos++;}
+
+    // コンマ読み飛ばし
+    if (str[pos] != ',') { return PARSE_FAIL; }
+    pos++;
+
+    return pos;
+}
+
+
 // 文字列切り出し
 struct substring {
     char *str;
@@ -50,9 +73,7 @@ int parse_one(char *str, int start, struct substring* out_sub_str){
     int pos = start;
     int ch;
 
-    // 空白スキップ
-    while (str[pos] == ' ') { pos++; }
-
+    pos = skip_space(str, pos);
 
     int sub_str_start_pos = pos;
 
@@ -87,10 +108,7 @@ int parse_register(char *str, int start, int *out_register){
     int pos = start;
     int reg_num = 0;
 
-    // 空白スキップ
-    while (str[pos] == ' ') {
-        pos++;
-    }
+    pos = skip_space(str, pos);
 
     // "r"読み飛ばし
     if (str[pos] != 'r') { return PARSE_FAIL;}
@@ -115,8 +133,7 @@ int parse_immediate(char *str, int start, int *out_imm_value){
     int pos = start;
     int is_negative_num = 0;
 
-    // 空白スキップ
-    while (str[pos] == ' ') { pos++; }
+    pos = skip_space(str, pos);
 
     // "#"読み飛ばし
     if (str[pos] != '#') { return PARSE_FAIL; }
@@ -140,7 +157,7 @@ int parse_immediate(char *str, int start, int *out_imm_value){
     // 文字列の中の数字部分の範囲を取得
     unsigned int hex_num = 0;
     int res;
-    int tmp_num;
+    int one_hex;
 
     while(isxdigit(str[pos])){
 
@@ -148,11 +165,11 @@ int parse_immediate(char *str, int start, int *out_imm_value){
             hex_num = hex_num << 4;
         }
 
-        res = single_atoi_hex(&str[pos], &tmp_num);
+        res = single_atoi_hex(&str[pos], &one_hex);
 
         if (res == PARSE_FAIL) {return PARSE_FAIL; }
 
-        hex_num += tmp_num;
+        hex_num += one_hex;
 
         pos++;
     }
@@ -170,8 +187,7 @@ int parse_immediate(char *str, int start, int *out_imm_value){
 int parse_raw(char *str, int start, unsigned int *out_raw_value){
     int pos = start;
 
-    // スペース読み飛ばし
-    while (str[pos] == ' ') { pos++; }
+    pos = skip_space(str, pos);
 
     // "0"読み飛ばし
     if (str[pos] != '0') { return PARSE_FAIL;}
@@ -185,7 +201,7 @@ int parse_raw(char *str, int start, unsigned int *out_raw_value){
     // 文字列の中の数字部分の範囲を取得
     unsigned int hex_num = 0;
     int res;
-    int tmp_num;
+    int one_hex;
 
     while(isxdigit(str[pos])){
 
@@ -193,11 +209,11 @@ int parse_raw(char *str, int start, unsigned int *out_raw_value){
             hex_num = hex_num << 4;
         }
 
-        res = single_atoi_hex(&str[pos], &tmp_num);
+        res = single_atoi_hex(&str[pos], &one_hex);
 
         if (res == PARSE_FAIL) {return PARSE_FAIL; }
 
-        hex_num += tmp_num;
+        hex_num += one_hex;
 
         pos++;
     }
@@ -209,8 +225,7 @@ int parse_raw(char *str, int start, unsigned int *out_raw_value){
 int parse_left_sbracket(char *str, int start){
     int pos = start;
 
-    // スペース読み飛ばし
-    while (str[pos] == ' ') { pos++;}
+    pos = skip_space(str, pos);
 
     // 左角括弧読み飛ばし
     if (str[pos] != '[') { return PARSE_FAIL; }
@@ -222,8 +237,7 @@ int parse_left_sbracket(char *str, int start){
 int parse_right_sbracket(char *str, int start){
     int pos = start;
 
-    // スペース読み飛ばし
-    while (str[pos] == ' ') { pos++;}
+    pos = skip_space(str, pos);
 
     // 右角括弧読み飛ばし
     if (str[pos] != ']') { return PARSE_FAIL; }
@@ -233,24 +247,12 @@ int parse_right_sbracket(char *str, int start){
 }
 
 
-int skip_comma(char *str, int start){
-    int pos = start;
 
-    // スペース読み飛ばし
-    while (str[pos] == ' ') { pos++;}
-
-    // コンマ読み飛ばし
-    if (str[pos] != ',') { return PARSE_FAIL; }
-    pos++;
-
-    return pos;
-}
 
 int is_register(char *str, int start) {
     int pos = start;
 
-    // スペース読み飛ばし
-    while (str[pos] == ' ') { pos++;}
+    pos = skip_space(str, pos);
 
     if (str[pos] == 'r') {
         return 1;
@@ -263,8 +265,7 @@ int is_register(char *str, int start) {
 int is_comma(char *str, int start) {
     int pos = start;
 
-    // スペース読み飛ばし
-    while (str[pos] == ' ') { pos++;}
+    pos = skip_space(str, pos);
 
     if (str[pos] == ',') {
         return 1;
@@ -288,7 +289,7 @@ int asm_one(char *buf, struct Emitter *emitter) {
 
     unsigned int oneword = 0;
 
-    if (strncmp(sub_str.str, "mov", 3) == 0) { // mov命令
+    if (strncmp(sub_str.str, "mov", 3) == 0) { // mov
 
         // 1stレジスタ切り出し
         int reg_1st;
@@ -302,7 +303,7 @@ int asm_one(char *buf, struct Emitter *emitter) {
         if (start == PARSE_FAIL) { return start; }
 
 
-        if (is_register(buf, start)) { // レジスタの場合
+        if (is_register(buf, start)) { // レジスタの場合 ex. mov r1. r2
 
             int reg_2nd;
             start = parse_register(buf, start, &reg_2nd);
@@ -313,7 +314,7 @@ int asm_one(char *buf, struct Emitter *emitter) {
             oneword += reg_1st << 12;
             oneword += reg_2nd;
 
-        } else { // 即値の場合
+        } else { // 即値の場合 ex. mov r1. #0x30
 
             int imm_value;
             start = parse_immediate(buf, start, &imm_value);
@@ -326,7 +327,7 @@ int asm_one(char *buf, struct Emitter *emitter) {
         }
 
     } else if ((strncmp(sub_str.str, "ldr", 3) == 0)
-                || (strncmp(sub_str.str, "str", 3) == 0)) {
+                || (strncmp(sub_str.str, "str", 3) == 0)){  // ldr or str
 
         oneword = 0xE5000000;
 
@@ -353,7 +354,7 @@ int asm_one(char *buf, struct Emitter *emitter) {
         if (start == PARSE_FAIL) { return start; }
 
 
-        if (is_comma(buf, start)) { // 即値あり
+        if (is_comma(buf, start)) { // 即値あり　ex. ldr r0, [r15, #0x30]
 
             start = skip_comma(buf, start);
 
@@ -367,14 +368,14 @@ int asm_one(char *buf, struct Emitter *emitter) {
             if (start == PARSE_FAIL) { return start; }
 
 
-            if (imm_value < 0) { // 負のオフセット
+            if (imm_value < 0) { // 負のオフセット ldr r0, [r15, #-0x30]
 
                 oneword += 0x1 << 20;
                 oneword += base_reg << 16;
                 oneword += sourse_reg << 12;
                 oneword += -1 * imm_value;
 
-            } else {
+            } else { // 正のオフセット ex. ldr r0, [r15, #0x30]
 
                 oneword += 0x9 << 20;
                 oneword += base_reg << 16;
@@ -387,9 +388,9 @@ int asm_one(char *buf, struct Emitter *emitter) {
 
             // ldrかstr判定
             if (strncmp(sub_str.str, "ldr", 3) == 0) {
-                oneword += 0x9 << 20;
+                oneword += 0x9 << 20; // ldr  ex. ldr r0, [r15]
             } else {
-                oneword += 0x8 << 20;
+                oneword += 0x8 << 20; // str  ex. str r1, [0]
             }
 
 
@@ -1074,3 +1075,6 @@ int main() {
 
     return 0;
 }
+
+// todo
+//  Next -> 結果の配列をファイルに出力する処理を作る
