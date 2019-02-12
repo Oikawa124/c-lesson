@@ -303,7 +303,7 @@ int asm_one(char *buf, struct Emitter *emitter) {
         if (start == PARSE_FAIL) { return start; }
 
 
-        if (is_register(buf, start)) { // レジスタの場合 ex. mov r1. r2
+        if (is_register(buf, start)) { // レジスタの場合
 
             int reg_2nd;
             start = parse_register(buf, start, &reg_2nd);
@@ -314,7 +314,7 @@ int asm_one(char *buf, struct Emitter *emitter) {
             oneword += reg_1st << 12;
             oneword += reg_2nd;
 
-        } else { // 即値の場合 ex. mov r1. #0x30
+        } else { // 即値の場合
 
             int imm_value;
             start = parse_immediate(buf, start, &imm_value);
@@ -354,7 +354,7 @@ int asm_one(char *buf, struct Emitter *emitter) {
         if (start == PARSE_FAIL) { return start; }
 
 
-        if (is_comma(buf, start)) { // 即値あり　ex. ldr r0, [r15, #0x30]
+        if (is_comma(buf, start)) { // 即値あり　
 
             start = skip_comma(buf, start);
 
@@ -368,14 +368,14 @@ int asm_one(char *buf, struct Emitter *emitter) {
             if (start == PARSE_FAIL) { return start; }
 
 
-            if (imm_value < 0) { // 負のオフセット ldr r0, [r15, #-0x30]
+            if (imm_value < 0) { // 負のオフセット
 
                 oneword += 0x1 << 20;
                 oneword += base_reg << 16;
                 oneword += sourse_reg << 12;
                 oneword += -1 * imm_value;
 
-            } else { // 正のオフセット ex. ldr r0, [r15, #0x30]
+            } else { // 正のオフセット
 
                 oneword += 0x9 << 20;
                 oneword += base_reg << 16;
