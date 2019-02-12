@@ -1,6 +1,7 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
+#include <stdint-gcc.h>
 #include "asm.h"
 
 #define BUF_SIZE 100
@@ -71,14 +72,14 @@ void cl_print_hex_dump(unsigned int word){
 
 
 /* アセンブラ結果の出力関係*/
-static unsigned int g_asm_result[1000];
+static uint32_t g_asm_result[1000];
 
 void initialize_result_arr(struct Emitter *emitter){
     emitter->array = g_asm_result;
     emitter->pos = 0;
 }
 
-void emit_word(struct Emitter* emitter, unsigned int oneword){
+void emit_word(struct Emitter* emitter, uint32_t oneword){
     emitter->array[emitter->pos] = oneword;
     emitter->pos++;
 }
