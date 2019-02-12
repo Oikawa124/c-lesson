@@ -61,9 +61,12 @@ e3a0106c
 .raw 0xFFFFFFFF
 の時に、
 hex_numは”-1”と解釈されてしまう。  
-そのため、
-PARSE_FAILを"-2"に変更
-
+~~そのため、
+PARSE_FAILを"-2"に変更~~
+```
+int single_atoi_hex(char *str, int *out_num) ;
+```
+として、パースが成功したら、1を返すようにした。
 
 
 ## ldr, str 
@@ -105,6 +108,7 @@ c-lessonの略。
 
 ## regression test
 
+### 実装する前のメモ
 Pythonを使ってバイナリを比較する。  
 Python実行は、Powershellを使う。  
 
@@ -130,7 +134,7 @@ ex. > python .\hello.py
 - バイナリの読み込み方
 - ディレクトリからファイルの見つけ方
 
-### 実行方法
+### 実装した実行方法
 
 powershellで
 ```
@@ -162,9 +166,14 @@ fwrite(emitter->array, sizeof(unsigned int), emitter->pos, fp);
 
 に変更した。  
 
+intが4byteか8byteか処理系で違うということ。　　
 
 
+#### uint32_tを使う
 
+固定幅の型であるuint32_tを使う
+
+[Fixed width integer types ](https://en.cppreference.com/w/c/types/integer)
 
 
 
@@ -220,7 +229,30 @@ for文は強力すぎるので、あんまりイディオム的じゃない書�
     }
 ```
     
-    
 
+
+## regression test 変なイテレータ、zipを使った
+
+###前
+```python
+ac_iter = iter(list(actual.upper()))
+print("actual: ", end="")
+for a, b in zip(ac_iter, ac_iter):
+    print(f"{a}{b} ", end="")
+```
+
+これは、変なイテレータやzipの使いかた。  
+
+二文字ずつ表示させるなら。  
+
+###改善例
+```python
+act_str = actual.upper()
+print("actual: ", end="")
+for one in [act_str[i:(i+2)] for i in range(4)]:
+    print(one, " ", end="")
+```
+
+こんな感じに  
 
 
