@@ -60,6 +60,9 @@ def main():
 
                 line_num += 0x4
 
+        if not is_success:
+            break
+
     # ファイル削除
     os.remove("./main.o")
     os.remove("./cl_utils.o")
