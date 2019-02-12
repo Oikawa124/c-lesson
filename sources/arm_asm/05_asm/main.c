@@ -6,36 +6,6 @@
 #include "asm.h"
 
 
-#define PARSE_FAIL -1
-
-// 配列関係
-static unsigned int g_asm_result[1000];
-
-struct Emitter {
-    unsigned int *array;
-    int pos;
-};
-
-void emit_word(struct Emitter* emitter, unsigned int oneword){
-    emitter->array[emitter->pos] = oneword;
-    emitter->pos++;
-}
-
-int single_atoi_hex(char *str, int *out_num) {
-
-    if (('0' <= *str) && (*str <= '9')) {
-        *out_num = *str - 48;
-        return 1;
-    } else if (('a' <= *str) && (*str <= 'f')) {
-        *out_num = *str - 87;
-        return 1;
-    } else if (('A' <= *str) && (*str <= 'F')) {
-        *out_num = *str - 55;
-        return 1;
-    } else {
-        return PARSE_FAIL;
-    }
-}
 
 int skip_space(char *str, int start){
     int pos = start;
@@ -797,8 +767,7 @@ static void test_asm_one_when_symbol_is_mov_with_reg(){
 
 
     struct Emitter emitter;
-    emitter.array = g_asm_result;
-    emitter.pos = 0;
+    initialize_result_arr(&emitter);
 
     // Exercise
     asm_one(input, &emitter);
@@ -816,8 +785,7 @@ static void test_asm_one_when_symbol_is_mov_with_immediate(){
 
 
     struct Emitter emitter;
-    emitter.array = g_asm_result;
-    emitter.pos = 0;
+    initialize_result_arr(&emitter);
 
     // Exercise
     asm_one(input, &emitter);
@@ -835,8 +803,7 @@ static void test_asm_one_when_symbol_is_raw_number_only(){
 
 
     struct Emitter emitter;
-    emitter.array = g_asm_result;
-    emitter.pos = 0;
+    initialize_result_arr(&emitter);
 
     // Exercise
     asm_one(input, &emitter);
@@ -854,8 +821,7 @@ static void test_asm_one_when_symbol_is_ldr_with_immediate(){
 
 
     struct Emitter emitter;
-    emitter.array = g_asm_result;
-    emitter.pos = 0;
+    initialize_result_arr(&emitter);
 
     // Exercise
     asm_one(input, &emitter);
@@ -873,8 +839,7 @@ static void test_asm_one_when_symbol_is_ldr_with_minus_immediate(){
 
 
     struct Emitter emitter;
-    emitter.array = g_asm_result;
-    emitter.pos = 0;
+    initialize_result_arr(&emitter);
 
     // Exercise
     asm_one(input, &emitter);
@@ -891,8 +856,7 @@ static void test_asm_one_when_symbol_is_ldr_with_no_immediate(){
     unsigned int expect = 0xE59F0000;
 
     struct Emitter emitter;
-    emitter.array = g_asm_result;
-    emitter.pos = 0;
+    initialize_result_arr(&emitter);
 
     // Exercise
     asm_one(input, &emitter);
@@ -910,8 +874,7 @@ static void test_asm_one_when_symbol_is_str(){
     unsigned int expect = 0xE5801000;
 
     struct Emitter emitter;
-    emitter.array = g_asm_result;
-    emitter.pos = 0;
+    initialize_result_arr(&emitter);
 
     // Exercise
     asm_one(input, &emitter);
@@ -1005,7 +968,6 @@ static void unit_tests() {
     test_is_register();
     test_is_comma();
 
-
     // asm one
 
     //// mov
@@ -1023,7 +985,6 @@ static void unit_tests() {
     //// str
     test_asm_one_when_symbol_is_str();
 
-
     // single_atoi_hex
     test_single_atoi_hex_with_a();
     test_single_atoi_hex_with_A();
@@ -1031,23 +992,9 @@ static void unit_tests() {
 
 }
 
+void read_simple_assembler(FILE *fp, struct Emitter *emitter){
 
-int main() {
-
-    unit_tests();
-
-    // 結果を渡す配列を準備
-
-    struct Emitter emitter;
-    emitter.array = g_asm_result;
-    emitter.pos = 0;
-
-    FILE *fp;
-    fp = fopen("mov_op.ks", "r");
-
-    if (fp == NULL) { printf("Not exist file");}
     cl_getc_set_fp(fp);
-
 
     int res;
     int line_num = 0;
@@ -1061,7 +1008,7 @@ int main() {
 
         if (buf_len == EOF) { break;}
 
-        res = asm_one(buf, &emitter);
+        res = asm_one(buf, emitter);
 
         if (res == PARSE_FAIL) {
             printf("PARSE FAIL");
@@ -1070,6 +1017,22 @@ int main() {
 
         line_num++;
     }
+}
+
+int main() {
+
+    unit_tests();
+
+    // 結果を渡す配列を準備
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    FILE *fp;
+    fp = fopen("mov_op.ks", "r");
+
+    if (fp == NULL) { printf("Not exist file");}
+
+    read_simple_assembler(fp, &emitter);
 
     fclose(fp);
 
