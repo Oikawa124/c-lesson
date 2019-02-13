@@ -79,7 +79,7 @@ void initialize_result_arr(struct Emitter *emitter){
     emitter->pos = 0;
 }
 
-void emit_word(struct Emitter* emitter, uint32_t oneword){
+void emit_word(struct Emitter* emitter, unsigned int oneword){
     emitter->array[emitter->pos] = oneword;
     emitter->pos++;
 }

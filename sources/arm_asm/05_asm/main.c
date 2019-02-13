@@ -1026,7 +1026,7 @@ void write_binary_file(struct Emitter *emitter){
 
     fp = fopen("test.bin", "wb");
 
-    fwrite(emitter->array, sizeof(uint32_t), emitter->pos, fp);
+    fwrite(emitter->array, sizeof(unsigned int), emitter->pos, fp);
 
     fclose(fp);
 }
