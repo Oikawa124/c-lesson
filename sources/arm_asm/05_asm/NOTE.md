@@ -256,3 +256,4 @@ for one in [act_str[i:(i+2)] for i in range(4)]:
 こんな感じに  
 
 
+//
