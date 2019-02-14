@@ -1026,7 +1026,7 @@ void write_binary_file(struct Emitter *emitter){
 
     fp = fopen("test.bin", "wb");
 
-    fwrite(emitter->array, sizeof(uint32_t), emitter->pos, fp);
+    fwrite(emitter->array, sizeof(unsigned int), emitter->pos, fp);
 
     fclose(fp);
 }
@@ -1054,3 +1054,6 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
+// todo ブランチ戻す。uint32_tを un- intの元に戻す　混乱するため
+// NOTEの書き方を見直す。

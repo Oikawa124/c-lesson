@@ -177,6 +177,236 @@ intが4byteか8byteか処理系で違うということ。　　
 
 
 
+###　現状のコード
+
+emitter部分寄せ集め
+
+
+#### ヘッダー
+```
+/*結果をいれる配列*/
+struct Emitter {
+    unsigned int *array;
+    int pos;
+};
+
+void initialize_result_arr(struct Emitter *emitter);
+void emit_word(struct Emitter *emitter, unsigned int oneword);
+```
+
+#### cl_utils.c
+```
+/* アセンブラ結果の出力関係*/
+static uint32_t g_asm_result[1000];
+
+void initialize_result_arr(struct Emitter *emitter){
+    emitter->array = g_asm_result;
+    emitter->pos = 0;
+}
+
+void emit_word(struct Emitter* emitter, uint32_t oneword){
+    emitter->array[emitter->pos] = oneword;
+    emitter->pos++;
+}
+
+```
+#### main.c
+
+```
+void write_binary_file(struct Emitter *emitter){
+    FILE *fp;
+
+    fp = fopen("test.bin", "wb");
+
+    fwrite(emitter->array, sizeof(uint32_t), emitter->pos, fp);
+
+    fclose(fp);
+}
+
+```
+
+現状はこうなっています。  
+
+unsigned int -> uint32_t
+に変更ではまずいか？
+
+変更して、emitter.arrayの大きさを調べる。
+
+test.ks
+```
+ldr r1, [r15, #0x04]
+```
+
+
+##### CLionの場合
+
+CMAKE_C_STANDARD 99　がコンパイラのバージョン？
+
+
+printf("%d", sizeof(emitter->array));
+
+出力 > 4
+
+
+printf("%d", sizeof(emitter->array[0]));
+
+出力 > 4
+
+
+バイナリエディタ
+04 10 9F E5
+
+
+
+##### コマンドプロンプトの場合
+
+
+C:\Users\devel>gcc --version
+realgcc.exe (Rev3, Built by MSYS2 project) 5.2.0
+がバージョン？
+
+
+printf("%d", sizeof(emitter->array));
+
+出力 > 8
+
+printf("%d", sizeof(emitter->array[0]));
+
+出力 > 4
+
+バイナリ
+04 10 9F E5
+
+
+
+バイナリエディタで見た分には、バイナリは同じ。
+しかし、emitter.arrayの大きさが違う・・・
+emitter.array[0]の大きさは同じ・・・
+-> arrayの一要素の大きさは同じ？ （編集済み） 
+
+int: サイズ、32bit（とも限らない）
+uint32_t: unsigned long intのエイリアス、サイズ: 32bit
+
+### ポインタの大きさ
+CLion
+```
+uint32_t data;
+
+printf("%d", sizeof(data));
+出力 > 4
+
+uint32_t *data;
+
+printf("%d", sizeof(data));
+出力 > 4
+
+printf("%p", sizeof(data));
+出力 > 00000004
+
+
+```
+
+cmd
+```
+uint32_t data;
+
+printf("%d", sizeof(data));
+出力 > 4
+
+uint32_t *data;
+
+printf("%d", sizeof(data));
+出力 > 8
+
+printf("%p", sizeof(data));
+出力 > 0000000000000008
+
+```
+
+ポインタにすると大きさが違う。
+Clionが32bitで、cmdが64bitだからか。
+
+
+
+
+emitter.arrayは、  
+```
+struct Emitter {
+    uint32_t *array;
+    int pos;
+};
+```
+より、  
+uint32_t型のポインタ
+
+32bitか64bitで大きさが変わる。
+
+uint32_t自体の大きさは、
+32bit、64bitで同じ？
+
+
+### fwrite
+```
+size_t fwrite(const void *buf, size_t size, size_t n, FILE *fp); 
+```
+【引数】
+const void *buf　：　書き込みデータのポインタ
+size_t size　：　書き込みデータのバイト長さ
+size_t n　：　書き込みデータの数
+FILE *fp　：　FILEポインタ
+
+より、上手くいかなかったコードでは、  
+書き込みデータのバイトの長さに、  
+sizeof(emitter.array)  
+を渡していた。  
+そのため、clion(32bit)とcmd(64bit)で実行したときに、違うバイナリになった。
+
+cmdでは、書き込みデータのバイトの長さが2倍になっていたため、  
+バイナリの最後のほうに、00 00 00 00 が書き込まれていた。
+
+
+### 確認
+
+fwrite(emitter->array, sizeof(emitter->array), emitter->pos, fp);
+として実行。
+
+バイナリが変わった。
+
+
+## binary tree
+
+アセンブリだとシンボルが良く出てくるので、シンボルを実装する事にします。　　
+ニモニックのツリーとラベルのツリーは別にして、ニモニックは1から、ラベルは10000から　　
+
+leftはstrcmpしてマイナスの時に行く、+だったらrightに行く。　　
+
+
+追加する時にはnameはmallocしてstrcpyなりmemcpy  
+
+探すだけの関数と探してなかったらその時ついでに追加する関数の2つ  
+
+
+
+参考  
+[strcmp](http://www9.plala.or.jp/sgwr-t/lib/strcmp.html)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
