@@ -2,7 +2,6 @@
 #include <mem.h>
 #include <ctype.h>
 #include <assert.h>
-#include <stdint.h>
 
 #include "asm.h"
 
@@ -30,12 +29,6 @@ int skip_comma(char *str, int start){
     return pos;
 }
 
-
-// 文字列切り出し
-struct substring {
-    char *str;
-    int len;
-};
 
 
 // トークン切り出し
@@ -1031,29 +1024,30 @@ void write_binary_file(struct Emitter *emitter){
     fclose(fp);
 }
 
-int main(int argc, char **argv) {
-
-    //unit_tests();
-
-    // アセンブル結果を渡す配列を準備
-    struct Emitter emitter;
-    initialize_result_arr(&emitter);
-
-    FILE *fp;
-    fp = fopen(argv[1], "r");
-
-    if (fp == NULL) { printf("Not exist file");}
-
-    // .ksファイルをアセンブルする
-    read_simple_assembly_file(fp, &emitter);
-
-    fclose(fp);
-
-    // バイナリ書き込み
-    write_binary_file(&emitter);
-
-    return 0;
-}
+//
+//int main(int argc, char **argv) {
+//
+//    //unit_tests();
+//
+//    // アセンブル結果を渡す配列を準備
+//    struct Emitter emitter;
+//    initialize_result_arr(&emitter);
+//
+//    FILE *fp;
+//    fp = fopen(argv[1], "r");
+//
+//    if (fp == NULL) { printf("Not exist file");}
+//
+//    // .ksファイルをアセンブルする
+//    read_simple_assembly_file(fp, &emitter);
+//
+//    fclose(fp);
+//
+//    // バイナリ書き込み
+//    write_binary_file(&emitter);
+//
+//    return 0;
+//}
 
 // todo ブランチ戻す。uint32_tを un- intの元に戻す　混乱するため
 // NOTEの書き方を見直す。

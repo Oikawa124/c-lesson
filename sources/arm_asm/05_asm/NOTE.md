@@ -158,7 +158,7 @@ sizeof(emitter.array)
 Clionで実行では、大きさは、"4"だった。  
 cmdで実行すると、大きさは、"8"となった。  
 
-アライメント？が関係しているか？
+~~アライメント？が関係しているか？~~
 
 そのため、  
 
@@ -166,7 +166,7 @@ fwrite(emitter->array, sizeof(unsigned int), emitter->pos, fp);
 
 に変更した。  
 
-intが4byteか8byteか処理系で違うということ。　　
+~~intが4byteか8byteか処理系で違うということ。~~　　
 
 
 #### uint32_tを使う
@@ -371,6 +371,14 @@ fwrite(emitter->array, sizeof(emitter->array), emitter->pos, fp);
 として実行。
 
 バイナリが変わった。
+
+
+
+## ファイル分割
+
+main.cが大きくなったため、ファイルを分割する。  
+まずは、パースする関数は、parse.cにする。
+
 
 
 ## binary tree
