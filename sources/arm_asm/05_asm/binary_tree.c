@@ -3,6 +3,8 @@
 #include <mem.h>
 #include <assert.h>
 
+#include "asm.h"
+
 #define NOT_FOUND -1
 
 typedef struct _Node {
@@ -19,23 +21,26 @@ int mnemonic_id = 1;
 int label_id = 10000;
 
 
-static char *my_strdup(char *name){
+static char *my_strdup(struct substring *substr){
     char *dest;
 
-    dest = malloc(sizeof(char) * (strlen(name) + 1));
-    strcpy(dest, name);
+    dest = malloc(sizeof(char) * (substr->len + 1)); // '\0'の分も領域確保？
+    dest[substr->len] = '\0';
+
+    strncpy(dest, substr->str, substr->len);
 
     return dest;
+
 }
 
 
 // Nodeの挿入
-static Node *insert_node(Node *node, char *name, int id){
+static Node *insert_node(Node *node, struct substring *substr, int id){
 
     if (node == NULL) {
         node = malloc(sizeof(Node));
 
-        node->name = my_strdup(name);
+        node->name = my_strdup(substr);
         node->value = id;
 
         node->left = NULL;
@@ -44,21 +49,21 @@ static Node *insert_node(Node *node, char *name, int id){
         return node;
     }
 
-    if (strcmp(node->name, name) < 0) {
-        node->left = insert_node(node->left, name, id);
+    if (strncmp(node->name, substr->str, substr->len) < 0) {
+        node->left = insert_node(node->left, substr, id);
     } else {
-        node->right = insert_node(node->right, name, id);
+        node->right = insert_node(node->right, substr, id);
     }
 
     return node;
 }
 
 // Nodeの探索
-static int search_node(Node *node, char *name){
+static int search_node(Node *node, struct substring *substr){
     int cond;
 
     while (node != NULL) {
-        if ((cond = strcmp(node->name, name)) == 0) {
+        if ((cond = strncmp(node->name, substr->str, substr->len)) == 0) {
             return node->value;
         } else if (cond < 0){
             node = node->left;
@@ -80,14 +85,14 @@ static void delete_tree(Node *node){
 }
 
 
-int to_mnemonic_symbol(char *str){ // substringを渡せばよい？
+int to_mnemonic_symbol(struct substring *substr){
     int value;
 
-    if ((value = search_node(mnemonic_root, str)) != NOT_FOUND) {
+    if ((value = search_node(mnemonic_root, substr)) != NOT_FOUND) {
         return value;
     }
 
-    mnemonic_root = insert_node(mnemonic_root, str, mnemonic_id);
+    mnemonic_root = insert_node(mnemonic_root, substr, mnemonic_id);
     mnemonic_id++;
 
     return mnemonic_id - 1;
@@ -111,13 +116,15 @@ static int streq(char *s1, char *s2) { return 0 == strcmp(s1, s2); }
 static void test_insert_node_when_call_once(){
 
     // SetUP
-    char *input = "mov";
+    struct substring input;
+    input.str = "mov";
+    input.len = 3;
 
     char *expect_name = "mov";
     int expect_value = 1;
 
     // Exercise
-    mnemonic_root = insert_node(mnemonic_root, input, mnemonic_id);
+    mnemonic_root = insert_node(mnemonic_root, &input, mnemonic_id);
 
     // Verify
     assert(expect_value == mnemonic_root->value);
@@ -130,9 +137,17 @@ static void test_insert_node_when_call_once(){
 static void test_insert_node_when_call_three_times(){
 
     // SetUP
-    char *input1 = "mov";
-    char *input2 = "abcdef";
-    char *input3 = "x";
+    struct substring input1;
+    input1.str = "mov";
+    input1.len = 3;
+
+    struct substring input2;
+    input2.str = "abcdef";
+    input2.len = 6;
+
+    struct substring input3;
+    input3.str = "x";
+    input3.len = 1;
 
     char *expect_name1 = "mov";
     char *expect_name2 = "abcdef";
@@ -143,13 +158,13 @@ static void test_insert_node_when_call_three_times(){
     int expect_value3 = 3;
 
     // Exercise
-    mnemonic_root = insert_node(mnemonic_root, input1, mnemonic_id);
+    mnemonic_root = insert_node(mnemonic_root, &input1, mnemonic_id);
     mnemonic_id++;
 
-    mnemonic_root = insert_node(mnemonic_root, input2, mnemonic_id);
+    mnemonic_root = insert_node(mnemonic_root, &input2, mnemonic_id);
     mnemonic_id++;
 
-    mnemonic_root = insert_node(mnemonic_root, input3, mnemonic_id);
+    mnemonic_root = insert_node(mnemonic_root, &input3, mnemonic_id);
     mnemonic_id++;
 
     // Verify
@@ -169,13 +184,15 @@ static void test_insert_node_when_call_three_times(){
 static void test_search_node_when_call_once(){
 
     // SetUP
-    char *input = "mov";
+    struct substring input;
+    input.str = "mov";
+    input.len = 3;
 
     int expect_value = 1;
 
     // Exercise
-    mnemonic_root = insert_node(mnemonic_root, input, mnemonic_id);
-    int actual_value = search_node(mnemonic_root, input);
+    mnemonic_root = insert_node(mnemonic_root, &input, mnemonic_id);
+    int actual_value = search_node(mnemonic_root, &input);
 
     // Verify
     assert(expect_value == actual_value);
@@ -187,27 +204,35 @@ static void test_search_node_when_call_once(){
 static void test_search_node_when_call_three_times(){
 
     // SetUP
-    char *input1 = "mov";
-    char *input2 = "abcdef";
-    char *input3 = "x";
+    struct substring input1;
+    input1.str = "mov";
+    input1.len = 3;
+
+    struct substring input2;
+    input2.str = "abcdef";
+    input2.len = 6;
+
+    struct substring input3;
+    input3.str = "x";
+    input3.len = 1;
 
     int expect_value1 = 1;
     int expect_value2 = 2;
     int expect_value3 = 3;
 
     // Exercise
-    mnemonic_root = insert_node(mnemonic_root, input1, mnemonic_id);
+    mnemonic_root = insert_node(mnemonic_root, &input1, mnemonic_id);
     mnemonic_id++;
 
-    mnemonic_root = insert_node(mnemonic_root, input2, mnemonic_id);
+    mnemonic_root = insert_node(mnemonic_root, &input2, mnemonic_id);
     mnemonic_id++;
 
-    mnemonic_root = insert_node(mnemonic_root, input3, mnemonic_id);
+    mnemonic_root = insert_node(mnemonic_root, &input3, mnemonic_id);
     mnemonic_id++;
 
-    int actual_value1 = search_node(mnemonic_root, input1);
-    int actual_value2 = search_node(mnemonic_root, input2);
-    int actual_value3 = search_node(mnemonic_root, input3);
+    int actual_value1 = search_node(mnemonic_root, &input1);
+    int actual_value2 = search_node(mnemonic_root, &input2);
+    int actual_value3 = search_node(mnemonic_root, &input3);
 
 
     // Verify
@@ -222,12 +247,13 @@ static void test_search_node_when_call_three_times(){
 static void test_to_mnemonic_symbol_when_call_once(){
 
     // SetUP
-    char *input = "mov";
-
+    struct substring input;
+    input.str = "mov";
+    input.len = 3;
     int expect_value = 1;
 
     // Exercise
-    int actual_value = to_mnemonic_symbol(input);
+    int actual_value = to_mnemonic_symbol(&input);
 
     // Verify
     assert(expect_value == actual_value);
@@ -239,16 +265,21 @@ static void test_to_mnemonic_symbol_when_call_once(){
 static void test_to_mnemonic_symbol_when_same_symbol(){
 
     // SetUP
-    char *input1 = "mov";
-    char *input2 = "mov";
+    struct substring input1;
+    input1.str = "mov";
+    input1.len = 3;
+
+    struct substring input2;
+    input2.str = "mov";
+    input2.len = 3;
 
     int expect_value1 = 1;
     int expect_value2 = 1;
 
 
     // Exercise
-    int actual_value1 = to_mnemonic_symbol(input1);
-    int actual_value2 = to_mnemonic_symbol(input2);
+    int actual_value1 = to_mnemonic_symbol(&input1);
+    int actual_value2 = to_mnemonic_symbol(&input2);
 
     // Verify
     assert(expect_value1 == actual_value1);
@@ -261,15 +292,20 @@ static void test_to_mnemonic_symbol_when_same_symbol(){
 static void test_to_mnemonic_symbol_when_different_symbol(){
 
     // SetUP
-    char *input1 = "mov";
-    char *input2 = "str";
+    struct substring input1;
+    input1.str = "mov";
+    input1.len = 3;
+
+    struct substring input2;
+    input2.str = "str";
+    input2.len = 3;
 
     int expect_value1 = 1;
     int expect_value2 = 2;
 
     // Exercise
-    int actual_value1 = to_mnemonic_symbol(input1);
-    int actual_value2 = to_mnemonic_symbol(input2);
+    int actual_value1 = to_mnemonic_symbol(&input1);
+    int actual_value2 = to_mnemonic_symbol(&input2);
 
     // Verify
     assert(expect_value1 == actual_value1);
@@ -283,15 +319,17 @@ static void test_to_mnemonic_symbol_when_different_symbol(){
 static void test_my_strdup(){
 
     // SetUP
-    char *input = "mov";
-
-    char *expect_name = "mov";
+    struct substring input;
+    input.str = "mov";
+    input.len = 3;
 
     // Exercise
-    char *actual_name = my_strdup(input);
+    char *actual;
+
+    actual = my_strdup(&input);
 
     // Verify
-    assert(streq(expect_name, actual_name));
+    assert(streq(input.str, actual));
 
     // TearDown
     initialize_mnemonic_root();
@@ -319,3 +357,5 @@ int main() {
 
     return 1;
 }
+
+//todo substringに対応
