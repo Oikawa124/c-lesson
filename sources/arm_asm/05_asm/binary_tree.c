@@ -116,9 +116,7 @@ static int streq(char *s1, char *s2) { return 0 == strcmp(s1, s2); }
 static void test_insert_node_when_call_once(){
 
     // SetUP
-    struct substring input;
-    input.str = "mov";
-    input.len = 3;
+    struct substring input = {.str="mov", .len=3};
 
     char *expect_name = "mov";
     int expect_value = 1;
@@ -137,17 +135,9 @@ static void test_insert_node_when_call_once(){
 static void test_insert_node_when_call_three_times(){
 
     // SetUP
-    struct substring input1;
-    input1.str = "mov";
-    input1.len = 3;
-
-    struct substring input2;
-    input2.str = "abcdef";
-    input2.len = 6;
-
-    struct substring input3;
-    input3.str = "x";
-    input3.len = 1;
+    struct substring input1 = {.str="mov", .len=3};
+    struct substring input2 = {.str="abcdef", .len=6};
+    struct substring input3 = {.str="x", .len=1};
 
     char *expect_name1 = "mov";
     char *expect_name2 = "abcdef";
@@ -184,9 +174,7 @@ static void test_insert_node_when_call_three_times(){
 static void test_search_node_when_call_once(){
 
     // SetUP
-    struct substring input;
-    input.str = "mov";
-    input.len = 3;
+    struct substring input = {.str="mov", .len=3};
 
     int expect_value = 1;
 
@@ -204,17 +192,9 @@ static void test_search_node_when_call_once(){
 static void test_search_node_when_call_three_times(){
 
     // SetUP
-    struct substring input1;
-    input1.str = "mov";
-    input1.len = 3;
-
-    struct substring input2;
-    input2.str = "abcdef";
-    input2.len = 6;
-
-    struct substring input3;
-    input3.str = "x";
-    input3.len = 1;
+    struct substring input1 = {.str="mov", .len=3};
+    struct substring input2 = {.str="abcdef", .len=6};
+    struct substring input3 = {.str="x", .len=1};
 
     int expect_value1 = 1;
     int expect_value2 = 2;
@@ -247,9 +227,8 @@ static void test_search_node_when_call_three_times(){
 static void test_to_mnemonic_symbol_when_call_once(){
 
     // SetUP
-    struct substring input;
-    input.str = "mov";
-    input.len = 3;
+    struct substring input = {.str="mov", .len=3};
+
     int expect_value = 1;
 
     // Exercise
@@ -265,13 +244,8 @@ static void test_to_mnemonic_symbol_when_call_once(){
 static void test_to_mnemonic_symbol_when_same_symbol(){
 
     // SetUP
-    struct substring input1;
-    input1.str = "mov";
-    input1.len = 3;
-
-    struct substring input2;
-    input2.str = "mov";
-    input2.len = 3;
+    struct substring input1 = {.str="mov", .len=3};
+    struct substring input2 = {.str="mov", .len=3};
 
     int expect_value1 = 1;
     int expect_value2 = 1;
@@ -292,13 +266,8 @@ static void test_to_mnemonic_symbol_when_same_symbol(){
 static void test_to_mnemonic_symbol_when_different_symbol(){
 
     // SetUP
-    struct substring input1;
-    input1.str = "mov";
-    input1.len = 3;
-
-    struct substring input2;
-    input2.str = "str";
-    input2.len = 3;
+    struct substring input1 = {.str="mov", .len=3};
+    struct substring input2 = {.str="str", .len=3};
 
     int expect_value1 = 1;
     int expect_value2 = 2;
@@ -319,9 +288,7 @@ static void test_to_mnemonic_symbol_when_different_symbol(){
 static void test_my_strdup(){
 
     // SetUP
-    struct substring input;
-    input.str = "mov";
-    input.len = 3;
+    struct substring input = {.str="mov", .len=3};
 
     // Exercise
     char *actual;
@@ -357,5 +324,3 @@ int main() {
 
     return 1;
 }
-
-//todo substringに対応
