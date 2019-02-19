@@ -7,19 +7,8 @@
 
 #define NOT_FOUND -1
 
-typedef struct _Node {
-    char *name;
-    int value;
-    struct _Node *left;
-    struct _Node *right;
-} Node;
-
-Node *mnemonic_root = NULL;
-Node *label_loot = NULL;
-
-int mnemonic_id = 1;
-int label_id = 10000;
-
+static int mnemonic_id = 1;
+static int label_id = 10000;
 
 static char *my_strdup(struct substring *substr){
     char *dest;
@@ -30,7 +19,6 @@ static char *my_strdup(struct substring *substr){
     strncpy(dest, substr->str, substr->len);
 
     return dest;
-
 }
 
 
@@ -318,9 +306,9 @@ static void unit_tests() {
 }
 
 
-int main() {
-
-    unit_tests();
-
-    return 1;
-}
+//int main() {
+//
+//    unit_tests();
+//
+//    return 1;
+//}

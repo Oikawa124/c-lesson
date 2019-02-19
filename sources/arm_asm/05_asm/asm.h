@@ -8,7 +8,7 @@ int cl_getline(char **out_buf);
 void cl_print_hex_dump(unsigned int word);
 
 
-// 文字列切り出し
+// 文字列
 struct substring {
     char *str;
     int len;
@@ -32,3 +32,14 @@ int single_atoi_hex(char *str, int *out_num);
 
 
 /* binary tree*/
+typedef struct _Node {
+    char *name;
+    int value;
+    struct _Node *left;
+    struct _Node *right;
+} Node;
+
+Node *mnemonic_root = NULL;
+Node *label_loot = NULL;
+
+int to_mnemonic_symbol(struct substring *substr);
