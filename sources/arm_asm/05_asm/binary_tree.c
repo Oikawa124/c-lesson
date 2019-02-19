@@ -29,7 +29,6 @@ static char *my_strdup(char *name){
 }
 
 
-
 // Nodeの挿入
 static Node *insert_node(Node *node, char *name, int id){
 
@@ -281,16 +280,37 @@ static void test_to_mnemonic_symbol_when_different_symbol(){
 }
 
 
+static void test_my_strdup(){
+
+    // SetUP
+    char *input = "mov";
+
+    char *expect_name = "mov";
+
+    // Exercise
+    char *actual_name = my_strdup(input);
+
+    // Verify
+    assert(streq(expect_name, actual_name));
+
+    // TearDown
+    initialize_mnemonic_root();
+}
+
+
 static void unit_tests() {
     test_insert_node_when_call_once();
     test_insert_node_when_call_three_times();
+
     test_search_node_when_call_once();
     test_search_node_when_call_three_times();
+
     test_to_mnemonic_symbol_when_call_once();
     test_to_mnemonic_symbol_when_same_symbol();
     test_to_mnemonic_symbol_when_different_symbol();
-}
 
+    test_my_strdup();
+}
 
 
 int main() {
