@@ -5,6 +5,13 @@
 
 #include "asm.h"
 
+enum {
+    MOV = 1,
+    STR,
+    LDR,
+    RAW,
+};
+
 
 
 int skip_space(char *str, int start){
@@ -240,24 +247,56 @@ int is_comma(char *str, int start) {
 }
 
 
+int is_colon(char *str, int start) {
+    int pos = start;
+
+    pos = skip_space(str, pos);
+
+    if (str[pos] == ':') {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
+
 
 // 先頭のトークンを読み出して，結果によって分岐する
 int asm_one(char *buf, struct Emitter *emitter) {
 
     int start = 0;
+    unsigned int oneword = 0;
 
     // 命令切り出し
     struct substring sub_str;
     start = parse_one(buf, start, &sub_str);
 
+//    int mnemonic_symbol = 0;
+//
+//    if (is_colon(buf, start)) {
+//        //　ラベル
+//    } else {
+//        mnemonic_symbol = to_mnemonic_symbol(&sub_str);
+//    }
+//
+//
+//    switch (mnemonic_symbol) {
+//        case MOV:
+//
+//        case STR:
+//
+//        case LDR:
+//
+//        case RAW:
+//
+//        default:
+//            printf("Not Implemented");
+//    }
 
-    unsigned int oneword = 0;
 
     if (strncmp(sub_str.str, "mov", 3) == 0) { // mov
-
-        // 1stレジスタ切り出し
         int reg_1st;
-
         start = parse_register(buf, start, &reg_1st);
 
         if (start == PARSE_FAIL) { return start; }
@@ -265,7 +304,6 @@ int asm_one(char *buf, struct Emitter *emitter) {
         start = skip_comma(buf, start);
 
         if (start == PARSE_FAIL) { return start; }
-
 
         if (is_register(buf, start)) { // レジスタの場合
 
@@ -289,6 +327,7 @@ int asm_one(char *buf, struct Emitter *emitter) {
             oneword += reg_1st << 12;
             oneword += imm_value;
         }
+
 
     } else if ((strncmp(sub_str.str, "ldr", 3) == 0)
                 || (strncmp(sub_str.str, "str", 3) == 0)){  // ldr or str
@@ -1024,11 +1063,30 @@ void write_binary_file(struct Emitter *emitter){
     fclose(fp);
 }
 
-//
-//int main(int argc, char **argv) {
-//
-//    //unit_tests();
-//
+static void set_up(){
+    initialize_mnemonic_root();
+
+    struct substring mov = {.str="mov", .len=3};
+    to_mnemonic_symbol(&mov);
+
+    struct substring str = {.str="str", .len=3};
+    to_mnemonic_symbol(&str);
+
+    struct substring ldr = {.str="ldr", .len=3};
+    to_mnemonic_symbol(&ldr);
+
+    struct substring raw = {.str=".raw", .len=4};
+    to_mnemonic_symbol(&raw);
+    // いちいち構造体を初期化する必要はない?
+}
+
+
+
+
+int main(int argc, char **argv) {
+
+    unit_tests();
+
 //    // アセンブル結果を渡す配列を準備
 //    struct Emitter emitter;
 //    initialize_result_arr(&emitter);
@@ -1045,9 +1103,6 @@ void write_binary_file(struct Emitter *emitter){
 //
 //    // バイナリ書き込み
 //    write_binary_file(&emitter);
-//
-//    return 0;
-//}
 
-// todo ブランチ戻す。uint32_tを un- intの元に戻す　混乱するため
-// NOTEの書き方を見直す。
+    return 0;
+}
