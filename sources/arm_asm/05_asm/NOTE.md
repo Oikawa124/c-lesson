@@ -398,8 +398,34 @@ leftはstrcmpしてマイナスの時に行く、+だったらrightに行く。�
 参考  
 [strcmp](http://www9.plala.or.jp/sgwr-t/lib/strcmp.html)
 
+### staticofについて
+
+sizeofは静的に決まるサイズしか返さない。
+mallocしたものをくわせても、そのサイズは教えてくれず、そのポインタを入れるのに必要なサイズしか教えてくれない。
+
+アスタリスクをつけたら先頭の要素のサイズしか教えてくれない。
+むしろ配列だけが特別で、それ以外は全部型のサイズ。
+sizeof(node->name)は、sizeof(char*)
+とまったく同じ。  
+
+"char *"はポインタであるため、サイズは4になる。　　
 
 
+入力は、char *name
+```
+printf("before node.name %d\n", sizeof(node->name)); //4
+printf("before mem %p\n", &node->name); // 00721578
+node->name = malloc(sizeof(*name));
+printf("after node.name %d\n", sizeof(node->name)); // 4
+printf("after mem  %p\n", &node->name); // 00721578
+
+printf("char name %d\n", sizeof(*name)); // 1
+printf("mov %d\n", sizeof("mov")); // 4 ('\0'を含むため)
+
+printf("before value mem %p\n", &node->value); // 00AA157C
+node->value = (int)malloc(sizeof(int));
+printf("after value mem %p\n", node->value); // 00AA157C
+```
 
 
 

@@ -3,6 +3,8 @@
 #include <mem.h>
 #include <assert.h>
 
+#define NOT_FOUND -1
+
 typedef struct _Node {
     char *name;
     int value;
@@ -17,15 +19,24 @@ int mnemonic_id = 1;
 int label_id = 10000;
 
 
+static char *my_strdup(char *name){
+    char *dest;
+
+    dest = malloc(sizeof(char) * (strlen(name) + 1));
+    strcpy(dest, name);
+
+    return dest;
+}
+
+
+
 // Nodeの挿入
-Node *insert_node(Node *node, char *name, int id){
+static Node *insert_node(Node *node, char *name, int id){
 
     if (node == NULL) {
         node = malloc(sizeof(Node));
-        node->name = malloc(sizeof(*name));
-        node->value = (int)malloc(sizeof(int));
 
-        strcpy(node->name, name);
+        node->name = my_strdup(name);
         node->value = id;
 
         node->left = NULL;
@@ -44,7 +55,7 @@ Node *insert_node(Node *node, char *name, int id){
 }
 
 // Nodeの探索
-int search_node(Node *node, char *name){
+static int search_node(Node *node, char *name){
     int cond;
 
     while (node != NULL) {
@@ -57,14 +68,14 @@ int search_node(Node *node, char *name){
         }
     }
 
-    return 0;
+    return NOT_FOUND;
 }
 
 // Nodeの削除
-static void destroy_node(Node *node){
+static void delete_tree(Node *node){
     if (node != NULL) {
-        destroy_node(node->left);
-        destroy_node(node->right);
+        delete_tree(node->left);
+        delete_tree(node->right);
         free(node);
     }
 }
@@ -73,7 +84,7 @@ static void destroy_node(Node *node){
 int to_mnemonic_symbol(char *str){ // substringを渡せばよい？
     int value;
 
-    if ((value = search_node(mnemonic_root, str)) != 0) {
+    if ((value = search_node(mnemonic_root, str)) != NOT_FOUND) {
         return value;
     }
 
@@ -81,12 +92,12 @@ int to_mnemonic_symbol(char *str){ // substringを渡せばよい？
     mnemonic_id++;
 
     return mnemonic_id - 1;
-
 }
+
 
 // 初期化
 void initialize_mnemonic_root(){
-    destroy_node(mnemonic_root);
+    delete_tree(mnemonic_root);
     mnemonic_root = NULL;
     mnemonic_id = 1;
 }
