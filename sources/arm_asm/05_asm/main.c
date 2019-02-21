@@ -5,11 +5,6 @@
 
 #include "asm.h"
 
-int MOV;
-int LDR;
-int STR;
-int RAW;
-
 
 // 先頭のトークンを読み出して，結果によって分岐する
 int asm_one(char *buf, struct Emitter *emitter) {
@@ -363,28 +358,6 @@ void write_binary_file(struct Emitter *emitter){
     fwrite(emitter->array, sizeof(unsigned int), emitter->pos, fp);
 
     fclose(fp);
-}
-
-
-static int str_to_mnemonic_symbol(char *str, int len) {
-    struct substring sub;
-    sub.str = str;
-    sub.len = len;
-
-    int value = to_mnemonic_symbol(&sub);
-
-    return value;
-}
-
-
-static void set_up(){
-    initialize_mnemonic_root();
-
-    MOV = str_to_mnemonic_symbol("mov", 3);
-    STR = str_to_mnemonic_symbol("str", 3);
-    LDR = str_to_mnemonic_symbol("ldr", 3);
-    RAW = str_to_mnemonic_symbol(".raw", 4);
-
 }
 
 
