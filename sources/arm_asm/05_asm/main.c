@@ -5,6 +5,147 @@
 
 #include "asm.h"
 
+static int mov_op(char *str, int start, unsigned int *out_oneword){
+
+    int pos = start;
+
+    unsigned int oneword;
+    int reg_1st;
+
+    pos = parse_register(str, pos, &reg_1st);
+
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = skip_comma(str, pos);
+
+    if (pos == PARSE_FAIL) { return pos; }
+
+    if (is_register(str, pos)) { // レジスタの場合
+
+        int reg_2nd;
+        pos = parse_register(str, pos, &reg_2nd);
+
+        if (pos == PARSE_FAIL) { return pos; }
+
+        oneword = 0xE1A00000;
+        oneword += reg_1st << 12;
+        oneword += reg_2nd;
+
+    } else { // 即値の場合
+
+        int imm_value;
+        pos = parse_immediate(str, pos, &imm_value);
+
+        if (pos == PARSE_FAIL) { return pos; }
+
+        oneword = 0xE3A00000;
+        oneword += reg_1st << 12;
+        oneword += imm_value;
+    }
+
+    *out_oneword = oneword;
+
+    return pos;
+}
+
+
+static int single_data_transfer(char *str, int start, int mnemonic, unsigned int *out_oneword) {
+    int pos = start;
+
+    unsigned int oneword = 0xE5000000;
+
+    // sourseレジスタ切り出し
+    int sourse_reg;
+
+    pos = parse_register(str, pos, &sourse_reg);
+
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = skip_comma(str, pos);
+
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = parse_left_sbracket(str, pos);
+
+    if (pos == PARSE_FAIL) { return pos; }
+
+    // baseレジスタ切り出し
+    int base_reg;
+
+    pos = parse_register(str, pos, &base_reg);
+
+    if (pos == PARSE_FAIL) { return pos; }
+
+
+    if (is_comma(str, pos)) { // 即値あり　
+
+        pos = skip_comma(str, pos);
+
+        int imm_value;
+        pos = parse_immediate(str, pos, &imm_value);
+
+        if (pos == PARSE_FAIL) { return pos; }
+
+        pos = parse_right_sbracket(str, pos);
+
+        if (pos == PARSE_FAIL) { return pos; }
+
+
+        if (imm_value < 0) { // 負のオフセット
+
+            oneword += 0x1 << 20;
+            oneword += base_reg << 16;
+            oneword += sourse_reg << 12;
+            oneword += -1 * imm_value;
+
+        } else { // 正のオフセット
+
+            oneword += 0x9 << 20;
+            oneword += base_reg << 16;
+            oneword += sourse_reg << 12;
+            oneword += imm_value;
+
+        }
+
+    } else { // レジスタのみ
+
+        // ldrかstr判定
+        if (mnemonic == LDR) {
+            oneword += 0x9 << 20; // ldr  ex. ldr r0, [r15]
+        } else {
+            oneword += 0x8 << 20; // str  ex. str r1, [0]
+        }
+
+
+        pos = parse_right_sbracket(str, pos);
+
+        if (pos == PARSE_FAIL) { return pos; }
+
+        oneword += base_reg << 16;
+        oneword += sourse_reg << 12;
+
+    }
+
+    *out_oneword = oneword;
+
+    return pos;
+}
+
+static int raw_word(char *str, int start, unsigned int *out_oneword){
+
+    int pos = start;
+
+    unsigned int raw_val;
+    start = parse_raw(str, start, &raw_val);
+
+    if (start == PARSE_FAIL) { return start; }
+
+    *out_oneword = raw_val;
+
+    return pos;
+}
+
+
 
 // 先頭のトークンを読み出して，結果によって分岐する
 int asm_one(char *buf, struct Emitter *emitter) {
@@ -16,15 +157,15 @@ int asm_one(char *buf, struct Emitter *emitter) {
     struct substring sub_str;
     start = parse_one(buf, start, &sub_str);
 
-//    int mnemonic_symbol = 0;
-//
-//    if (is_colon(buf, start)) {
-//        //　ラベル
-//    } else {
-//        mnemonic_symbol = to_mnemonic_symbol(&sub_str);
-//    }
-//
-//
+    int mnemonic_symbol = 0;
+
+    if (is_colon(buf, start)) {
+        //　ラベル
+    } else {
+        mnemonic_symbol = to_mnemonic_symbol(&sub_str);
+    }
+
+
 //    switch (mnemonic_symbol) {
 //        case MOV:
 //
@@ -39,125 +180,18 @@ int asm_one(char *buf, struct Emitter *emitter) {
 //    }
 
 
-    if (strncmp(sub_str.str, "mov", 3) == 0) { // mov
-        int reg_1st;
-        start = parse_register(buf, start, &reg_1st);
+    if (mnemonic_symbol == MOV)
+    {
+        mov_op(buf, start, &oneword);
 
-        if (start == PARSE_FAIL) { return start; }
+    } else if ((mnemonic_symbol == LDR)
+                || (mnemonic_symbol == STR))
+    {
+        single_data_transfer(buf, start, mnemonic_symbol, &oneword);
 
-        start = skip_comma(buf, start);
-
-        if (start == PARSE_FAIL) { return start; }
-
-        if (is_register(buf, start)) { // レジスタの場合
-
-            int reg_2nd;
-            start = parse_register(buf, start, &reg_2nd);
-
-            if (start == PARSE_FAIL) { return start; }
-
-            oneword = 0xE1A00000;
-            oneword += reg_1st << 12;
-            oneword += reg_2nd;
-
-        } else { // 即値の場合
-
-            int imm_value;
-            start = parse_immediate(buf, start, &imm_value);
-
-            if (start == PARSE_FAIL) { return start; }
-
-            oneword = 0xE3A00000;
-            oneword += reg_1st << 12;
-            oneword += imm_value;
-        }
-
-
-    } else if ((strncmp(sub_str.str, "ldr", 3) == 0)
-                || (strncmp(sub_str.str, "str", 3) == 0)){  // ldr or str
-
-        oneword = 0xE5000000;
-
-        // sourseレジスタ切り出し
-        int sourse_reg;
-
-        start = parse_register(buf, start, &sourse_reg);
-
-        if (start == PARSE_FAIL) { return start; }
-
-        start = skip_comma(buf, start);
-
-        if (start == PARSE_FAIL) { return start; }
-
-        start = parse_left_sbracket(buf, start);
-
-        if (start == PARSE_FAIL) { return start; }
-
-        // baseレジスタ切り出し
-        int base_reg;
-
-        start = parse_register(buf, start, &base_reg);
-
-        if (start == PARSE_FAIL) { return start; }
-
-
-        if (is_comma(buf, start)) { // 即値あり　
-
-            start = skip_comma(buf, start);
-
-            int imm_value;
-            start = parse_immediate(buf, start, &imm_value);
-
-            if (start == PARSE_FAIL) { return start; }
-
-            start = parse_right_sbracket(buf, start);
-
-            if (start == PARSE_FAIL) { return start; }
-
-
-            if (imm_value < 0) { // 負のオフセット
-
-                oneword += 0x1 << 20;
-                oneword += base_reg << 16;
-                oneword += sourse_reg << 12;
-                oneword += -1 * imm_value;
-
-            } else { // 正のオフセット
-
-                oneword += 0x9 << 20;
-                oneword += base_reg << 16;
-                oneword += sourse_reg << 12;
-                oneword += imm_value;
-
-            }
-
-        } else { // レジスタのみ
-
-            // ldrかstr判定
-            if (strncmp(sub_str.str, "ldr", 3) == 0) {
-                oneword += 0x9 << 20; // ldr  ex. ldr r0, [r15]
-            } else {
-                oneword += 0x8 << 20; // str  ex. str r1, [0]
-            }
-
-
-            start = parse_right_sbracket(buf, start);
-
-            if (start == PARSE_FAIL) { return start; }
-
-            oneword += base_reg << 16;
-            oneword += sourse_reg << 12;
-
-        }
-
-
-    } else if (strncmp(sub_str.str, ".raw", 4) == 0) { //.raw
-        unsigned int raw_val;
-        start = parse_raw(buf, start, &raw_val);
-
-        if (start == PARSE_FAIL) { return start; }
-
-        oneword = raw_val;
+    } else if (mnemonic_symbol == RAW)
+    {
+        raw_word(buf, start, &oneword);
     }
 
     emit_word(emitter, oneword);
@@ -368,22 +402,22 @@ int main(int argc, char **argv) {
 
     unit_tests();
 
-    // アセンブル結果を渡す配列を準備
-    struct Emitter emitter;
-    initialize_result_arr(&emitter);
-
-    FILE *fp;
-    fp = fopen(argv[1], "r");
-
-    if (fp == NULL) { printf("Not exist file");}
-
-    // .ksファイルをアセンブルする
-    read_simple_assembly_file(fp, &emitter);
-
-    fclose(fp);
-
-    // バイナリ書き込み
-    write_binary_file(&emitter);
+//    // アセンブル結果を渡す配列を準備
+//    struct Emitter emitter;
+//    initialize_result_arr(&emitter);
+//
+//    FILE *fp;
+//    fp = fopen(argv[1], "r");
+//
+//    if (fp == NULL) { printf("Not exist file");}
+//
+//    // .ksファイルをアセンブルする
+//    read_simple_assembly_file(fp, &emitter);
+//
+//    fclose(fp);
+//
+//    // バイナリ書き込み
+//    write_binary_file(&emitter);
 
     return 0;
 }
