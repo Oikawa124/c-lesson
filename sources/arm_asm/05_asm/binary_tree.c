@@ -7,6 +7,9 @@
 
 #define NOT_FOUND -1
 
+static Node *mnemonic_root = NULL;
+static Node *label_loot = NULL;
+
 static int mnemonic_id = 1;
 static int label_id = 10000;
 
@@ -101,6 +104,7 @@ void initialize_mnemonic_root(){
 static int streq(char *s1, char *s2) { return 0 == strcmp(s1, s2); }
 
 
+/*insert node*/
 static void test_insert_node_when_call_once(){
 
     // SetUP
@@ -159,6 +163,43 @@ static void test_insert_node_when_call_three_times(){
     initialize_mnemonic_root();
 }
 
+static void test_insert_node_when_multiple_words(){
+
+    // SetUP
+    char *str = "abc def";
+    struct substring input1, input2;
+
+    input1.str = str;
+    input1.len = 3;
+
+    input2.str = str+4;
+    input2.len = 3;
+
+    char *expect_name1 = "abc";
+    int expect_value1 = 1;
+
+    char *expect_name2 = "def";
+    int expect_value2 = 2;
+
+    // Exercise
+    mnemonic_root = insert_node(mnemonic_root, &input1, mnemonic_id);
+    mnemonic_id++;
+
+    mnemonic_root = insert_node(mnemonic_root, &input2, mnemonic_id);
+
+    // Verify
+    assert(expect_value1 == mnemonic_root->value);
+    assert(streq(expect_name1, mnemonic_root->name));
+
+    assert(expect_value2 == mnemonic_root->left->value);
+    assert(streq(expect_name2, mnemonic_root->left->name));
+
+    // TearDown
+    initialize_mnemonic_root();
+}
+
+
+/*search node */
 static void test_search_node_when_call_once(){
 
     // SetUP
@@ -212,6 +253,41 @@ static void test_search_node_when_call_three_times(){
     initialize_mnemonic_root();
 }
 
+static void test_search_node_when_multiple_words(){
+
+    // SetUP
+    char *str = "abc def";
+    struct substring input1, input2;
+
+    input1.str = str;
+    input1.len = 3;
+
+    input2.str = str+4;
+    input2.len = 3;
+
+
+    int expect_value1 = 1;
+    int expect_value2 = 2;
+
+    // Exercise
+    mnemonic_root = insert_node(mnemonic_root, &input1, mnemonic_id);
+    mnemonic_id++;
+
+    mnemonic_root = insert_node(mnemonic_root, &input2, mnemonic_id);
+
+    int actual_value1 = search_node(mnemonic_root, &input1);
+    int actual_value2 = search_node(mnemonic_root, &input2);
+
+    // Verify
+    assert(expect_value1 == actual_value1);
+    assert(expect_value2 == actual_value2);
+
+    // TearDown
+    initialize_mnemonic_root();
+}
+
+
+/* mnemonic to symbol*/
 static void test_to_mnemonic_symbol_when_call_once(){
 
     // SetUP
@@ -272,6 +348,34 @@ static void test_to_mnemonic_symbol_when_different_symbol(){
     initialize_mnemonic_root();
 }
 
+static void test_to_mnemonic_symbol_when_multiple_words(){
+
+    // SetUP
+    char *str = "abc def";
+    struct substring input1, input2;
+
+    input1.str = str;
+    input1.len = 3;
+
+    input2.str = str+4;
+    input2.len = 3;
+
+
+    int expect_value1 = 1;
+    int expect_value2 = 2;
+
+    // Exercise
+    int actual_value1 = to_mnemonic_symbol(&input1);
+    int actual_value2 = to_mnemonic_symbol(&input2);
+
+    // Verify
+    assert(expect_value1 == actual_value1);
+    assert(expect_value2 == actual_value2);
+
+    // TearDown
+    initialize_mnemonic_root();
+}
+
 
 static void test_my_strdup(){
 
@@ -294,21 +398,24 @@ static void test_my_strdup(){
 static void unit_tests() {
     test_insert_node_when_call_once();
     test_insert_node_when_call_three_times();
+    test_insert_node_when_multiple_words();
 
     test_search_node_when_call_once();
     test_search_node_when_call_three_times();
+    test_search_node_when_multiple_words();
 
     test_to_mnemonic_symbol_when_call_once();
     test_to_mnemonic_symbol_when_same_symbol();
     test_to_mnemonic_symbol_when_different_symbol();
+    test_to_mnemonic_symbol_when_multiple_words();
 
     test_my_strdup();
 }
 
 
-//int main() {
-//
-//    unit_tests();
-//
-//    return 1;
-//}
+int main() {
+
+    unit_tests();
+
+    return 0;
+}

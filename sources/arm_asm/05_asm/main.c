@@ -1079,6 +1079,7 @@ static void set_up(){
     to_mnemonic_symbol(&raw);
     // いちいち構造体を初期化する必要はない?
 }
+// str_to_nemonic_symbolなど
 
 
 
