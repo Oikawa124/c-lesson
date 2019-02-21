@@ -5,13 +5,10 @@
 
 #include "asm.h"
 
-enum {
-    MOV = 1,
-    STR,
-    LDR,
-    RAW,
-};
-
+int MOV;
+int LDR;
+int STR;
+int RAW;
 
 
 int skip_space(char *str, int start){
@@ -1063,31 +1060,39 @@ void write_binary_file(struct Emitter *emitter){
     fclose(fp);
 }
 
+
+static int str_to_mnemonic_symbol(char *str, int len) {
+    struct substring sub;
+    sub.str = str;
+    sub.len = len;
+
+    int value = to_mnemonic_symbol(&sub);
+
+    return value;
+}
+
+
 static void set_up(){
     initialize_mnemonic_root();
 
-    struct substring mov = {.str="mov", .len=3};
-    to_mnemonic_symbol(&mov);
+    MOV = str_to_mnemonic_symbol("mov", 3);
+    STR = str_to_mnemonic_symbol("str", 3);
+    LDR = str_to_mnemonic_symbol("ldr", 3);
+    RAW = str_to_mnemonic_symbol(".raw", 4);
 
-    struct substring str = {.str="str", .len=3};
-    to_mnemonic_symbol(&str);
-
-    struct substring ldr = {.str="ldr", .len=3};
-    to_mnemonic_symbol(&ldr);
-
-    struct substring raw = {.str=".raw", .len=4};
-    to_mnemonic_symbol(&raw);
-    // いちいち構造体を初期化する必要はない?
 }
-// str_to_nemonic_symbolなど
 
+// todo str_to_mnemonic_symbolのようにラップする関数を作る。
+//  slackを見て修正。
 
 
 
 int main(int argc, char **argv) {
 
-    unit_tests();
+    set_up();
 
+//    unit_tests();
+//
 //    // アセンブル結果を渡す配列を準備
 //    struct Emitter emitter;
 //    initialize_result_arr(&emitter);

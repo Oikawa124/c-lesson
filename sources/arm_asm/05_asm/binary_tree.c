@@ -412,10 +412,10 @@ static void unit_tests() {
     test_my_strdup();
 }
 
-
-int main() {
-
-    unit_tests();
-
-    return 0;
-}
+//
+//int main() {
+//
+//    unit_tests();
+//
+//    return 0;
+//}
