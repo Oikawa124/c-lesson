@@ -65,7 +65,5 @@ int to_label_symbol(struct substring *substr);
 
 
 /*dictionary*/
-void dict_put(char* key, struct Element *elem);
-int dict_get(char* key, struct Element *out_elem);
-
-// 辞書のkey,valueが分からない
+void dict_put(int key, unsigned int line_num);
+int dict_get(int key, unsigned int *out_line_num);
