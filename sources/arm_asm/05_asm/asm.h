@@ -60,3 +60,12 @@ void emit_word(struct Emitter *emitter, unsigned int oneword);
 void initialize_mnemonic_root();
 int to_mnemonic_symbol(struct substring *substr);
 
+void initialize_label_root();
+int to_label_symbol(struct substring *substr);
+
+
+/*dictionary*/
+void dict_put(char* key, struct Element *elem);
+int dict_get(char* key, struct Element *out_elem);
+
+// 辞書のkey,valueが分からない

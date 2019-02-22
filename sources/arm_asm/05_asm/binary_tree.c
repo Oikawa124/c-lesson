@@ -7,8 +7,16 @@
 
 #define NOT_FOUND -1
 
+typedef struct _Node {
+    char *name;
+    int value;
+    struct _Node *left;
+    struct _Node *right;
+} Node;
+
+
 static Node *mnemonic_root = NULL;
-static Node *label_loot = NULL;
+static Node *label_root = NULL;
 
 static int mnemonic_id = 1;
 static int label_id = 10000;
@@ -90,11 +98,31 @@ int to_mnemonic_symbol(struct substring *substr){
 }
 
 
+int to_label_symbol(struct substring *substr){
+    int value;
+
+    if ((value = search_node(label_root, substr)) != NOT_FOUND) {
+        return value;
+    }
+
+    label_root = insert_node(label_root, substr, label_id);
+    label_id++;
+
+    return label_id - 1;
+}
+
+
 // 初期化
 void initialize_mnemonic_root(){
     delete_tree(mnemonic_root);
     mnemonic_root = NULL;
     mnemonic_id = 1;
+}
+
+void initialize_label_root(){
+    delete_tree(label_root);
+    label_root = NULL;
+    label_id = 10000;
 }
 
 
@@ -377,6 +405,68 @@ static void test_to_mnemonic_symbol_when_multiple_words(){
 }
 
 
+/* label to symbol*/
+static void test_to_label_symbol_when_call_once(){
+
+    // SetUP
+    struct substring input = {.str="HelloWorld", .len=10};
+
+    int expect_value = 10000;
+
+    // Exercise
+    int actual_value = to_label_symbol(&input);
+
+    // Verify
+    assert(expect_value == actual_value);
+
+    // TearDown
+    initialize_label_root();
+}
+
+
+static void test_to_label_symbol_when_same_symbol(){
+
+    // SetUP
+    struct substring input1 = {.str="label", .len=5};
+    struct substring input2 = {.str="label", .len=5};
+
+    int expect_value1 = 10000;
+    int expect_value2 = 10000;
+
+
+    // Exercise
+    int actual_value1 = to_label_symbol(&input1);
+    int actual_value2 = to_label_symbol(&input2);
+
+    // Verify
+    assert(expect_value1 == actual_value1);
+    assert(expect_value2 == actual_value2);
+
+    // TearDown
+    initialize_label_root();
+}
+
+static void test_to_label_symbol_when_different_symbol(){
+
+    // SetUP
+    struct substring input1 = {.str="mov", .len=3};
+    struct substring input2 = {.str="str", .len=3};
+
+    int expect_value1 = 10000;
+    int expect_value2 = 10001;
+
+    // Exercise
+    int actual_value1 = to_label_symbol(&input1);
+    int actual_value2 = to_label_symbol(&input2);
+
+    // Verify
+    assert(expect_value1 == actual_value1);
+    assert(expect_value2 == actual_value2);
+
+    // TearDown
+    initialize_label_root();
+}
+
 static void test_my_strdup(){
 
     // SetUP
@@ -396,26 +486,37 @@ static void test_my_strdup(){
 
 
 static void unit_tests() {
+
+    // insert node
     test_insert_node_when_call_once();
     test_insert_node_when_call_three_times();
     test_insert_node_when_multiple_words();
 
+    // search node
     test_search_node_when_call_once();
     test_search_node_when_call_three_times();
     test_search_node_when_multiple_words();
 
+    // to mnemonic symbol
     test_to_mnemonic_symbol_when_call_once();
     test_to_mnemonic_symbol_when_same_symbol();
     test_to_mnemonic_symbol_when_different_symbol();
     test_to_mnemonic_symbol_when_multiple_words();
 
+    // to label symbol
+    test_to_label_symbol_when_call_once();
+    test_to_label_symbol_when_same_symbol();
+    test_to_label_symbol_when_different_symbol();
+
+    // my strdup
     test_my_strdup();
 }
 
-//
-//int main() {
-//
-//    unit_tests();
-//
-//    return 0;
-//}
+
+
+int main() {
+
+    unit_tests();
+
+    return 0;
+}
