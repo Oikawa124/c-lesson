@@ -16,6 +16,7 @@ void set_up();
 int MOV;
 int LDR;
 int STR;
+int B;
 int RAW;
 
 
@@ -23,7 +24,7 @@ int RAW;
 int parse_one(char *str, int start, struct substring* out_sub_str);
 int parse_register(char *str, int start, int *out_register);
 int parse_immediate(char *str, int start, int *out_imm_value);
-int parse_raw(char *str, int start, unsigned int *out_raw_value);
+int parse_raw_value(char *str, int start, unsigned int *out_raw_value);
 
 int parse_left_sbracket(char *str, int start);
 int parse_right_sbracket(char *str, int start);
@@ -67,3 +68,18 @@ int to_label_symbol(struct substring *substr);
 /*dictionary*/
 void dict_put(int key, unsigned int line_num);
 int dict_get(int key, unsigned int *out_line_num);
+
+/*linked list*/
+
+typedef struct _B_list {
+    int emit_arr_pos;
+    unsigned int op_address;
+    int label_symbol;
+
+    struct _B_list *next;
+}B_list;
+
+B_list *b_list_head;
+void add_b_list(int emit_arr_pos,
+                unsigned int op_address,
+                int label_symbol);
