@@ -2,6 +2,7 @@
 #include <mem.h>
 #include <ctype.h>
 #include <assert.h>
+#include <stdlib.h>
 
 #include "asm.h"
 
@@ -135,32 +136,46 @@ static int single_data_transfer(char *str, int start, int mnemonic, unsigned int
 
 
 
+void address_decision(struct Emitter *emitter){
+    // ここでラベルのアドレスを解決する。
 
-// todo instruction_set_XXXの名前のほうが良いか。
-static int instruction_set_is_branch(char *str, int start, unsigned int *out_oneword){
-    int pos = start;
+    B_list *pos = b_list_head;
+
+    // 命令: bのみ対応
     unsigned int oneword = 0xEA000000;
+    while (pos != NULL) {
+
+        unsigned int label_address;
+        dict_get(pos->label_symbol, &label_address);
+        int offset = abs(pos->op_address - label_address) - 8; // r15は8個先を示しているため、-8する
+
+        if (offset < 0) {
+            offset = (~(-1*offset)) + 1; //2の補数表現
+        }
+
+        offset = (offset >> 2) & 0xFFFFFF; // 右に2bitシフト
+
+        oneword += offset;
+
+        emitter->array[pos->emit_arr_pos] = oneword;
+        pos = pos->next;
+    }
+}
+
+// todo ほかの部分もinstruction_set_XXXの名前のほうが良いか。
+static int instruction_set_is_branch(char *str, int start, int emit_arr_pos, unsigned int *out_oneword){
+    int pos = start;
 
     struct substring sub_str;
     pos = parse_one(str, pos, &sub_str); // ラベルをパース
     if (pos == PARSE_FAIL) { return pos; }
 
-    int label_symbol_key = to_label_symbol(&sub_str);
-    unsigned int label_address;
+    int label_symbol = to_label_symbol(&sub_str);
 
-    dict_get(label_symbol_key, &label_address);
+    // ラベルのアドレスの解決に必要なものを覚えておく
+    add_b_list(emit_arr_pos, memory_address, label_symbol);
 
-    int offset = memory_address - label_address -8; // r15は8個先を示しているため、-8する
-
-    if (offset < 0) {
-        offset = (~(-1*offset)) + 1; //2の補数表現
-        offset = (offset >> 2) & 0xFFFFFF; // 右に2bitシフト
-    }
-
-    oneword += offset;
-
-    *out_oneword = oneword;
-
+    *out_oneword = 0;
     return pos;
 };
 
@@ -218,7 +233,7 @@ int asm_one(char *buf, struct Emitter *emitter) {
 
     } else if (mnemonic_symbol == B)
     {
-        instruction_set_is_branch(buf, start, &oneword);
+        instruction_set_is_branch(buf, start, emitter->pos, &oneword);
 
     } else if (mnemonic_symbol == RAW) {
         raw_word(buf, start, &oneword);
@@ -232,9 +247,6 @@ int asm_one(char *buf, struct Emitter *emitter) {
 
     return 1;
 }
-
-
-
 
 
 
@@ -381,10 +393,62 @@ static void test_asm_one_when_is_b(){
     // Exercise
     asm_one(input1, &emitter);
     asm_one(input2, &emitter);
-
+    address_decision(&emitter);
 
     // Verify
     assert(expect == emitter.array[0]);
+
+    // TearDown
+    initialize_when_test();
+}
+
+static void test_asm_one_when_is_b_with_after_label(){
+    // SetUp
+    char *input1 = "b loop";
+    char *input2 = "loop:";
+
+    unsigned int expect = 0xEAFFFFFF;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input1, &emitter);
+    asm_one(input2, &emitter);
+    address_decision(&emitter);
+
+    // Verify
+    assert(expect == emitter.array[0]);
+
+    // TearDown
+    initialize_when_test();
+}
+
+static void test_asm_one_when_is_b_with_far_after_label(){
+    // SetUp
+    char *input1 = "b loop";
+    char *input2 = "mov r1, r2";
+    char *input3 = "mov r1, r2";
+    char *input4 = "loop:";
+
+    unsigned int expect = 0xEA000001;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input1, &emitter);
+    asm_one(input2, &emitter);
+    asm_one(input3, &emitter);
+    asm_one(input4, &emitter);
+
+    address_decision(&emitter);
+
+    // Verify
+    assert(expect == emitter.array[0]);
+
+    // TearDown
+    initialize_when_test();
 }
 
 
@@ -408,16 +472,18 @@ static void unit_tests() {
 //    test_asm_one_when_symbol_is_str();
 
     //// b
-    test_asm_one_when_is_b();
+//    test_asm_one_when_is_b();
+//    test_asm_one_when_is_b_with_after_label();
+    test_asm_one_when_is_b_with_far_after_label();
 
 }
+
 
 void read_simple_assembly_file(FILE *fp, struct Emitter *emitter){
 
     cl_getc_set_fp(fp);
 
     int res;
-    int line_num = 0;
     char *buf;
 
     while (1){
@@ -426,17 +492,18 @@ void read_simple_assembly_file(FILE *fp, struct Emitter *emitter){
         int buf_len = 0;
         buf_len = cl_getline(&buf);
 
-        if (buf_len == EOF) { break;}
+        if (buf_len == EOF) {
+            address_decision(emitter);
+            break;
+        }
 
         res = asm_one(buf, emitter);
 
         if (res == PARSE_FAIL) {
             printf("PARSE FAIL\n");
-            printf("line num: %d", line_num);
+            printf("line num: %d", memory_address);
             break;
         }
-
-        line_num++;
     }
 }
 
@@ -457,7 +524,7 @@ int main(int argc, char **argv) {
     set_up();
 
     unit_tests();
-//
+
 //    // アセンブル結果を渡す配列を準備
 //    struct Emitter emitter;
 //    initialize_result_arr(&emitter);

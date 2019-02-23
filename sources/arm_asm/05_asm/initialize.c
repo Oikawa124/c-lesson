@@ -17,12 +17,17 @@ void set_up(){
     MOV = str_to_mnemonic_symbol("mov", 3);
     STR = str_to_mnemonic_symbol("str", 3);
     LDR = str_to_mnemonic_symbol("ldr", 3);
+    B   = str_to_mnemonic_symbol("b", 1);
+
     RAW = str_to_mnemonic_symbol(".raw", 4);
+
 }
 
-
-
-
+void initialize_when_test(){
+    initialize_linked_list();
+    initialize_label_root();
+    initialize_dict();
+}
 
 
 /*unit tests*/

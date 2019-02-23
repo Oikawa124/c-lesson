@@ -59,7 +59,11 @@ void dict_print_all(){
 }
 
 
-static void initialize_dict(){
+void initialize_dict(){
+    for (int index = 0; index < dict_pos; ++index) {
+        dict_array->key = 0;
+        dict_array->value = 0;
+    }
     dict_pos = 0;
 }
 
@@ -216,9 +220,9 @@ void unit_tests() {
     test_dict_get_when_call_three_times();
 }
 
-int main(){
-
-    unit_tests();
-
-    return 0;
-}
+//int main(){
+//
+//    unit_tests();
+//
+//    return 0;
+//}

@@ -12,6 +12,7 @@ struct substring {
 
 /* initialize.c*/
 void set_up();
+void initialize_when_test();
 
 int MOV;
 int LDR;
@@ -68,6 +69,7 @@ int to_label_symbol(struct substring *substr);
 /*dictionary*/
 void dict_put(int key, unsigned int line_num);
 int dict_get(int key, unsigned int *out_line_num);
+void initialize_dict();
 
 /*linked list*/
 
@@ -83,3 +85,5 @@ B_list *b_list_head;
 void add_b_list(int emit_arr_pos,
                 unsigned int op_address,
                 int label_symbol);
+
+void initialize_linked_list();

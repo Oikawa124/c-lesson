@@ -116,7 +116,7 @@ static void unit_tests(){
     test_add_b_list_when_call_two_times();
 }
 
-int main(){
-    unit_tests();
-    return 0;
-}
+//int main(){
+//    unit_tests();
+//    return 0;
+//}

@@ -428,12 +428,33 @@ printf("after value mem %p\n", node->value); // 00AA157C
 ```
 
 
+## ラベルのサポート
+
+```
+b end
+end:
+  b end    
+```
+のobjdumpは、  
+
+```
+Disassembly of section .data:
+
+00000000 <.data>:
+   0:   eaffffff        b       0x4
+   4:   eafffffe        b       0x4
+```
 
 
+### 方針メモ
 
+bのemmiter.array[i]の位置を覚えておく  
+emmiter.array[i] には、oneword = 0を入れておく。  
 
+線形リストには、emmitter.array[i]のi、bの命令があるメモリアドレス、  
+ラベルのシンボルを覚えておく。
 
-
+ラベルのシンボルがわかれば、そのラベルのメモリの位置が分かる。
 
 
 
@@ -518,6 +539,5 @@ for one in [act_str[i:(i+2)] for i in range(4)]:
 ```
 
 こんな感じに  
-
 
 

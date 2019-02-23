@@ -1,7 +1,8 @@
 #include <stdarg.h>
 #include <stdio.h>
 #include <string.h>
-#include <stdint-gcc.h>
+#include <assert.h>
+
 #include "asm.h"
 
 #define BUF_SIZE 100
@@ -102,3 +103,73 @@ int single_atoi_hex(char *str, int *out_num) {
         return PARSE_FAIL;
     }
 }
+
+
+
+
+
+/**************** single atoi hex ************************************/
+
+static void test_single_atoi_hex_with_a() {
+
+    // SetUP
+    char *input = "a";
+    unsigned int expect = 0xa;
+
+    int actual;
+    int res;
+
+    // Exercise
+    res = single_atoi_hex(input, &actual);
+
+    // Verify
+    assert(expect == actual);
+}
+
+static void test_single_atoi_hex_with_A() {
+
+    // SetUP
+    char *input = "A";
+    unsigned int expect = 0xa;
+
+    int actual;
+    int res;
+
+    // Exercise
+    res = single_atoi_hex(input, &actual);
+
+    // Verify
+    assert(expect == actual);
+}
+
+static void test_single_atoi_hex_with_1() {
+
+    // SetUP
+    char *input = "1";
+    unsigned int expect = 0x1;
+
+    int actual;
+    int res;
+
+    // Exercise
+    res = single_atoi_hex(input, &actual);
+
+    // Verify
+    assert(expect == actual);
+}
+
+
+static void unit_tests(){
+
+    // single_atoi_hex
+    test_single_atoi_hex_with_a();
+    test_single_atoi_hex_with_A();
+    test_single_atoi_hex_with_1();
+}
+
+//
+//int main() {
+//    unit_tests();
+//
+//    return 0;
+//}
