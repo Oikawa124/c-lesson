@@ -5,6 +5,8 @@
 
 #include "asm.h"
 
+static unsigned int memory_address = 0x00010000;
+
 static int mov_op(char *str, int start, unsigned int *out_oneword){
 
     int pos = start;
@@ -131,12 +133,44 @@ static int single_data_transfer(char *str, int start, int mnemonic, unsigned int
     return pos;
 }
 
+
+
+
+// todo instruction_set_XXXの名前のほうが良いか。
+static int instruction_set_is_branch(char *str, int start, unsigned int *out_oneword){
+    int pos = start;
+    unsigned int oneword = 0xEA000000;
+
+    struct substring sub_str;
+    pos = parse_one(str, pos, &sub_str); // ラベルをパース
+    if (pos == PARSE_FAIL) { return pos; }
+
+    int label_symbol_key = to_label_symbol(&sub_str);
+    unsigned int label_address;
+
+    dict_get(label_symbol_key, &label_address);
+
+    int offset = memory_address - label_address -8; // r15は8個先を示しているため、-8する
+
+    if (offset < 0) {
+        offset = (~(-1*offset)) + 1; //2の補数表現
+        offset = (offset >> 2) & 0xFFFFFF; // 右に2bitシフト
+    }
+
+    oneword += offset;
+
+    *out_oneword = oneword;
+
+    return pos;
+};
+
+
 static int raw_word(char *str, int start, unsigned int *out_oneword){
 
     int pos = start;
 
     unsigned int raw_val;
-    start = parse_raw(str, start, &raw_val);
+    start = parse_raw_value(str, start, &raw_val);
 
     if (start == PARSE_FAIL) { return start; }
 
@@ -158,28 +192,21 @@ int asm_one(char *buf, struct Emitter *emitter) {
     start = parse_one(buf, start, &sub_str);
 
     int mnemonic_symbol = 0;
+    int label_symbol = 0;
 
-    if (is_colon(buf, start)) {
-        //　ラベル
-    } else {
+
+    if (is_colon(buf, start)) { // ラベル
+        label_symbol = to_label_symbol(&sub_str);
+        dict_put(label_symbol, memory_address);
+
+        return 1;
+
+    } else { // シンボル
         mnemonic_symbol = to_mnemonic_symbol(&sub_str);
     }
 
 
-//    switch (mnemonic_symbol) {
-//        case MOV:
-//
-//        case STR:
-//
-//        case LDR:
-//
-//        case RAW:
-//
-//        default:
-//            printf("Not Implemented");
-//    }
-
-
+    // mnemonicで分岐
     if (mnemonic_symbol == MOV)
     {
         mov_op(buf, start, &oneword);
@@ -189,11 +216,18 @@ int asm_one(char *buf, struct Emitter *emitter) {
     {
         single_data_transfer(buf, start, mnemonic_symbol, &oneword);
 
-    } else if (mnemonic_symbol == RAW)
+    } else if (mnemonic_symbol == B)
     {
+        instruction_set_is_branch(buf, start, &oneword);
+
+    } else if (mnemonic_symbol == RAW) {
         raw_word(buf, start, &oneword);
+
+    } else {
+        printf("Not Implemented");
     }
 
+    memory_address += 4;
     emit_word(emitter, oneword);
 
     return 1;
@@ -334,25 +368,47 @@ static void test_asm_one_when_symbol_is_str(){
     assert(expect == actual);
 }
 
+static void test_asm_one_when_is_b(){
+    // SetUp
+    char *input1 = "loop:";
+    char *input2 = "b loop";
+
+    unsigned int expect = 0xEAFFFFFE;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input1, &emitter);
+    asm_one(input2, &emitter);
+
+
+    // Verify
+    assert(expect == emitter.array[0]);
+}
+
 
 static void unit_tests() {
 
     // asm one
 
-    //// mov
-    test_asm_one_when_symbol_is_mov_with_reg();
-    test_asm_one_when_symbol_is_mov_with_immediate();
+//    //// mov
+//    test_asm_one_when_symbol_is_mov_with_reg();
+//    test_asm_one_when_symbol_is_mov_with_immediate();
+//
+//    //// raw
+//    test_asm_one_when_symbol_is_raw_number_only();
+//
+//    //// ldr
+//    test_asm_one_when_symbol_is_ldr_with_immediate();
+//    test_asm_one_when_symbol_is_ldr_with_minus_immediate();
+//    test_asm_one_when_symbol_is_ldr_with_no_immediate();
+//
+//    //// str
+//    test_asm_one_when_symbol_is_str();
 
-    //// raw
-    test_asm_one_when_symbol_is_raw_number_only();
-
-    //// ldr
-    test_asm_one_when_symbol_is_ldr_with_immediate();
-    test_asm_one_when_symbol_is_ldr_with_minus_immediate();
-    test_asm_one_when_symbol_is_ldr_with_no_immediate();
-
-    //// str
-    test_asm_one_when_symbol_is_str();
+    //// b
+    test_asm_one_when_is_b();
 
 }
 
@@ -401,7 +457,7 @@ int main(int argc, char **argv) {
     set_up();
 
     unit_tests();
-
+//
 //    // アセンブル結果を渡す配列を準備
 //    struct Emitter emitter;
 //    initialize_result_arr(&emitter);
