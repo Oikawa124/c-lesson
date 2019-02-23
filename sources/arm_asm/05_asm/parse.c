@@ -146,7 +146,7 @@ int parse_immediate(char *str, int start, int *out_imm_value){
 }
 
 
-int parse_raw(char *str, int start, unsigned int *out_raw_value){
+int parse_raw_value(char *str, int start, unsigned int *out_raw_value){
     int pos = start;
 
     pos = skip_space(str, pos);
@@ -160,7 +160,7 @@ int parse_raw(char *str, int start, unsigned int *out_raw_value){
     pos++;
 
 
-    // 文字列の中の数字部分の範囲を取得
+    // 数字部分を取得
     unsigned int hex_num = 0;
     int res;
     int one_hex;
@@ -518,7 +518,7 @@ static void test_parse_raw_when_number_only(){
     unsigned int actual_raw_value;
 
     // Exercise
-    start = parse_raw(input, start, &actual_raw_value);
+    start = parse_raw_value(input, start, &actual_raw_value);
 
     // Verify
     assert(expect_imm_value == actual_raw_value);
@@ -535,7 +535,7 @@ static void test_parse_raw_when_number_max(){
     unsigned int actual_raw_value;
 
     // Exercise
-    start = parse_raw(input, start, &actual_raw_value);
+    start = parse_raw_value(input, start, &actual_raw_value);
 
     // Verify
     assert(expect_imm_value == actual_raw_value);
@@ -632,7 +632,7 @@ static void unit_tests() {
     test_parse_immediate_with_imm0x64();
     test_parse_immediate_with_imm0xFA();
 
-    // parse_raw
+    // parse_raw_value
     test_parse_raw_when_number_only();
     test_parse_raw_when_number_max();
 
