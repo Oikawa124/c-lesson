@@ -8,7 +8,7 @@
 
 static unsigned int memory_address = 0x00010000;
 
-static int mov_op(char *str, int start, unsigned int *out_oneword){
+static int asm_mov_op(char *str, int start, unsigned int *out_oneword){
 
     int pos = start;
 
@@ -52,7 +52,7 @@ static int mov_op(char *str, int start, unsigned int *out_oneword){
 }
 
 
-static int single_data_transfer(char *str, int start, int mnemonic, unsigned int *out_oneword) {
+static int asm_single_data_transfer(char *str, int start, int mnemonic, unsigned int *out_oneword) {
     int pos = start;
 
     unsigned int oneword = 0xE5000000;
@@ -136,18 +136,18 @@ static int single_data_transfer(char *str, int start, int mnemonic, unsigned int
 
 
 
-void address_decision(struct Emitter *emitter){
+void resolve_address(struct Emitter *emitter){
     // ここでラベルのアドレスを解決する。
 
-    B_list *pos = b_list_head;
+    unresolve_list *node = unresolve_list_head;
 
     // 命令: bのみ対応
     unsigned int oneword = 0xEA000000;
-    while (pos != NULL) {
+    while (node != NULL) {
 
         unsigned int label_address;
-        dict_get(pos->label_symbol, &label_address);
-        int offset = abs(pos->op_address - label_address) - 8; // r15は8個先を示しているため、-8する
+        dict_get(node->label_symbol, &label_address);
+        int offset = abs(node->op_address - label_address) - 8; // r15は8個先を示しているため、-8する
 
         if (offset < 0) {
             offset = (~(-1*offset)) + 1; //2の補数表現
@@ -157,13 +157,13 @@ void address_decision(struct Emitter *emitter){
 
         oneword += offset;
 
-        emitter->array[pos->emit_arr_pos] = oneword;
-        pos = pos->next;
+        emitter->array[node->emit_arr_pos] = oneword;
+        node = node->next;
     }
 }
 
 // todo ほかの部分もinstruction_set_XXXの名前のほうが良いか。
-static int instruction_set_is_branch(char *str, int start, int emit_arr_pos, unsigned int *out_oneword){
+static int asm_branch(char *str, int start, int emit_arr_pos, unsigned int *out_oneword){
     int pos = start;
 
     struct substring sub_str;
@@ -173,7 +173,7 @@ static int instruction_set_is_branch(char *str, int start, int emit_arr_pos, uns
     int label_symbol = to_label_symbol(&sub_str);
 
     // ラベルのアドレスの解決に必要なものを覚えておく
-    add_b_list(emit_arr_pos, memory_address, label_symbol);
+    add_unresolve_list(emit_arr_pos, memory_address, label_symbol);
 
     *out_oneword = 0;
     return pos;
@@ -224,16 +224,16 @@ int asm_one(char *buf, struct Emitter *emitter) {
     // mnemonicで分岐
     if (mnemonic_symbol == MOV)
     {
-        mov_op(buf, start, &oneword);
+        asm_mov_op(buf, start, &oneword);
 
     } else if ((mnemonic_symbol == LDR)
                 || (mnemonic_symbol == STR))
     {
-        single_data_transfer(buf, start, mnemonic_symbol, &oneword);
+        asm_single_data_transfer(buf, start, mnemonic_symbol, &oneword);
 
     } else if (mnemonic_symbol == B)
     {
-        instruction_set_is_branch(buf, start, emitter->pos, &oneword);
+        asm_branch(buf, start, emitter->pos, &oneword);
 
     } else if (mnemonic_symbol == RAW) {
         raw_word(buf, start, &oneword);
@@ -393,7 +393,7 @@ static void test_asm_one_when_is_b(){
     // Exercise
     asm_one(input1, &emitter);
     asm_one(input2, &emitter);
-    address_decision(&emitter);
+    resolve_address(&emitter);
 
     // Verify
     assert(expect == emitter.array[0]);
@@ -415,7 +415,7 @@ static void test_asm_one_when_is_b_with_after_label(){
     // Exercise
     asm_one(input1, &emitter);
     asm_one(input2, &emitter);
-    address_decision(&emitter);
+    resolve_address(&emitter);
 
     // Verify
     assert(expect == emitter.array[0]);
@@ -442,7 +442,7 @@ static void test_asm_one_when_is_b_with_far_after_label(){
     asm_one(input3, &emitter);
     asm_one(input4, &emitter);
 
-    address_decision(&emitter);
+    resolve_address(&emitter);
 
     // Verify
     assert(expect == emitter.array[0]);
@@ -456,24 +456,24 @@ static void unit_tests() {
 
     // asm one
 
-//    //// mov
-//    test_asm_one_when_symbol_is_mov_with_reg();
-//    test_asm_one_when_symbol_is_mov_with_immediate();
-//
-//    //// raw
-//    test_asm_one_when_symbol_is_raw_number_only();
-//
-//    //// ldr
-//    test_asm_one_when_symbol_is_ldr_with_immediate();
-//    test_asm_one_when_symbol_is_ldr_with_minus_immediate();
-//    test_asm_one_when_symbol_is_ldr_with_no_immediate();
-//
-//    //// str
-//    test_asm_one_when_symbol_is_str();
+    //// mov
+    test_asm_one_when_symbol_is_mov_with_reg();
+    test_asm_one_when_symbol_is_mov_with_immediate();
 
-    //// b
-//    test_asm_one_when_is_b();
-//    test_asm_one_when_is_b_with_after_label();
+    //// raw
+    test_asm_one_when_symbol_is_raw_number_only();
+
+    //// ldr
+    test_asm_one_when_symbol_is_ldr_with_immediate();
+    test_asm_one_when_symbol_is_ldr_with_minus_immediate();
+    test_asm_one_when_symbol_is_ldr_with_no_immediate();
+
+    //// str
+    test_asm_one_when_symbol_is_str();
+
+    // b
+    test_asm_one_when_is_b();
+    test_asm_one_when_is_b_with_after_label();
     test_asm_one_when_is_b_with_far_after_label();
 
 }
@@ -493,7 +493,7 @@ void read_simple_assembly_file(FILE *fp, struct Emitter *emitter){
         buf_len = cl_getline(&buf);
 
         if (buf_len == EOF) {
-            address_decision(emitter);
+            resolve_address(emitter);
             break;
         }
 
@@ -523,24 +523,24 @@ int main(int argc, char **argv) {
 
     set_up();
 
-    unit_tests();
+    //unit_tests();
 
-//    // アセンブル結果を渡す配列を準備
-//    struct Emitter emitter;
-//    initialize_result_arr(&emitter);
-//
-//    FILE *fp;
-//    fp = fopen(argv[1], "r");
-//
-//    if (fp == NULL) { printf("Not exist file");}
-//
-//    // .ksファイルをアセンブルする
-//    read_simple_assembly_file(fp, &emitter);
-//
-//    fclose(fp);
-//
-//    // バイナリ書き込み
-//    write_binary_file(&emitter);
+    // アセンブル結果を渡す配列を準備
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    FILE *fp;
+    fp = fopen(argv[1], "r");
+
+    if (fp == NULL) { printf("Not exist file");}
+
+    // .ksファイルをアセンブルする
+    read_simple_assembly_file(fp, &emitter);
+
+    fclose(fp);
+
+    // バイナリ書き込み
+    write_binary_file(&emitter);
 
     return 0;
 }

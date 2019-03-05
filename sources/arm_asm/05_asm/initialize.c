@@ -24,7 +24,7 @@ void set_up(){
 }
 
 void initialize_when_test(){
-    initialize_linked_list();
+    free_linked_list();
     initialize_label_root();
     initialize_dict();
 }

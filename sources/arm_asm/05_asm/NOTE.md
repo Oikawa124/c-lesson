@@ -456,10 +456,22 @@ emmiter.array[i] には、oneword = 0を入れておく。
 
 ラベルのシンボルがわかれば、そのラベルのメモリの位置が分かる。
 
+```
+char *input1 = "b loop";
+char *input2 = "mov r1, r2";
+char *input3 = "mov r1, r2";
+char *input4 = "loop:";
+
+```
 
 
+#### objdump結果
 
 
+00000000 <.data>:
+   0:   ea000001        b       0xc
+   4:   e1a01002        mov     r1, r2
+   8:   e1a01002        mov     r1, r2
 
 
 

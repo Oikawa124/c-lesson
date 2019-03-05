@@ -73,17 +73,17 @@ void initialize_dict();
 
 /*linked list*/
 
-typedef struct _B_list {
+typedef struct _unresolve_list {
     int emit_arr_pos;
     unsigned int op_address;
     int label_symbol;
 
-    struct _B_list *next;
-}B_list;
+    struct _unresolve_list *next;
+}unresolve_list;
 
-B_list *b_list_head;
-void add_b_list(int emit_arr_pos,
-                unsigned int op_address,
-                int label_symbol);
+unresolve_list *unresolve_list_head;
+void add_unresolve_list(int emit_arr_pos,
+                        unsigned int op_address,
+                        int label_symbol);
 
-void initialize_linked_list();
+void free_linked_list();

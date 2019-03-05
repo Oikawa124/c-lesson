@@ -4,64 +4,59 @@
 
 #include "asm.h"
 
-B_list *b_list_head = NULL;
+unresolve_list *unresolve_list_head = NULL;
 
 
-static B_list *create_b_list(int emit_arr_pos,
-                             unsigned int op_address,
-                             int label_symbol){
-    B_list *b_list;
+static unresolve_list *create_unresolve_list(int emit_arr_pos,
+                                             unsigned int op_address,
+                                             int label_symbol){
+    unresolve_list *unresole_list_;
 
-    b_list = malloc(sizeof(B_list));
+    unresole_list_ = malloc(sizeof(unresolve_list));
 
-    b_list->emit_arr_pos = emit_arr_pos;
-    b_list->op_address = op_address;
-    b_list->label_symbol = label_symbol;
-    b_list->next = NULL;
+    unresole_list_->emit_arr_pos = emit_arr_pos;
+    unresole_list_->op_address = op_address;
+    unresole_list_->label_symbol = label_symbol;
+    unresole_list_->next = NULL;
 
-    return b_list;
+    return unresole_list_;
 }
 
-void add_b_list(int emit_arr_pos,
-                unsigned int op_address,
-                int label_symbol){
+void add_unresolve_list(int emit_arr_pos,
+                        unsigned int op_address,
+                        int label_symbol){
 
-    if (b_list_head == NULL) {
-        b_list_head = create_b_list(emit_arr_pos, op_address, label_symbol);
+    if (unresolve_list_head == NULL) {
+        unresolve_list_head = create_unresolve_list(emit_arr_pos, op_address, label_symbol);
         return;
     }
 
-    B_list *new_b_list = create_b_list(emit_arr_pos, op_address, label_symbol);
+    unresolve_list *new_unresolve_list = create_unresolve_list(emit_arr_pos, op_address, label_symbol);
 
-    B_list *pos = b_list_head;
-    B_list *prev = NULL;
-
-    // 最後の要素まで移動
-    while (pos != NULL){
-        prev = pos;
-        pos = pos->next;
-    }
-
-    prev->next = new_b_list;
+    // unresolve_list_headは常に最新のノードになる
+    unresolve_list *prev_node = unresolve_list_head;
+    unresolve_list_head = new_unresolve_list;
+    unresolve_list_head->next = prev_node;
 }
 
 
-void initialize_linked_list(){
+void free_linked_list(){
 
-    B_list *tmp;
-    while (b_list_head != NULL){
-        tmp = b_list_head;
-        b_list_head = b_list_head->next;
+    unresolve_list *tmp, *temp_head;
+    temp_head = unresolve_list_head;
+    while (temp_head != NULL){
+        tmp = temp_head;
+        temp_head = temp_head->next;
         free(tmp);
     }
-    b_list_head = NULL;
+    unresolve_list_head = NULL;
 }
 
 
 
 
 /* unit tests*/
-static void test_add_b_list_when_call_once(){
+static void test_add_unresolve_list_when_call_once(){
 
     // SetUP
     int input_emit_arr_pos = 1;
@@ -69,18 +64,18 @@ static void test_add_b_list_when_call_once(){
     int input_label_symbol = 1;
 
     // Exercise
-    add_b_list(input_emit_arr_pos, input_op_address, input_label_symbol);
+    add_unresolve_list(input_emit_arr_pos, input_op_address, input_label_symbol);
 
     // Verify
-    assert(input_emit_arr_pos == b_list_head->emit_arr_pos);
-    assert(input_op_address == b_list_head->op_address);
-    assert(input_label_symbol == b_list_head->label_symbol);
+    assert(input_emit_arr_pos == unresolve_list_head->emit_arr_pos);
+    assert(input_op_address == unresolve_list_head->op_address);
+    assert(input_label_symbol == unresolve_list_head->label_symbol);
 
     // TearDown
-    initialize_linked_list();
+    free_linked_list();
 }
 
-static void test_add_b_list_when_call_two_times(){
+static void test_add_unresolve_list_when_call_two_times(){
 
     // SetUP
     int input_emit_arr_pos1 = 1;
@@ -93,29 +88,29 @@ static void test_add_b_list_when_call_two_times(){
     int input_label_symbol2 = 10;
 
     // Exercise
-    add_b_list(input_emit_arr_pos1, input_op_address1, input_label_symbol1);
-    add_b_list(input_emit_arr_pos2, input_op_address2, input_label_symbol2);
+    add_unresolve_list(input_emit_arr_pos1, input_op_address1, input_label_symbol1);
+    add_unresolve_list(input_emit_arr_pos2, input_op_address2, input_label_symbol2);
 
     // Verify
-    assert(input_emit_arr_pos1 == b_list_head->emit_arr_pos);
-    assert(input_op_address1 == b_list_head->op_address);
-    assert(input_label_symbol1 == b_list_head->label_symbol);
+    assert(input_emit_arr_pos1 == unresolve_list_head->next->emit_arr_pos);
+    assert(input_op_address1 == unresolve_list_head->next->op_address);
+    assert(input_label_symbol1 == unresolve_list_head->next->label_symbol);
 
-    assert(input_emit_arr_pos2 == b_list_head->next->emit_arr_pos);
-    assert(input_op_address2 == b_list_head->next->op_address);
-    assert(input_label_symbol2 == b_list_head->next->label_symbol);
+    assert(input_emit_arr_pos2 == unresolve_list_head->emit_arr_pos);
+    assert(input_op_address2 == unresolve_list_head->op_address);
+    assert(input_label_symbol2 == unresolve_list_head->label_symbol);
 
     // TearDown
-    initialize_linked_list();
+    free_linked_list();
 }
 
 
 static void unit_tests(){
 
-    test_add_b_list_when_call_once();
-    test_add_b_list_when_call_two_times();
+    test_add_unresolve_list_when_call_once();
+    test_add_unresolve_list_when_call_two_times();
 }
-
+//
 //int main(){
 //    unit_tests();
 //    return 0;
