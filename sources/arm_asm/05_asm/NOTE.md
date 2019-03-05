@@ -475,10 +475,43 @@ char *input4 = "loop:";
 
 
 
+## hello_asm.ksの実行
+
+### objdump結果
+Disassembly of section .data:
+
+00000000 <.data>:
+   0:   e59f0030        ldr     r0, [pc, #48]   ; 0x38
+   4:   e3a01068        mov     r1, #104        ; 0x68
+   8:   e5801000        str     r1, [r0]
+   c:   e3a01065        mov     r1, #101        ; 0x65
+  10:   e5801000        str     r1, [r0]
+  14:   e3a0106c        mov     r1, #108        ; 0x6c
+  18:   e5801000        str     r1, [r0]
+  1c:   e3a0106f        mov     r1, #111        ; 0x6f
+  20:   e5801000        str     r1, [r0]
+  24:   e3a0200d        mov     r2, #13
+  28:   e5802000        str     r2, [r0]
+  2c:   e3a0200a        mov     r2, #10
+  30:   e5802000        str     r2, [r0]
+  34:   eafffffe        b       0x34
 
 
-
-
+### hello_asm.sのobjdump結果
+   0:   e59f0030        ldr     r0, [pc, #48]   ; 0x38
+   4:   e3a01068        mov     r1, #104        ; 0x68
+   8:   e5801000        str     r1, [r0]
+   c:   e3a01065        mov     r1, #101        ; 0x65
+  10:   e5801000        str     r1, [r0]
+  14:   e3a0106c        mov     r1, #108        ; 0x6c
+  18:   e5801000        str     r1, [r0]
+  1c:   e3a0106f        mov     r1, #111        ; 0x6f
+  20:   e5801000        str     r1, [r0]
+  24:   e3a0200d        mov     r2, #13
+  28:   e5802000        str     r2, [r0]
+  2c:   e3a0200a        mov     r2, #10
+  30:   e5802000        str     r2, [r0]
+  34:   eafffffe        b       0x34
 
 
 
