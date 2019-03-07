@@ -4,17 +4,29 @@
 import subprocess
 import os
 
-filenames = ["test"]
+filenames = ["test", "hello_asm"]
 
 compile_utils = "gcc -c cl_utils.c".split()
 compile_main = "gcc -c main.c".split()
-link = "gcc cl_utils.o main.o -o test".split()
+compile_parse = "gcc -c parse.c".split()
+compile_dictionary = "gcc -c dictionary.c".split()
+compile_linked_list = "gcc -c linked_list.c".split()
+compile_binary_tree = "gcc -c binary_tree.c".split()
+compile_initialize = "gcc -c initialize.c".split()
+
+link = "gcc cl_utils.o main.o parse.o dictionary.o linked_list.o binary_tree.o initialize.o -o test".split()
 
 
 def main():
     # コンパイル
     subprocess.run(compile_utils, shell=True)
     subprocess.run(compile_main, shell=True)
+    subprocess.run(compile_parse, shell=True)
+    subprocess.run(compile_dictionary, shell=True)
+    subprocess.run(compile_linked_list, shell=True)
+    subprocess.run(compile_binary_tree, shell=True)
+    subprocess.run(compile_initialize, shell=True)
+
     subprocess.run(link, shell=True)
 
     is_success = True
@@ -66,7 +78,15 @@ def main():
     # ファイル削除
     os.remove("./main.o")
     os.remove("./cl_utils.o")
+    os.remove("./initialize.o")
+    os.remove("./binary_tree.o")
+    os.remove("./linked_list.o")
+    os.remove("./parse.o")
+    os.remove("./dictionary.o")
+
     os.remove("./test.exe")
+
+    #todo ファイル削除を正規表現で書き直し
 
     if is_success:
         os.remove("./test.bin")

@@ -13,3 +13,4 @@ mov r2,#0x0A
 str r2,[r0]
 loop:
     b loop
+.raw 0x101f1000
