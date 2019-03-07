@@ -514,6 +514,30 @@ Disassembly of section .data:
   34:   eafffffe        b       0x34
 
 
+## 文字列リテラルとstate machine
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 # 詰まったところ、変な実装
 
