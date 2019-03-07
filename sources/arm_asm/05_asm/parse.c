@@ -1,6 +1,7 @@
 #include <ctype.h>
 #include <assert.h>
 #include <mem.h>
+#include <malloc.h>
 
 #include "asm.h"
 
@@ -184,6 +185,36 @@ int parse_raw_value(char *str, int start, unsigned int *out_raw_value){
     return pos;
 }
 
+
+int parse_string(struct substring *input, int start, char **out_str_value) {
+    char tmp_buf[1024];
+    int tmp_cnt = 0;
+
+    int pos = start;
+    pos = skip_space(input->str, pos);
+
+    if (input->str[pos] != '"') { return PARSE_FAIL; }
+    pos++;
+
+    while (input->str[pos] != '"'){
+
+        tmp_buf[tmp_cnt] = input->str[pos];
+
+        tmp_cnt++;
+        pos++;
+    }
+    tmp_buf[tmp_cnt] = '\0';
+
+    char *res = (char *) malloc(sizeof(char) * 5);
+    memcpy(res, tmp_buf, tmp_cnt+1);
+
+    *out_str_value = res;
+
+    return pos;
+}
+
+
+
 int parse_left_sbracket(char *str, int start){
     int pos = start;
 
@@ -257,6 +288,7 @@ int is_colon(char *str, int start) {
 /**************** Unit Tests ************************************/
 
 int strneq(char *s1, char *s2, int len) { return 0 == strncmp(s1, s2, len); }
+//static int streq(char *s1, char *s2) { return 0 == strcmp(s1, s2); }
 
 void assert_substring_eq(char *expect, struct substring* actual){
     assert(strneq(expect, actual->str, actual->len));
@@ -542,6 +574,30 @@ static void test_parse_raw_when_number_max(){
 }
 
 
+
+/**************** parse string *************************************/
+
+
+
+static void test_parse_string_when_call_once() {
+
+    // SetUp
+    struct substring input = {.str="\"hi\"", .len=2};
+    int start = 0;
+
+    char *expect = "hi";
+    char *actual;
+
+    // Exercise
+    start = parse_string(&input, start, &actual);
+
+    printf("%s\n", expect);
+    printf("%s\n", actual);
+
+    // Verify
+    assert(strneq(expect, actual, 1));
+}
+
 /**************** parse left square bracket ***********************/
 
 static void test_parse_left_sbracket(){
@@ -632,6 +688,9 @@ static void unit_tests() {
     test_parse_immediate_with_imm0x64();
     test_parse_immediate_with_imm0xFA();
 
+    // parse_string
+    test_parse_string_when_call_once();
+
     // parse_raw_value
     test_parse_raw_when_number_only();
     test_parse_raw_when_number_max();
@@ -647,8 +706,8 @@ static void unit_tests() {
     test_is_comma();
 }
 
-//int main() {
-//    unit_tests();
-//
-//    return 0;
-//}
+int main() {
+    unit_tests();
+
+    return 0;
+}
