@@ -186,22 +186,139 @@ int parse_raw_value(char *str, int start, unsigned int *out_raw_value){
 }
 
 
+/*********************** parse string***************************************************/
+
+static char tmp_buf[1024];
+static int tmp_cnt = 0;
+
+// 文字列ステートマシン
+static int state;
+
+typedef enum {
+    ST_DEFAULT,
+    ST_STRING,
+    ST_ESCAPE,
+} State;
+
+typedef enum {
+    EV_DOUBLE_QUART,
+    EV_ESCAPE_CHAR,
+    EV_READ_ONE_CHAR,
+
+} EventCode;
+
+
+
+void ST_initialize(){
+    state = ST_DEFAULT;
+}
+
+
+//  ここでtmp_bufにつめる
+
+int default_read(struct substring *input, int pos) {
+    printf("default read\n");
+    // 数字などのパース？
+    state = ST_DEFAULT;
+    return pos;
+}
+
+
+int string_read(struct substring *input, int pos) {
+    printf("string read\n");
+    // 文字列のパース
+    state = ST_STRING;
+    return pos;
+}
+
+int escape_read(struct substring *input, int pos) {
+    printf("escape read\n");
+    // エスケープシーケンスのパース
+    state = ST_ESCAPE;
+    return pos;
+}
+
+
+
+int onEvent(EventCode ec, struct substring *input, pos) {
+    int _pos;
+
+    switch (state) {
+        case ST_DEFAULT:
+            switch (ec) {
+                case EV_READ_ONE_CHAR:
+                    _pos = default_read(input, pos);
+                    break;
+
+                case EV_DOUBLE_QUART:
+                    _pos = string_read(input, pos);
+                    break;
+
+                default:
+                    break;
+            }
+
+            break;
+
+        case ST_STRING:
+            switch (ec) {
+                case EV_DOUBLE_QUART:
+                    _pos = default_read(input, pos);
+                    break;
+
+                case EV_READ_ONE_CHAR:
+                    _pos = string_read(input, pos);
+                    break;
+
+                case EV_ESCAPE_CHAR:
+                    _pos = escape_read(input, pos);
+                    break;
+
+                default:
+                    break;
+            }
+
+            break;
+
+        case ST_ESCAPE:
+            switch (ec) {
+                case EV_READ_ONE_CHAR:
+                    _pos = string_read(input, pos);
+                    break;
+                default:
+                    break;
+            }
+
+            break;
+
+        default:
+            break;
+    }
+    return _pos;
+}
+
+
+//todo tmp_bufに詰めていくようにする
 int parse_string(struct substring *input, int start, char **out_str_value) {
-    char tmp_buf[1024];
-    int tmp_cnt = 0;
 
     int pos = start;
+
     pos = skip_space(input->str, pos);
 
-    if (input->str[pos] != '"') { return PARSE_FAIL; }
-    pos++;
 
-    while (input->str[pos] != '"'){
+    ST_initialize();
 
-        tmp_buf[tmp_cnt] = input->str[pos];
+    while (input->str[pos] != '\0'){
 
-        tmp_cnt++;
-        pos++;
+        if (input->str[pos] == '"') {
+            pos = onEvent(EV_DOUBLE_QUART, input, pos);
+
+        } else if (input->str[pos] == '\\') {
+            pos = onEvent(EV_ESCAPE_CHAR, input, pos);
+
+        } else {
+            pos = onEvent(EV_READ_ONE_CHAR, input, pos);
+        }
     }
     tmp_buf[tmp_cnt] = '\0';
 
@@ -214,6 +331,7 @@ int parse_string(struct substring *input, int start, char **out_str_value) {
 }
 
 
+/***********************************************************************************/
 
 int parse_left_sbracket(char *str, int start){
     int pos = start;
