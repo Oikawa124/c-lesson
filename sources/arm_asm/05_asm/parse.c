@@ -195,134 +195,63 @@ static int tmp_cnt = 0;
 static int state;
 
 typedef enum {
-    ST_DEFAULT,
+    ST_INIT,
     ST_STRING,
     ST_ESCAPE,
+    ST_END,
 } State;
 
-typedef enum {
-    EV_DOUBLE_QUART,
-    EV_ESCAPE_CHAR,
-    EV_READ_ONE_CHAR,
 
-} EventCode;
-
-
-
-void ST_initialize(){
-    state = ST_DEFAULT;
-}
-
-
-//  ここでtmp_bufにつめる
-
-int default_read(struct substring *input, int pos) {
-    printf("default read\n");
-    // 数字などのパース？
-    state = ST_DEFAULT;
-    return pos;
-}
-
-
-int string_read(struct substring *input, int pos) {
-    printf("string read\n");
-    // 文字列のパース
-    state = ST_STRING;
-    return pos;
-}
-
-int escape_read(struct substring *input, int pos) {
-    printf("escape read\n");
-    // エスケープシーケンスのパース
-    state = ST_ESCAPE;
-    return pos;
-}
-
-
-
-int onEvent(EventCode ec, struct substring *input, pos) {
-    int _pos;
-
-    switch (state) {
-        case ST_DEFAULT:
-            switch (ec) {
-                case EV_READ_ONE_CHAR:
-                    _pos = default_read(input, pos);
-                    break;
-
-                case EV_DOUBLE_QUART:
-                    _pos = string_read(input, pos);
-                    break;
-
-                default:
-                    break;
-            }
-
-            break;
-
-        case ST_STRING:
-            switch (ec) {
-                case EV_DOUBLE_QUART:
-                    _pos = default_read(input, pos);
-                    break;
-
-                case EV_READ_ONE_CHAR:
-                    _pos = string_read(input, pos);
-                    break;
-
-                case EV_ESCAPE_CHAR:
-                    _pos = escape_read(input, pos);
-                    break;
-
-                default:
-                    break;
-            }
-
-            break;
-
-        case ST_ESCAPE:
-            switch (ec) {
-                case EV_READ_ONE_CHAR:
-                    _pos = string_read(input, pos);
-                    break;
-                default:
-                    break;
-            }
-
-            break;
-
-        default:
-            break;
-    }
-    return _pos;
-}
 
 
 //todo tmp_bufに詰めていくようにする
 int parse_string(struct substring *input, int start, char **out_str_value) {
 
     int pos = start;
+    char tmp_buf[1024];
+    int tmp_cnt = 0;
 
     pos = skip_space(input->str, pos);
 
+    state = ST_INIT;
 
-    ST_initialize();
+    while (state != ST_END){
+        int ch = input->str[pos++];
 
-    while (input->str[pos] != '\0'){
+        switch (state) {
+            case ST_INIT:
+                if (ch != '"') {
+                    return PARSE_FAIL;
+                }
+                state = ST_STRING;
+                continue;
 
-        if (input->str[pos] == '"') {
-            pos = onEvent(EV_DOUBLE_QUART, input, pos);
+            case ST_STRING:
+                if (ch == '\\') {
+                    state = ST_ESCAPE;
+                    continue;
+                } else if (ch == '"') {
+                    state = ST_END;
+                    continue;
+                } else {
+                    tmp_buf[tmp_cnt++] = (char)ch;
+                    continue;
+                }
+            case ST_ESCAPE:
+                tmp_buf[tmp_cnt++] = (char)ch;
+                state = ST_STRING;
+                continue;
+            case ST_END:
+                break;
 
-        } else if (input->str[pos] == '\\') {
-            pos = onEvent(EV_ESCAPE_CHAR, input, pos);
-
-        } else {
-            pos = onEvent(EV_READ_ONE_CHAR, input, pos);
+            default:
+                break;
         }
     }
+
     tmp_buf[tmp_cnt] = '\0';
 
-    char *res = (char *) malloc(sizeof(char) * 5);
+    char *res = (char *) malloc(sizeof(char) * (tmp_cnt+1));
     memcpy(res, tmp_buf, tmp_cnt+1);
 
     *out_str_value = res;
@@ -709,8 +638,37 @@ static void test_parse_string_when_call_once() {
     // Exercise
     start = parse_string(&input, start, &actual);
 
-    printf("%s\n", expect);
-    printf("%s\n", actual);
+    // Verify
+    assert(strneq(expect, actual, 2));
+}
+
+static void test_parse_string_when_call_once_2() {
+
+    // SetUp
+    struct substring input = {.str="\"hello\\\n\"", .len=9};
+    int start = 0;
+
+    char *expect = "hello\n";
+    char *actual;
+
+    // Exercise
+    start = parse_string(&input, start, &actual);
+
+    // Verify
+    assert(strneq(expect, actual, 6));
+}
+
+static void test_parse_string_when_new_line() {
+
+    // SetUp
+    struct substring input = {.str="\"\\\n\"", .len=3};
+    int start = 0;
+
+    char *expect = "\n";
+    char *actual;
+
+    // Exercise
+    start = parse_string(&input, start, &actual);
 
     // Verify
     assert(strneq(expect, actual, 1));
@@ -808,6 +766,8 @@ static void unit_tests() {
 
     // parse_string
     test_parse_string_when_call_once();
+    test_parse_string_when_call_once_2();
+    test_parse_string_when_new_line();
 
     // parse_raw_value
     test_parse_raw_when_number_only();
