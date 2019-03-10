@@ -199,7 +199,6 @@ typedef enum {
 } State;
 
 
-//todo tmp_bufに詰めていくようにする
 int parse_string(char *input, int start, char **out_str_value) {
 
     int pos = start;
