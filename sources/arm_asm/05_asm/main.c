@@ -162,7 +162,6 @@ void resolve_address(struct Emitter *emitter){
     }
 }
 
-// todo ほかの部分もinstruction_set_XXXの名前のほうが良いか。
 static int asm_branch(char *str, int start, int emit_arr_pos, unsigned int *out_oneword){
     int pos = start;
 
@@ -180,17 +179,44 @@ static int asm_branch(char *str, int start, int emit_arr_pos, unsigned int *out_
 };
 
 
-static int raw_word(char *str, int start, unsigned int *out_oneword){
+static int asm_raw_op(char *str, int start, struct Emitter *emitter){
 
     int pos = start;
 
-    unsigned int raw_val;
-    start = parse_raw_value(str, start, &raw_val);
+    pos = skip_space(str, pos);
 
-    if (start == PARSE_FAIL) { return start; }
+    if (str[pos] == '"') { // 文字列パース
+        char *str_val;
+        pos = parse_string(str, pos, &str_val);
+        if (pos == PARSE_FAIL) { return pos; }
 
-    *out_oneword = raw_val;
+        //emitterに4byteずづ詰める
+        int i = 0;
+        int str_pos = 0;
+        unsigned int oneword = 0;
 
+        while (str_val[str_pos] != '\0') {
+            if (i != 4) {
+                oneword += (int)str_val[str_pos] << 8*i;
+            } else {
+                emit_word(emitter, oneword);
+                oneword = 0;
+                i = 0;
+                continue;
+            }
+            i++;
+            str_pos++;
+        }
+        emit_word(emitter, oneword);
+
+    } else { // 数字パース
+        unsigned int raw_num_val;
+        pos = parse_raw_value(str, pos, &raw_num_val);
+        if (pos == PARSE_FAIL) { return pos; }
+
+        memory_address += 4;
+        emit_word(emitter, raw_num_val);
+    }
     return pos;
 }
 
@@ -198,6 +224,8 @@ static int raw_word(char *str, int start, unsigned int *out_oneword){
 
 // 先頭のトークンを読み出して，結果によって分岐する
 int asm_one(char *buf, struct Emitter *emitter) {
+
+    int res = 1;
 
     int start = 0;
     unsigned int oneword = 0;
@@ -214,7 +242,7 @@ int asm_one(char *buf, struct Emitter *emitter) {
         label_symbol = to_label_symbol(&sub_str);
         dict_put(label_symbol, memory_address);
 
-        return 1;
+        return res;
 
     } else { // シンボル
         mnemonic_symbol = to_mnemonic_symbol(&sub_str);
@@ -224,19 +252,22 @@ int asm_one(char *buf, struct Emitter *emitter) {
     // mnemonicで分岐
     if (mnemonic_symbol == MOV)
     {
-        asm_mov_op(buf, start, &oneword);
+        res = asm_mov_op(buf, start, &oneword);
 
     } else if ((mnemonic_symbol == LDR)
                 || (mnemonic_symbol == STR))
     {
-        asm_single_data_transfer(buf, start, mnemonic_symbol, &oneword);
+        res = asm_single_data_transfer(buf, start, mnemonic_symbol, &oneword);
 
     } else if (mnemonic_symbol == B)
     {
-        asm_branch(buf, start, emitter->pos, &oneword);
+        res = asm_branch(buf, start, emitter->pos, &oneword);
 
-    } else if (mnemonic_symbol == RAW) {
-        raw_word(buf, start, &oneword);
+    } else if (mnemonic_symbol == RAW)
+    {
+        // asm_raw_opでonewordを配列に詰める
+        res = asm_raw_op(buf, start, emitter);
+        return res;
 
     } else {
         printf("Not Implemented");
@@ -245,7 +276,7 @@ int asm_one(char *buf, struct Emitter *emitter) {
     memory_address += 4;
     emit_word(emitter, oneword);
 
-    return 1;
+    return res;
 }
 
 
@@ -291,23 +322,6 @@ static void test_asm_one_when_symbol_is_mov_with_immediate(){
     assert(expect == actual);
 }
 
-static void test_asm_one_when_symbol_is_raw_number_only(){
-
-    // SetUp
-    char *input = ".raw 0x12345678";
-    unsigned int expect = 0x12345678;
-
-
-    struct Emitter emitter;
-    initialize_result_arr(&emitter);
-
-    // Exercise
-    asm_one(input, &emitter);
-    unsigned int actual = emitter.array[0];
-
-    // Verify
-    assert(expect == actual);
-}
 
 static void test_asm_one_when_symbol_is_ldr_with_immediate(){
 
@@ -452,6 +466,169 @@ static void test_asm_one_when_is_b_with_far_after_label(){
 }
 
 
+static void test_asm_one_when_symbol_is_raw_number_only(){
+
+    // SetUp
+    char *input = ".raw 0x12345678";
+    unsigned int expect = 0x12345678;
+
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+
+    // Verify
+    assert(expect == actual);
+}
+
+static void test_asm_one_when_symbol_is_raw_string(){
+
+    // SetUp
+    char *input = ".raw \"test\"";
+    unsigned int expect = 0x74736574;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+
+    // Verify
+    assert(expect == actual);
+;
+}
+
+static void test_asm_one_when_symbol_is_raw_string_with_new_line(){
+
+    // SetUp
+    char *input = ".raw \"Hello World\\n\"";
+    unsigned int expect1 = 0x6c6c6548;
+    unsigned int expect2 = 0x6f57206f;
+    unsigned int expect3 = 0x0a646c72;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual1 = emitter.array[0];
+    unsigned int actual2 = emitter.array[1];
+    unsigned int actual3 = emitter.array[2];
+
+    // Verify
+    assert(expect1 == actual1);
+    assert(expect2 == actual2);
+    assert(expect3 == actual3);
+}
+
+static void test_asm_one_when_symbol_is_raw_string_with_double_quart(){
+
+    // SetUp
+    char *input = ".raw \"escape1 \\\" end\"";
+    unsigned int expect1 = 0x61637365;
+    unsigned int expect2 = 0x20316570;
+    unsigned int expect3 = 0x6e652022;
+    unsigned int expect4 = 0x00000064;
+
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual1 = emitter.array[0];
+    unsigned int actual2 = emitter.array[1];
+    unsigned int actual3 = emitter.array[2];
+    unsigned int actual4 = emitter.array[3];
+
+    // Verify
+    assert(expect1 == actual1);
+    assert(expect2 == actual2);
+    assert(expect3 == actual3);
+    assert(expect4 == actual4);
+}
+
+static void test_asm_one_when_symbol_is_raw_string_with_escape(){
+
+    // SetUp
+    char *input = ".raw \"escape2 \\\\ end\"";
+    unsigned int expect1 = 0x61637365;
+    unsigned int expect2 = 0x20326570;
+    unsigned int expect3 = 0x6e65205c;
+    unsigned int expect4 = 0x00000064;
+
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual1 = emitter.array[0];
+    unsigned int actual2 = emitter.array[1];
+    unsigned int actual3 = emitter.array[2];
+    unsigned int actual4 = emitter.array[3];
+
+    // Verify
+    assert(expect1 == actual1);
+    assert(expect2 == actual2);
+    assert(expect3 == actual3);
+    assert(expect4 == actual4);
+}
+
+static void test_asm_one_when_symbol_is_raw_string_with_escape_2(){
+
+    // SetUp
+    char *input = ".raw \"escape3 \\\\\"";
+    unsigned int expect1 = 0x61637365;
+    unsigned int expect2 = 0x20336570;
+    unsigned int expect3 = 0x0000005c;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual1 = emitter.array[0];
+    unsigned int actual2 = emitter.array[1];
+    unsigned int actual3 = emitter.array[2];
+
+    // Verify
+    assert(expect1 == actual1);
+    assert(expect2 == actual2);
+    assert(expect3 == actual3);
+}
+
+static void test_asm_one_when_symbol_is_raw_string_with_escape_and_d_quart(){
+
+    // SetUp
+    char *input = ".raw \"escape4 \\\\\\\" end\"";
+    unsigned int expect1 = 0x61637365;
+    unsigned int expect2 = 0x20346570;
+    unsigned int expect3 = 0x6520225c;
+    unsigned int expect4 = 0x0000646e;
+
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual1 = emitter.array[0];
+    unsigned int actual2 = emitter.array[1];
+    unsigned int actual3 = emitter.array[2];
+    unsigned int actual4 = emitter.array[3];
+
+    // Verify
+    assert(expect1 == actual1);
+    assert(expect2 == actual2);
+    assert(expect3 == actual3);
+    assert(expect4 == actual4);
+}
+
 static void unit_tests() {
 
     // asm one
@@ -459,9 +636,6 @@ static void unit_tests() {
     //// mov
     test_asm_one_when_symbol_is_mov_with_reg();
     test_asm_one_when_symbol_is_mov_with_immediate();
-
-    //// raw
-    test_asm_one_when_symbol_is_raw_number_only();
 
     //// ldr
     test_asm_one_when_symbol_is_ldr_with_immediate();
@@ -476,6 +650,15 @@ static void unit_tests() {
     test_asm_one_when_is_b_with_after_label();
     test_asm_one_when_is_b_with_far_after_label();
 
+
+    //// raw
+    test_asm_one_when_symbol_is_raw_number_only();
+    test_asm_one_when_symbol_is_raw_string();
+    test_asm_one_when_symbol_is_raw_string_with_new_line();
+    test_asm_one_when_symbol_is_raw_string_with_double_quart();
+    test_asm_one_when_symbol_is_raw_string_with_escape();
+    test_asm_one_when_symbol_is_raw_string_with_escape_2();
+    test_asm_one_when_symbol_is_raw_string_with_escape_and_d_quart();
 }
 
 
@@ -523,24 +706,24 @@ int main(int argc, char **argv) {
 
     set_up();
 
-    //unit_tests();
+    unit_tests();
 
-    // アセンブル結果を渡す配列を準備
-    struct Emitter emitter;
-    initialize_result_arr(&emitter);
-
-    FILE *fp;
-    fp = fopen(argv[1], "r");
-
-    if (fp == NULL) { printf("Not exist file");}
-
-    // .ksファイルをアセンブルする
-    read_simple_assembly_file(fp, &emitter);
-
-    fclose(fp);
-
-    // バイナリ書き込み
-    write_binary_file(&emitter);
+//    // アセンブル結果を渡す配列を準備
+//    struct Emitter emitter;
+//    initialize_result_arr(&emitter);
+//
+//    FILE *fp;
+//    fp = fopen(argv[1], "r");
+//
+//    if (fp == NULL) { printf("Not exist file");}
+//
+//    // .ksファイルをアセンブルする
+//    read_simple_assembly_file(fp, &emitter);
+//
+//    fclose(fp);
+//
+//    // バイナリ書き込み
+//    write_binary_file(&emitter);
 
     return 0;
 }

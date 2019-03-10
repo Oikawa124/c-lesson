@@ -147,43 +147,7 @@ int parse_immediate(char *str, int start, int *out_imm_value){
 }
 
 
-int parse_raw_value(char *str, int start, unsigned int *out_raw_value){
-    int pos = start;
 
-    pos = skip_space(str, pos);
-
-    // "0"読み飛ばし
-    if (str[pos] != '0') { return PARSE_FAIL;}
-    pos++;
-
-    // "x"読み飛ばし
-    if (str[pos] != 'x') { return PARSE_FAIL;}
-    pos++;
-
-
-    // 数字部分を取得
-    unsigned int hex_num = 0;
-    int res;
-    int one_hex;
-
-    while(isxdigit(str[pos])){
-
-        if (hex_num != 0) {
-            hex_num = hex_num << 4;
-        }
-
-        res = single_atoi_hex(&str[pos], &one_hex);
-
-        if (res == PARSE_FAIL) {return PARSE_FAIL; }
-
-        hex_num += one_hex;
-
-        pos++;
-    }
-
-    *out_raw_value = hex_num;
-    return pos;
-}
 
 
 /*********************** parse string***************************************************/
@@ -263,6 +227,46 @@ int parse_string(char *input, int start, char **out_str_value) {
 
 
 /***********************************************************************************/
+
+int parse_raw_value(char *str, int start, unsigned int *out_raw_value){
+    int pos = start;
+
+    pos = skip_space(str, pos);
+
+    // 数字のパース
+    // "0"読み飛ばし
+    if (str[pos] != '0') { return PARSE_FAIL;}
+    pos++;
+
+    // "x"読み飛ばし
+    if (str[pos] != 'x') { return PARSE_FAIL;}
+    pos++;
+
+
+    // 数字部分を取得
+    unsigned int hex_num = 0;
+    int res;
+    int one_hex;
+
+    while(isxdigit(str[pos])){
+
+        if (hex_num != 0) {
+            hex_num = hex_num << 4;
+        }
+
+        res = single_atoi_hex(&str[pos], &one_hex);
+
+        if (res == PARSE_FAIL) {return PARSE_FAIL; }
+
+        hex_num += one_hex;
+
+        pos++;
+    }
+
+    *out_raw_value = hex_num;
+    return pos;
+}
+
 
 int parse_left_sbracket(char *str, int start){
     int pos = start;
@@ -779,29 +783,29 @@ static void test_is_comma(){
 
 static void unit_tests() {
 
-//    // parse_one
-//    test_parse_one_when_call_once();
-//    test_parse_one_when_everything_parse();
-//    test_parse_one_when_parse_one_colon();
-//    test_parse_one_with_raw();
-//
-//    // parse_register
-//    test_parse_register_when_call_once();
-//    test_parse_register_when_parse_two_registers();
-//    test_parse_register_when_parse_fail();
-//
-//    // parse_immediate
-//    test_parse_immediate_when_call_once();
-//    test_parse_immediate_with_leading_space();
-//    test_parse_immediate_with_hexadecimal();
-//    test_parse_immediate_with_imm0x64();
-//    test_parse_immediate_with_imm0xFA();
+    // parse_one
+    test_parse_one_when_call_once();
+    test_parse_one_when_everything_parse();
+    test_parse_one_when_parse_one_colon();
+    test_parse_one_with_raw();
+
+    // parse_register
+    test_parse_register_when_call_once();
+    test_parse_register_when_parse_two_registers();
+    test_parse_register_when_parse_fail();
+
+    // parse_immediate
+    test_parse_immediate_when_call_once();
+    test_parse_immediate_with_leading_space();
+    test_parse_immediate_with_hexadecimal();
+    test_parse_immediate_with_imm0x64();
+    test_parse_immediate_with_imm0xFA();
 
     // parse_string
-//    test_parse_string_when_call_once();
-//    test_parse_string_when_call_once_2();
-//    test_parse_string_when_new_line();
-//    test_parse_string_when_double_quart();
+    test_parse_string_when_call_once();
+    test_parse_string_when_call_once_2();
+    test_parse_string_when_new_line();
+    test_parse_string_when_double_quart();
     test_parse_string_when_backslash();
 
     // parse_raw_value
@@ -819,8 +823,8 @@ static void unit_tests() {
     test_is_comma();
 }
 
-int main() {
-    unit_tests();
-
-    return 0;
-}
+//int main() {
+//    unit_tests();
+//
+//    return 0;
+//}

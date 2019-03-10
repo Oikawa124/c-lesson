@@ -525,6 +525,75 @@ Disassembly of section .data:
 ## hello_loop.ksをアセンブル出来るようにする
 
 
+### 入力
+b loop
+loop: .asciz "hello"   
+
+### objdump結果
+    0:   eaffffff        b       0x4
+    4:   6c6c6568        cfstr64vs       mvdx6, [ip], #-416      ; 0xfffffe60
+    8:   0000006f        andeq   r0, r0, pc, rrx
+
+
+
+### 入力
+.asciz "test"  
+
+### objdump結果
+
+00000000 <.data>:
+   0:   eaffffff        b       0x4
+   4:   74736574        ldrbtvc r6, [r3], #-1396        ; 0xfffffa8c
+   8:   00000000        andeq   r0, r0, r0
+
+
+### 入力
+"Hello World\n"
+
+### objdump結果
+   0:   eaffffff        b       0x4
+   4:   6c6c6548        cfstr64vs       mvdx6, [ip], #-288      ; 0xfffffee0
+   8:   6f57206f        svcvs   0x0057206f
+   c:   0a646c72        beq     0x191b1dc
+  10:   00000000        andeq   r0, r0, r0
+
+### 入力
+"escape1 \" end"
+
+### objdump結果
+   0:   eaffffff        b       0x4
+   4:   61637365        cmnvs   r3, r5, ror #6
+   8:   20316570        eorscs  r6, r1, r0, ror r5
+   c:   6e652022        cdpvs   0, 6, cr2, cr5, cr2, {1}
+  10:   00000064        andeq   r0, r0, r4, rrx
+
+### 入力
+"escape2 \\ end"
+
+### objdump結果
+   0:   eaffffff        b       0x4
+   4:   61637365        cmnvs   r3, r5, ror #6
+   8:   20326570        eorscs  r6, r2, r0, ror r5
+   c:   6e65205c        mcrvs   0, 3, r2, cr5, cr12, {2}
+  10:   00000064        andeq   r0, r0, r4, rrx
+
+### 入力
+"escape3 \\"
+
+### objdump結果
+   0:   eaffffff        b       0x4
+   4:   61637365        cmnvs   r3, r5, ror #6
+   8:   20336570        eorscs  r6, r3, r0, ror r5
+   c:   0000005c        andeq   r0, r0, ip, asr r0
+### 入力
+"escape4 \\\" end"
+
+### objdump結果
+   0:   eaffffff        b       0x4
+   4:   61637365        cmnvs   r3, r5, ror #6
+   8:   20346570        eorscs  r6, r4, r0, ror r5
+   c:   6520225c        strvs   r2, [r0, #-604]!        ; 0xfffffda4
+  10:   0000646e        andeq   r6, r0, lr, ror #8
 
 
 
