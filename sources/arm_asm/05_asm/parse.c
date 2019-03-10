@@ -188,9 +188,6 @@ int parse_raw_value(char *str, int start, unsigned int *out_raw_value){
 
 /*********************** parse string***************************************************/
 
-static char tmp_buf[1024];
-static int tmp_cnt = 0;
-
 // 文字列ステートマシン
 static int state;
 
@@ -202,21 +199,19 @@ typedef enum {
 } State;
 
 
-
-
 //todo tmp_bufに詰めていくようにする
-int parse_string(struct substring *input, int start, char **out_str_value) {
+int parse_string(char *input, int start, char **out_str_value) {
 
     int pos = start;
     char tmp_buf[1024];
     int tmp_cnt = 0;
 
-    pos = skip_space(input->str, pos);
+    pos = skip_space(input, pos);
 
     state = ST_INIT;
 
     while (state != ST_END){
-        int ch = input->str[pos++];
+        int ch = input[pos++];
 
         switch (state) {
             case ST_INIT:
@@ -238,7 +233,15 @@ int parse_string(struct substring *input, int start, char **out_str_value) {
                     continue;
                 }
             case ST_ESCAPE:
-                tmp_buf[tmp_cnt++] = (char)ch;
+                if (ch == '"') {
+                    tmp_buf[tmp_cnt++] = '"';
+                } else if (ch == 'n') {
+                    tmp_buf[tmp_cnt++] = '\n';
+                } else if (ch == '\\') {
+                    tmp_buf[tmp_cnt++] = '\\';
+                } else {
+                    printf("Not implemented");
+                }
                 state = ST_STRING;
                 continue;
             case ST_END:
@@ -335,7 +338,7 @@ int is_colon(char *str, int start) {
 /**************** Unit Tests ************************************/
 
 int strneq(char *s1, char *s2, int len) { return 0 == strncmp(s1, s2, len); }
-//static int streq(char *s1, char *s2) { return 0 == strcmp(s1, s2); }
+static int streq(char *s1, char *s2) { return 0 == strcmp(s1, s2); }
 
 void assert_substring_eq(char *expect, struct substring* actual){
     assert(strneq(expect, actual->str, actual->len));
@@ -625,53 +628,84 @@ static void test_parse_raw_when_number_max(){
 /**************** parse string *************************************/
 
 
-
 static void test_parse_string_when_call_once() {
 
     // SetUp
-    struct substring input = {.str="\"hi\"", .len=2};
+    char *input = "\"hi\"";
     int start = 0;
 
     char *expect = "hi";
     char *actual;
 
     // Exercise
-    start = parse_string(&input, start, &actual);
+    start = parse_string(input, start, &actual);
 
     // Verify
-    assert(strneq(expect, actual, 2));
+    assert(streq(expect, actual));
 }
 
 static void test_parse_string_when_call_once_2() {
 
     // SetUp
-    struct substring input = {.str="\"hello\\\n\"", .len=9};
+    char *input = "\"hello\\n\"";
     int start = 0;
 
     char *expect = "hello\n";
     char *actual;
 
     // Exercise
-    start = parse_string(&input, start, &actual);
+    start = parse_string(input, start, &actual);
 
     // Verify
-    assert(strneq(expect, actual, 6));
+    assert(streq(expect, actual));
 }
 
 static void test_parse_string_when_new_line() {
 
     // SetUp
-    struct substring input = {.str="\"\\\n\"", .len=3};
+    char *input = "\"\\n\"";
     int start = 0;
 
     char *expect = "\n";
     char *actual;
 
     // Exercise
-    start = parse_string(&input, start, &actual);
+    start = parse_string(input, start, &actual);
 
     // Verify
-    assert(strneq(expect, actual, 1));
+    assert(streq(expect, actual));
+}
+
+static void test_parse_string_when_double_quart() {
+
+    // SetUp
+    char *input = "\"\\\"\"";
+    int start = 0;
+
+    char *expect = "\"";
+    char *actual;
+
+    // Exercise
+    start = parse_string(input, start, &actual);
+
+    // Verify
+    assert(streq(expect, actual));
+}
+
+static void test_parse_string_when_backslash() {
+
+    // SetUp
+    char *input = "\"\\\\\"";
+    int start = 0;
+
+    char *expect = "\\";
+    char *actual;
+
+    // Exercise
+    start = parse_string(input, start, &actual);
+
+    // Verify
+    assert(streq(expect, actual));
 }
 
 /**************** parse left square bracket ***********************/
@@ -746,28 +780,30 @@ static void test_is_comma(){
 
 static void unit_tests() {
 
-    // parse_one
-    test_parse_one_when_call_once();
-    test_parse_one_when_everything_parse();
-    test_parse_one_when_parse_one_colon();
-    test_parse_one_with_raw();
-
-    // parse_register
-    test_parse_register_when_call_once();
-    test_parse_register_when_parse_two_registers();
-    test_parse_register_when_parse_fail();
-
-    // parse_immediate
-    test_parse_immediate_when_call_once();
-    test_parse_immediate_with_leading_space();
-    test_parse_immediate_with_hexadecimal();
-    test_parse_immediate_with_imm0x64();
-    test_parse_immediate_with_imm0xFA();
+//    // parse_one
+//    test_parse_one_when_call_once();
+//    test_parse_one_when_everything_parse();
+//    test_parse_one_when_parse_one_colon();
+//    test_parse_one_with_raw();
+//
+//    // parse_register
+//    test_parse_register_when_call_once();
+//    test_parse_register_when_parse_two_registers();
+//    test_parse_register_when_parse_fail();
+//
+//    // parse_immediate
+//    test_parse_immediate_when_call_once();
+//    test_parse_immediate_with_leading_space();
+//    test_parse_immediate_with_hexadecimal();
+//    test_parse_immediate_with_imm0x64();
+//    test_parse_immediate_with_imm0xFA();
 
     // parse_string
-    test_parse_string_when_call_once();
-    test_parse_string_when_call_once_2();
-    test_parse_string_when_new_line();
+//    test_parse_string_when_call_once();
+//    test_parse_string_when_call_once_2();
+//    test_parse_string_when_new_line();
+//    test_parse_string_when_double_quart();
+    test_parse_string_when_backslash();
 
     // parse_raw_value
     test_parse_raw_when_number_only();
