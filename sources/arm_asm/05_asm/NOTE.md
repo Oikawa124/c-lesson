@@ -522,8 +522,7 @@ Disassembly of section .data:
 
 
 
-
-
+## hello_loop.ksをアセンブル出来るようにする
 
 
 
