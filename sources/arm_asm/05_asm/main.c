@@ -226,15 +226,17 @@ void resolve_address(struct Emitter *emitter){
         }
 
         int offset;
+        int is_minus_offset = 0;
 
         // r15(pc)は8個先を示しているため、-8する
         if (node->op_address < label_address) {
             offset = label_address - node->op_address - 8;
         } else {
             offset = node->op_address - label_address - 8;
+            is_minus_offset = 1;
         }
 
-        if (offset < 0) {
+        if (is_minus_offset) {
             offset = (~(-1*offset)) + 1; //2の補数表現
         }
 
