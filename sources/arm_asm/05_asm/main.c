@@ -196,18 +196,21 @@ static int asm_raw_op(char *str, int start, struct Emitter *emitter){
         unsigned int oneword = 0;
 
         while (str_val[str_pos] != '\0') {
-            if (i != 4) {
-                oneword += (int)str_val[str_pos] << 8*i;
-            } else {
+
+            oneword += (int) str_val[str_pos] << 8 * i;
+            str_pos++;
+            i++;
+
+            if (i == 4) {
                 emit_word(emitter, oneword);
                 oneword = 0;
                 i = 0;
-                continue;
             }
-            i++;
-            str_pos++;
         }
-        emit_word(emitter, oneword);
+
+        if (i != 0) {
+            emit_word(emitter, oneword);
+        }
 
     } else { // 数字パース
         unsigned int raw_num_val;
