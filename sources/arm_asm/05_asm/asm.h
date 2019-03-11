@@ -1,6 +1,7 @@
 #include <stdio.h>
 
 #define PARSE_FAIL -1
+unsigned int memory_address;
 
 // 文字列
 struct substring {
@@ -70,11 +71,13 @@ int to_label_symbol(struct substring *substr);
 /*dictionary*/
 void dict_put(int key, unsigned int line_num);
 int dict_get(int key, unsigned int *out_line_num);
+void dict_print_all();
 void initialize_dict();
 
 /*linked list*/
 
 typedef struct _unresolve_list {
+    int mnemonic;
     int emit_arr_pos;
     unsigned int op_address;
     int label_symbol;
@@ -83,7 +86,8 @@ typedef struct _unresolve_list {
 }unresolve_list;
 
 unresolve_list *unresolve_list_head;
-void add_unresolve_list(int emit_arr_pos,
+void add_unresolve_list(int mnemonic,
+                        int emit_arr_pos,
                         unsigned int op_address,
                         int label_symbol);
 

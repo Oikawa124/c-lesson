@@ -7,13 +7,15 @@
 unresolve_list *unresolve_list_head = NULL;
 
 
-static unresolve_list *create_unresolve_list(int emit_arr_pos,
+static unresolve_list *create_unresolve_list(int mnemonic,
+                                             int emit_arr_pos,
                                              unsigned int op_address,
                                              int label_symbol){
     unresolve_list *unresole_list_;
 
     unresole_list_ = malloc(sizeof(unresolve_list));
 
+    unresole_list_->mnemonic = mnemonic;
     unresole_list_->emit_arr_pos = emit_arr_pos;
     unresole_list_->op_address = op_address;
     unresole_list_->label_symbol = label_symbol;
@@ -22,16 +24,17 @@ static unresolve_list *create_unresolve_list(int emit_arr_pos,
     return unresole_list_;
 }
 
-void add_unresolve_list(int emit_arr_pos,
+void add_unresolve_list(int mnemonic,
+                        int emit_arr_pos,
                         unsigned int op_address,
                         int label_symbol){
 
     if (unresolve_list_head == NULL) {
-        unresolve_list_head = create_unresolve_list(emit_arr_pos, op_address, label_symbol);
+        unresolve_list_head = create_unresolve_list(mnemonic, emit_arr_pos, op_address, label_symbol);
         return;
     }
 
-    unresolve_list *new_unresolve_list = create_unresolve_list(emit_arr_pos, op_address, label_symbol);
+    unresolve_list *new_unresolve_list = create_unresolve_list(mnemonic, emit_arr_pos, op_address, label_symbol);
 
     // unresolve_list_headは常に最新のノードになる
     unresolve_list *prev_node = unresolve_list_head;
@@ -62,11 +65,13 @@ static void test_add_unresolve_list_when_call_once(){
     int input_emit_arr_pos = 1;
     unsigned int input_op_address = 0x000000004;
     int input_label_symbol = 1;
+    int input_mnemonic = B;
 
     // Exercise
-    add_unresolve_list(input_emit_arr_pos, input_op_address, input_label_symbol);
+    add_unresolve_list(input_mnemonic, input_emit_arr_pos, input_op_address, input_label_symbol);
 
     // Verify
+    assert(input_mnemonic == unresolve_list_head->mnemonic);
     assert(input_emit_arr_pos == unresolve_list_head->emit_arr_pos);
     assert(input_op_address == unresolve_list_head->op_address);
     assert(input_label_symbol == unresolve_list_head->label_symbol);
@@ -81,21 +86,24 @@ static void test_add_unresolve_list_when_call_two_times(){
     int input_emit_arr_pos1 = 1;
     unsigned int input_op_address1 = 0x000000004;
     int input_label_symbol1 = 1;
-
+    int input_mnemonic = B;
 
     int input_emit_arr_pos2 = 5;
     unsigned int input_op_address2 = 0x0000FFF4;
     int input_label_symbol2 = 10;
+    int input_mnemonic2 = B;
 
     // Exercise
-    add_unresolve_list(input_emit_arr_pos1, input_op_address1, input_label_symbol1);
-    add_unresolve_list(input_emit_arr_pos2, input_op_address2, input_label_symbol2);
+    add_unresolve_list(input_mnemonic, input_emit_arr_pos1, input_op_address1, input_label_symbol1);
+    add_unresolve_list(input_mnemonic2, input_emit_arr_pos2, input_op_address2, input_label_symbol2);
 
     // Verify
+    assert(input_mnemonic == unresolve_list_head->mnemonic);
     assert(input_emit_arr_pos1 == unresolve_list_head->next->emit_arr_pos);
     assert(input_op_address1 == unresolve_list_head->next->op_address);
     assert(input_label_symbol1 == unresolve_list_head->next->label_symbol);
 
+    assert(input_mnemonic2 == unresolve_list_head->mnemonic);
     assert(input_emit_arr_pos2 == unresolve_list_head->emit_arr_pos);
     assert(input_op_address2 == unresolve_list_head->op_address);
     assert(input_label_symbol2 == unresolve_list_head->label_symbol);

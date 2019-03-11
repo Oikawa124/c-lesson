@@ -53,7 +53,7 @@ void dict_print_all(){
     }
 
     for (int index = 0; index < dict_pos; ++index) {
-        printf("Key: %d, Value: %d",
+        printf("Key: %d, Value: %x",
                dict_array[index].key, dict_array[index].value);
     }
 }

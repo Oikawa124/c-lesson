@@ -6,7 +6,7 @@
 
 #include "asm.h"
 
-static unsigned int memory_address = 0x00010000;
+unsigned int memory_address = 0x00010000;
 
 static int asm_mov_op(char *str, int start, unsigned int *out_oneword){
 
@@ -52,86 +52,157 @@ static int asm_mov_op(char *str, int start, unsigned int *out_oneword){
 }
 
 
-static int asm_single_data_transfer(char *str, int start, int mnemonic, unsigned int *out_oneword) {
-    int pos = start;
+static int asm_ldr_relative_offset(char *str, int pos, int base_reg, int sourse_reg,
+                                   unsigned int *out_oneword) {
 
     unsigned int oneword = 0xE5000000;
+    pos = skip_comma(str, pos);
+
+    int imm_value;
+    pos = parse_immediate(str, pos, &imm_value);
+
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = parse_right_sbracket(str, pos);
+
+    if (pos == PARSE_FAIL) { return pos; }
+
+
+    if (imm_value < 0) { // 負のオフセット
+
+        oneword += 0x1 << 20;
+        oneword += base_reg << 16;
+        oneword += sourse_reg << 12;
+        oneword += -1 * imm_value;
+
+    } else { // 正のオフセット
+
+        oneword += 0x9 << 20;
+        oneword += base_reg << 16;
+        oneword += sourse_reg << 12;
+        oneword += imm_value;
+    }
+
+    *out_oneword = oneword;
+    return pos;
+}
+
+int is_equal_sign(char *str, int start) {
+    int pos = start;
+
+    pos = skip_space(str, pos);
+
+    if (str[pos] == '=') {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
+int skip_equal_sign(char *str, int start){
+    int pos = start;
+
+    // スペース読み飛ばし
+    while (str[pos] == ' ') { pos++;}
+
+    // コンマ読み飛ばし
+    if (str[pos] != '=') { return PARSE_FAIL; }
+    pos++;
+
+    return pos;
+}
+
+static int asm_ldr_or_str_register_only(char *str, int pos, int mnemonic, int base_reg, int sourse_reg,
+                                        unsigned int *out_oneword) {
+
+    unsigned int oneword = 0xE5000000;
+
+    // ldrかstr判定
+    if (mnemonic == LDR) {
+        oneword += 0x9 << 20; // ldr  ex. ldr r0, [r15]
+    } else {
+        oneword += 0x8 << 20; // str  ex. str r1, [0]
+    }
+
+    pos = parse_right_sbracket(str, pos);
+
+    if (pos == PARSE_FAIL) { return pos; }
+
+    oneword += base_reg << 16;
+    oneword += sourse_reg << 12;
+
+    *out_oneword = oneword;
+    return pos;
+}
+
+
+static int asm_ldr_label(char *str, int pos,
+                         int sourse_reg,
+                         int emit_arr_pos,
+                         unsigned int *out_oneword) {
+
+    unsigned int oneword = 0xE5900000;
+    oneword += 0xF << 16;
+    oneword += sourse_reg << 12;
+    *out_oneword = oneword;
+
+    pos = skip_equal_sign(str, pos);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    struct substring sub_str;
+    pos = parse_one(str, pos, &sub_str); // ラベルをパース
+    if (pos == PARSE_FAIL) { return pos; }
+
+    int label_symbol = to_label_symbol(&sub_str);
+
+    // ラベルのアドレスの解決に必要なものを覚えておく
+    int mnemonic = LDR;
+    add_unresolve_list(mnemonic, emit_arr_pos, memory_address, label_symbol);
+
+    return pos;
+}
+
+static int asm_single_data_transfer(char *str, int start, int mnemonic,
+                                    int emit_arr_pos, unsigned int *out_oneword) {
+    int pos = start;
 
     // sourseレジスタ切り出し
     int sourse_reg;
 
     pos = parse_register(str, pos, &sourse_reg);
-
     if (pos == PARSE_FAIL) { return pos; }
 
     pos = skip_comma(str, pos);
-
     if (pos == PARSE_FAIL) { return pos; }
 
-    pos = parse_left_sbracket(str, pos);
 
+    // ldr rX, =address　の場合
+    if (is_equal_sign(str, pos)) {
+        asm_ldr_label(str, pos, sourse_reg, emit_arr_pos, out_oneword);
+        return pos;
+    }
+
+    pos = parse_left_sbracket(str, pos);
     if (pos == PARSE_FAIL) { return pos; }
 
     // baseレジスタ切り出し
     int base_reg;
 
     pos = parse_register(str, pos, &base_reg);
-
     if (pos == PARSE_FAIL) { return pos; }
 
 
-    if (is_comma(str, pos)) { // 即値あり　
-
-        pos = skip_comma(str, pos);
-
-        int imm_value;
-        pos = parse_immediate(str, pos, &imm_value);
-
+    if (is_comma(str, pos)) { // 即値あり　ex. ldr r0, [r15, #0x03]
+        pos = asm_ldr_relative_offset(str, pos, base_reg, sourse_reg, out_oneword);
         if (pos == PARSE_FAIL) { return pos; }
+        return pos;
 
-        pos = parse_right_sbracket(str, pos);
-
+    } else { // レジスタのみ  ex. ldr r0, [r15]
+        pos = asm_ldr_or_str_register_only(str, pos, mnemonic, base_reg, sourse_reg, out_oneword);
         if (pos == PARSE_FAIL) { return pos; }
-
-
-        if (imm_value < 0) { // 負のオフセット
-
-            oneword += 0x1 << 20;
-            oneword += base_reg << 16;
-            oneword += sourse_reg << 12;
-            oneword += -1 * imm_value;
-
-        } else { // 正のオフセット
-
-            oneword += 0x9 << 20;
-            oneword += base_reg << 16;
-            oneword += sourse_reg << 12;
-            oneword += imm_value;
-
-        }
-
-    } else { // レジスタのみ
-
-        // ldrかstr判定
-        if (mnemonic == LDR) {
-            oneword += 0x9 << 20; // ldr  ex. ldr r0, [r15]
-        } else {
-            oneword += 0x8 << 20; // str  ex. str r1, [0]
-        }
-
-
-        pos = parse_right_sbracket(str, pos);
-
-        if (pos == PARSE_FAIL) { return pos; }
-
-        oneword += base_reg << 16;
-        oneword += sourse_reg << 12;
-
+        return pos;
     }
-
-    *out_oneword = oneword;
-
-    return pos;
 }
 
 
@@ -141,23 +212,38 @@ void resolve_address(struct Emitter *emitter){
 
     unresolve_list *node = unresolve_list_head;
 
-    // 命令: bのみ対応
-    unsigned int oneword = 0xEA000000;
+    // 命令: b, ldrに対応
+
     while (node != NULL) {
 
         unsigned int label_address;
         dict_get(node->label_symbol, &label_address);
-        int offset = abs(node->op_address - label_address) - 8; // r15は8個先を示しているため、-8する
+
+        if (node->mnemonic == LDR) { //ldrの場合　一番後ろにラベルの位置へのアドレスを追加する
+            emit_word(emitter, label_address);
+            label_address = memory_address;
+            memory_address += 4;
+        }
+
+        int offset;
+
+        // r15(pc)は8個先を示しているため、-8する
+        if (node->op_address < label_address) {
+            offset = label_address - node->op_address - 8;
+        } else {
+            offset = node->op_address - label_address - 8;
+        }
 
         if (offset < 0) {
             offset = (~(-1*offset)) + 1; //2の補数表現
         }
 
-        offset = (offset >> 2) & 0xFFFFFF; // 右に2bitシフト
+        if (node->mnemonic == B) {
+            offset = (offset >> 2) & 0xFFFFFF; // bの場合、右に2bitシフトして24bit分マスク
+        }
 
-        oneword += offset;
+        emitter->array[node->emit_arr_pos] += offset;
 
-        emitter->array[node->emit_arr_pos] = oneword;
         node = node->next;
     }
 }
@@ -172,9 +258,10 @@ static int asm_branch(char *str, int start, int emit_arr_pos, unsigned int *out_
     int label_symbol = to_label_symbol(&sub_str);
 
     // ラベルのアドレスの解決に必要なものを覚えておく
-    add_unresolve_list(emit_arr_pos, memory_address, label_symbol);
+    int mnemonic = B;
+    add_unresolve_list(mnemonic, emit_arr_pos, memory_address, label_symbol);
 
-    *out_oneword = 0;
+    *out_oneword = 0xEA000000;
     return pos;
 };
 
@@ -202,6 +289,7 @@ static int asm_raw_op(char *str, int start, struct Emitter *emitter){
             i++;
 
             if (i == 4) {
+                memory_address += 4;
                 emit_word(emitter, oneword);
                 oneword = 0;
                 i = 0;
@@ -209,6 +297,7 @@ static int asm_raw_op(char *str, int start, struct Emitter *emitter){
         }
 
         if (i != 0) {
+            memory_address += 4;
             emit_word(emitter, oneword);
         }
 
@@ -244,7 +333,6 @@ int asm_one(char *buf, struct Emitter *emitter) {
     if (is_colon(buf, start)) { // ラベル
         label_symbol = to_label_symbol(&sub_str);
         dict_put(label_symbol, memory_address);
-
         return res;
 
     } else { // シンボル
@@ -260,7 +348,7 @@ int asm_one(char *buf, struct Emitter *emitter) {
     } else if ((mnemonic_symbol == LDR)
                 || (mnemonic_symbol == STR))
     {
-        res = asm_single_data_transfer(buf, start, mnemonic_symbol, &oneword);
+        res = asm_single_data_transfer(buf, start, mnemonic_symbol, emitter->pos, &oneword);
 
     } else if (mnemonic_symbol == B)
     {
@@ -305,6 +393,9 @@ static void test_asm_one_when_symbol_is_mov_with_reg(){
 
     // Verify
     assert(expect == actual);
+
+    // TearDown
+    initialize_when_test();
 }
 
 static void test_asm_one_when_symbol_is_mov_with_immediate(){
@@ -323,6 +414,9 @@ static void test_asm_one_when_symbol_is_mov_with_immediate(){
 
     // Verify
     assert(expect == actual);
+
+    // TearDown
+    initialize_when_test();
 }
 
 
@@ -342,6 +436,9 @@ static void test_asm_one_when_symbol_is_ldr_with_immediate(){
 
     // Verify
     assert(expect == actual);
+
+    // TearDown
+    initialize_when_test();
 }
 
 static void test_asm_one_when_symbol_is_ldr_with_minus_immediate(){
@@ -360,6 +457,9 @@ static void test_asm_one_when_symbol_is_ldr_with_minus_immediate(){
 
     // Verify
     assert(expect == actual);
+
+    // TearDown
+    initialize_when_test();
 }
 
 static void test_asm_one_when_symbol_is_ldr_with_no_immediate(){
@@ -377,7 +477,41 @@ static void test_asm_one_when_symbol_is_ldr_with_no_immediate(){
 
     // Verify
     assert(expect == actual);
+
+    // TearDown
+    initialize_when_test();
 }
+
+static void test_asm_one_when_is_ldr_with_label(){
+    // SetUp
+    char *input1 = "ldr r1, =msg";
+    char *input2 = "msg:";
+    char *input3 = ".raw \"hello\"";
+
+    unsigned int expect1 = 0xe59f1004;
+    unsigned int expect2 = 0x6c6c6568;
+    unsigned int expect3 = 0x0000006f;
+    unsigned int expect4 = 0x00010004;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input1, &emitter);
+    asm_one(input2, &emitter);
+    asm_one(input3, &emitter);
+    resolve_address(&emitter);
+
+    // Verify
+    assert(expect1 == emitter.array[0]);
+    assert(expect2 == emitter.array[1]);
+    assert(expect3 == emitter.array[2]);
+    assert(expect4 == emitter.array[3]);
+
+    // TearDown
+    initialize_when_test();
+}
+
 
 
 static void test_asm_one_when_symbol_is_str(){
@@ -632,6 +766,8 @@ static void test_asm_one_when_symbol_is_raw_string_with_escape_and_d_quart(){
     assert(expect4 == actual4);
 }
 
+
+
 static void unit_tests() {
 
     // asm one
@@ -644,6 +780,7 @@ static void unit_tests() {
     test_asm_one_when_symbol_is_ldr_with_immediate();
     test_asm_one_when_symbol_is_ldr_with_minus_immediate();
     test_asm_one_when_symbol_is_ldr_with_no_immediate();
+    test_asm_one_when_is_ldr_with_label();
 
     //// str
     test_asm_one_when_symbol_is_str();

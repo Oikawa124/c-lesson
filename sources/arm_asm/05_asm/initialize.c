@@ -27,6 +27,7 @@ void initialize_when_test(){
     free_linked_list();
     initialize_label_root();
     initialize_dict();
+    memory_address = 0x00010000;
 }
 
 
