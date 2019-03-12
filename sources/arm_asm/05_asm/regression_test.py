@@ -4,7 +4,7 @@
 import subprocess
 import os
 
-filenames = ["test", "hello_asm"]
+filenames = ["test", "hello_asm", "hello_msg"]
 
 compile_utils = "gcc -c cl_utils.c".split()
 compile_main = "gcc -c main.c".split()
