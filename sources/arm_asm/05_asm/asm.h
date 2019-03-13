@@ -58,6 +58,7 @@ struct Emitter {
 
 void initialize_result_arr(struct Emitter *emitter);
 void emit_word(struct Emitter *emitter, unsigned int oneword);
+unsigned int get_last_memory_address(struct Emitter *emitter);
 
 
 /* binary tree*/

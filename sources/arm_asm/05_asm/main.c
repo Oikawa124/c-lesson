@@ -6,9 +6,7 @@
 
 #include "asm.h"
 
-unsigned int memory_address = 0x00010000;
-
-static int asm_mov_op(char *str, int start, unsigned int *out_oneword){
+static int asm_mov_op(char *str, int start, struct Emitter *emitter){
 
     int pos = start;
 
@@ -46,14 +44,15 @@ static int asm_mov_op(char *str, int start, unsigned int *out_oneword){
         oneword += imm_value;
     }
 
-    *out_oneword = oneword;
 
+    emit_word(emitter, oneword);
     return pos;
 }
 
 
-static int asm_ldr_relative_offset(char *str, int pos, int base_reg, int sourse_reg,
-                                   unsigned int *out_oneword) {
+static int asm_ldr_relative_offset(char *str, int pos,
+                                   int base_reg, int sourse_reg,
+                                   struct Emitter *emitter) {
 
     unsigned int oneword = 0xE5000000;
     pos = skip_comma(str, pos);
@@ -83,7 +82,7 @@ static int asm_ldr_relative_offset(char *str, int pos, int base_reg, int sourse_
         oneword += imm_value;
     }
 
-    *out_oneword = oneword;
+    emit_word(emitter, oneword);
     return pos;
 }
 
@@ -113,8 +112,9 @@ int skip_equal_sign(char *str, int start){
     return pos;
 }
 
-static int asm_ldr_or_str_register_only(char *str, int pos, int mnemonic, int base_reg, int sourse_reg,
-                                        unsigned int *out_oneword) {
+static int asm_ldr_or_str_register_only(char *str, int pos, int mnemonic,
+                                        int base_reg, int sourse_reg,
+                                        struct Emitter *emitter) {
 
     unsigned int oneword = 0xE5000000;
 
@@ -132,20 +132,22 @@ static int asm_ldr_or_str_register_only(char *str, int pos, int mnemonic, int ba
     oneword += base_reg << 16;
     oneword += sourse_reg << 12;
 
-    *out_oneword = oneword;
+
+    emit_word(emitter, oneword);
     return pos;
 }
 
 
 static int asm_ldr_label(char *str, int pos,
                          int sourse_reg,
-                         int emit_arr_pos,
-                         unsigned int *out_oneword) {
+                         struct Emitter *emitter) {
 
     unsigned int oneword = 0xE5900000;
     oneword += 0xF << 16;
     oneword += sourse_reg << 12;
-    *out_oneword = oneword;
+
+    emit_word(emitter, oneword);
+
 
     pos = skip_equal_sign(str, pos);
     if (pos == PARSE_FAIL) { return pos; }
@@ -158,13 +160,16 @@ static int asm_ldr_label(char *str, int pos,
 
     // ラベルのアドレスの解決に必要なものを覚えておく
     int mnemonic = LDR;
-    add_unresolve_list(mnemonic, emit_arr_pos, memory_address, label_symbol);
+    unsigned int memory_address = get_last_memory_address(emitter);
+
+    // emitter.posは次のバイナリを入れる場所を示しているため、-1する。
+    add_unresolve_list(mnemonic, emitter->pos-1, memory_address, label_symbol);
 
     return pos;
 }
 
 static int asm_single_data_transfer(char *str, int start, int mnemonic,
-                                    int emit_arr_pos, unsigned int *out_oneword) {
+                                    struct Emitter *emitter) {
     int pos = start;
 
     // sourseレジスタ切り出し
@@ -179,7 +184,7 @@ static int asm_single_data_transfer(char *str, int start, int mnemonic,
 
     // ldr rX, =address　の場合
     if (is_equal_sign(str, pos)) {
-        asm_ldr_label(str, pos, sourse_reg, emit_arr_pos, out_oneword);
+        asm_ldr_label(str, pos, sourse_reg, emitter);
         return pos;
     }
 
@@ -194,12 +199,12 @@ static int asm_single_data_transfer(char *str, int start, int mnemonic,
 
 
     if (is_comma(str, pos)) { // 即値あり　ex. ldr r0, [r15, #0x03]
-        pos = asm_ldr_relative_offset(str, pos, base_reg, sourse_reg, out_oneword);
+        pos = asm_ldr_relative_offset(str, pos, base_reg, sourse_reg, emitter);
         if (pos == PARSE_FAIL) { return pos; }
         return pos;
 
     } else { // レジスタのみ  ex. ldr r0, [r15]
-        pos = asm_ldr_or_str_register_only(str, pos, mnemonic, base_reg, sourse_reg, out_oneword);
+        pos = asm_ldr_or_str_register_only(str, pos, mnemonic, base_reg, sourse_reg, emitter);
         if (pos == PARSE_FAIL) { return pos; }
         return pos;
     }
@@ -213,7 +218,6 @@ void resolve_address(struct Emitter *emitter){
     unresolve_list *node = unresolve_list_head;
 
     // 命令: b, ldrに対応
-
     while (node != NULL) {
 
         unsigned int label_address;
@@ -221,8 +225,9 @@ void resolve_address(struct Emitter *emitter){
 
         if (node->mnemonic == LDR) { //ldrの場合　一番後ろにラベルの位置へのアドレスを追加する
             emit_word(emitter, label_address);
+            unsigned int memory_address = get_last_memory_address(emitter);
+
             label_address = memory_address;
-            memory_address += 4;
         }
 
         int offset;
@@ -245,13 +250,15 @@ void resolve_address(struct Emitter *emitter){
         }
 
         emitter->array[node->emit_arr_pos] += offset;
-
         node = node->next;
     }
 }
 
-static int asm_branch(char *str, int start, int emit_arr_pos, unsigned int *out_oneword){
+static int asm_branch(char *str, int start, struct Emitter *emitter){
     int pos = start;
+
+    unsigned int oneword =  0xEA000000;
+    emit_word(emitter, oneword);
 
     struct substring sub_str;
     pos = parse_one(str, pos, &sub_str); // ラベルをパース
@@ -261,9 +268,11 @@ static int asm_branch(char *str, int start, int emit_arr_pos, unsigned int *out_
 
     // ラベルのアドレスの解決に必要なものを覚えておく
     int mnemonic = B;
-    add_unresolve_list(mnemonic, emit_arr_pos, memory_address, label_symbol);
+    unsigned int memory_address = get_last_memory_address(emitter);
 
-    *out_oneword = 0xEA000000;
+    // emitter.posは次のバイナリを入れる場所を示しているため、-1する。
+    add_unresolve_list(mnemonic, emitter->pos-1, memory_address, label_symbol);
+
     return pos;
 };
 
@@ -291,7 +300,6 @@ static int asm_raw_op(char *str, int start, struct Emitter *emitter){
             i++;
 
             if (i == 4) {
-                memory_address += 4;
                 emit_word(emitter, oneword);
                 oneword = 0;
                 i = 0;
@@ -299,7 +307,6 @@ static int asm_raw_op(char *str, int start, struct Emitter *emitter){
         }
 
         if (i != 0) {
-            memory_address += 4;
             emit_word(emitter, oneword);
         }
 
@@ -308,7 +315,6 @@ static int asm_raw_op(char *str, int start, struct Emitter *emitter){
         pos = parse_raw_value(str, pos, &raw_num_val);
         if (pos == PARSE_FAIL) { return pos; }
 
-        memory_address += 4;
         emit_word(emitter, raw_num_val);
     }
     return pos;
@@ -320,9 +326,7 @@ static int asm_raw_op(char *str, int start, struct Emitter *emitter){
 int asm_one(char *buf, struct Emitter *emitter) {
 
     int res = 1;
-
     int start = 0;
-    unsigned int oneword = 0;
 
     // 命令切り出し
     struct substring sub_str;
@@ -334,6 +338,9 @@ int asm_one(char *buf, struct Emitter *emitter) {
 
     if (is_colon(buf, start)) { // ラベル
         label_symbol = to_label_symbol(&sub_str);
+
+        // ラベルはemitされないため、次にemittされるバイナリのメモリ上のアドレスになる。
+        unsigned int memory_address = get_last_memory_address(emitter) + 4;
         dict_put(label_symbol, memory_address);
         return res;
 
@@ -345,16 +352,16 @@ int asm_one(char *buf, struct Emitter *emitter) {
     // mnemonicで分岐
     if (mnemonic_symbol == MOV)
     {
-        res = asm_mov_op(buf, start, &oneword);
+        res = asm_mov_op(buf, start, emitter);
 
     } else if ((mnemonic_symbol == LDR)
                 || (mnemonic_symbol == STR))
     {
-        res = asm_single_data_transfer(buf, start, mnemonic_symbol, emitter->pos, &oneword);
+        res = asm_single_data_transfer(buf, start, mnemonic_symbol, emitter);
 
     } else if (mnemonic_symbol == B)
     {
-        res = asm_branch(buf, start, emitter->pos, &oneword);
+        res = asm_branch(buf, start, emitter);
 
     } else if (mnemonic_symbol == RAW)
     {
@@ -365,9 +372,6 @@ int asm_one(char *buf, struct Emitter *emitter) {
     } else {
         printf("Not Implemented");
     }
-
-    memory_address += 4;
-    emit_word(emitter, oneword);
 
     return res;
 }
@@ -490,10 +494,10 @@ static void test_asm_one_when_is_ldr_with_label(){
     char *input2 = "msg:";
     char *input3 = ".raw \"hello\"";
 
-    unsigned int expect1 = 0xe59f1004;
-    unsigned int expect2 = 0x6c6c6568;
-    unsigned int expect3 = 0x0000006f;
-    unsigned int expect4 = 0x00010004;
+    unsigned int expect1 = 0xe59f1004; //0x1000
+    unsigned int expect2 = 0x6c6c6568; //0x1004
+    unsigned int expect3 = 0x0000006f; //0x100c
+    unsigned int expect4 = 0x00010004; //0x1010
 
     struct Emitter emitter;
     initialize_result_arr(&emitter);
@@ -849,7 +853,7 @@ int main(int argc, char **argv) {
     set_up();
 
     unit_tests();
-
+//
 //    // アセンブル結果を渡す配列を準備
 //    struct Emitter emitter;
 //    initialize_result_arr(&emitter);

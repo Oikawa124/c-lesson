@@ -85,6 +85,14 @@ void emit_word(struct Emitter* emitter, unsigned int oneword){
     emitter->pos++;
 }
 
+unsigned int get_last_memory_address(struct Emitter *emitter) {
+
+    // emit_wordを呼ぶとposは次のバイナリを入れる場所になるため、-1する。
+    unsigned int address = 0x00010000 + (unsigned int)(emitter->pos-1) * 4;
+
+    return address;
+}
+
 
 
 /*自作した標準関数もどき*/
