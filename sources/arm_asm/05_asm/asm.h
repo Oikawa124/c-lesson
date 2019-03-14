@@ -38,6 +38,7 @@ int is_register(char *str, int start);
 int is_comma(char *str, int start);
 int is_colon(char *str, int start);
 int is_equal_sign(char *str, int start);
+int is_address(char *str, int start);
 
 int skip_space(char *str, int start);
 int skip_comma(char *str, int start);

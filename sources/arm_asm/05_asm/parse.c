@@ -357,6 +357,18 @@ int is_equal_sign(char *str, int start) {
     }
 }
 
+int is_address(char *str, int start) {
+    int pos = start;
+
+    pos = skip_space(str, pos);
+
+    if (str[pos] == '0' && str[++pos] == 'x') {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
 
 
 /**************** Unit Tests ************************************/
@@ -815,6 +827,20 @@ static void test_is_equal_sign(){
     assert(expect == actual);
 }
 
+static void test_is_address(){
+
+    // SetUp
+    char *input = "0x00010000";
+    int start = 0;
+
+    int expect = 1;
+
+    // Exercise
+    int actual = is_equal_sign(input, start);
+
+    // Verify
+    assert(expect == actual);
+}
 
 
 static void unit_tests() {
@@ -858,6 +884,7 @@ static void unit_tests() {
     test_is_register();
     test_is_comma();
     test_is_equal_sign();
+    test_is_address();
 }
 
 //int main() {

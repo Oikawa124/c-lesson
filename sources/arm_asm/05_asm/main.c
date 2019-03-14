@@ -199,18 +199,6 @@ static int asm_ldr_or_str_register_only(char *str, int pos, int mnemonic,
 }
 
 
-int is_address(char *str, int start) {
-    int pos = start;
-
-    pos = skip_space(str, pos);
-
-    if (str[pos] == '0' && str[++pos] == 'x') {
-        return 1;
-    }
-    else {
-        return 0;
-    }
-}
 
 static int asm_ldr_label_or_address(char *str, int pos,
                          int sourse_reg,
@@ -229,6 +217,7 @@ static int asm_ldr_label_or_address(char *str, int pos,
     pos = skip_equal_sign(str, pos);
     if (pos == PARSE_FAIL) { return pos; }
 
+
     if (is_address(str, pos)) {
         unsigned int address;
         pos = parse_address(str, pos, &address);
@@ -242,21 +231,13 @@ static int asm_ldr_label_or_address(char *str, int pos,
         dict_put(label_symbol, address);
 
 
-        // ラベルのアドレスの解決に必要なものを覚えておく
-        int mnemonic = LDR;
-        unsigned int memory_address = get_last_memory_address(emitter);
+    } else { //ラベルの場合
+        pos = parse_one(str, pos, &sub_str); // ラベルをパース
+        if (pos == PARSE_FAIL) { return pos; }
 
-        // emitter.posは次のバイナリを入れる場所を示しているため、-1する。
-        add_unresolve_list(mnemonic, emitter->pos-1, memory_address, label_symbol);
-
-        return pos;
+        label_symbol = to_label_symbol(&sub_str);
     }
 
-
-    pos = parse_one(str, pos, &sub_str); // ラベルをパース
-    if (pos == PARSE_FAIL) { return pos; }
-
-    label_symbol = to_label_symbol(&sub_str);
 
     // ラベルのアドレスの解決に必要なものを覚えておく
     int mnemonic = LDR;
@@ -274,7 +255,6 @@ static int asm_single_data_transfer(char *str, int start, int mnemonic,
 
     // sourseレジスタ切り出し
     int sourse_reg;
-
     pos = parse_register(str, pos, &sourse_reg);
     if (pos == PARSE_FAIL) { return pos; }
 
@@ -358,6 +338,7 @@ static int asm_branch(char *str, int start, int mnemonic, struct Emitter *emitte
     int pos = start;
 
     unsigned int oneword = 0;
+
     if (mnemonic == B) {
         oneword = 0xEA000000;
     } else if(mnemonic == BNE){
