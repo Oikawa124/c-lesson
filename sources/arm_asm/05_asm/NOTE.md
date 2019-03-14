@@ -622,10 +622,43 @@ msg:
 ## print_loopの実装
 
 
+###入力
 
+```
+    ldr r0,=0x101f1000
+    ldr r1,=message
+    ldrb r3,[r1]    
+loop:
+    str r3,[r0]
+    add r1, r1, #1
+    ldrb r3,[r1]
+    cmp r3,#0
+    bne loop
+end:
+    b end
 
+message:
+    .raw  "hello, world\n"
 
+```
 
+###objdumpファイル
+
+   0:   e59f002c        ldr     r0, [pc, #44]   ; 0x34
+   4:   e59f102c        ldr     r1, [pc, #44]   ; 0x38
+   8:   e5d13000        ldrb    r3, [r1]
+   c:   e5803000        str     r3, [r0]
+  10:   e2811001        add     r1, r1, #1
+  14:   e5d13000        ldrb    r3, [r1]
+  18:   e3530000        cmp     r3, #0
+  1c:   1afffffa        bne     0xc
+  20:   eafffffe        b       0x20
+  24:   6c6c6568        cfstr64vs       mvdx6, [ip], #-416      ; 0xfffffe60
+  28:   77202c6f        strvc   r2, [r0, -pc, ror #24]!
+  2c:   646c726f        strbtvs r7, [ip], #-623 ; 0xfffffd91
+  30:   0000000a        andeq   r0, r0, sl
+  34:   101f1000        andsne  r1, pc, r0
+  38:   00010024        andeq   r0, r1, r4, lsr #32
 
 
 

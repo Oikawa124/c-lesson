@@ -11,8 +11,8 @@ static int asm_mov_op(char *str, int start, struct Emitter *emitter){
     int pos = start;
 
     unsigned int oneword;
-    int reg_1st;
 
+    int reg_1st;
     pos = parse_register(str, pos, &reg_1st);
     if (pos == PARSE_FAIL) { return pos; }
 
@@ -41,6 +41,41 @@ static int asm_mov_op(char *str, int start, struct Emitter *emitter){
     }
 
     emit_word(emitter, oneword);
+    return pos;
+}
+
+
+static int asm_add_op(char *str, int start, struct Emitter *emitter){
+
+    int pos = start;
+
+    unsigned int oneword = 0xE2800000;
+
+    int reg_1st;
+    pos = parse_register(str, pos, &reg_1st);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = skip_comma(str, pos);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    int destination_reg;
+    pos = parse_register(str, pos, &destination_reg);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = skip_comma(str, pos);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    int imm_value;
+    pos = parse_immediate(str, pos, &imm_value);
+    if (pos == PARSE_FAIL) { return pos; }
+
+
+    oneword += reg_1st << 16;
+    oneword += destination_reg << 12;
+    oneword += imm_value;
+
+    emit_word(emitter, oneword);
+
     return pos;
 }
 
@@ -169,7 +204,7 @@ static int asm_single_data_transfer(char *str, int start, int mnemonic,
         if (pos == PARSE_FAIL) { return pos; }
         return pos;
 
-    } else { // レジスタのみ  ex. ldr r0, [r15]
+    } else { // レジスタのみ  ex. ldr r0, [r15], str ...
         pos = asm_ldr_or_str_register_only(str, pos, mnemonic, base_reg, sourse_reg, emitter);
         if (pos == PARSE_FAIL) { return pos; }
         return pos;
@@ -316,24 +351,26 @@ int asm_one(char *buf, struct Emitter *emitter) {
 
 
     // mnemonicで分岐
-    if (mnemonic_symbol == MOV)
-    {
+    if (mnemonic_symbol == MOV){
+
         res = asm_mov_op(buf, start, emitter);
 
     } else if ((mnemonic_symbol == LDR)
-                || (mnemonic_symbol == STR))
-    {
+                || (mnemonic_symbol == STR)){
+
         res = asm_single_data_transfer(buf, start, mnemonic_symbol, emitter);
 
-    } else if (mnemonic_symbol == B)
-    {
+    } else if (mnemonic_symbol == B){
+
         res = asm_branch(buf, start, emitter);
 
-    } else if (mnemonic_symbol == RAW)
-    {
-        // asm_raw_opでonewordを配列に詰める
+    } else if (mnemonic_symbol == RAW) {
+
         res = asm_raw_op(buf, start, emitter);
-        return res;
+
+    } else if (mnemonic_symbol == ADD) {
+
+        res = asm_add_op(buf, start, emitter);
 
     } else {
         printf("Not Implemented");
@@ -761,37 +798,63 @@ static void test_asm_one_when_symbol_is_raw_string_with_escape_and_d_quart(){
 
 
 
+static void test_asm_one_when_symbol_is_add(){
+
+    // SetUp
+    char *input = "add r1, r1, #0x1";
+    unsigned int expect = 0xE2811001;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+
+    // Verify
+    assert(expect == actual);
+
+    // TearDown
+    initialize_when_test();
+}
+
+
+
+
 static void unit_tests() {
 
     // asm one
 
-    //// mov
-    test_asm_one_when_symbol_is_mov_with_reg();
-    test_asm_one_when_symbol_is_mov_with_immediate();
+//    //// mov
+//    test_asm_one_when_symbol_is_mov_with_reg();
+//    test_asm_one_when_symbol_is_mov_with_immediate();
+//
+//    //// ldr
+//    test_asm_one_when_symbol_is_ldr_with_immediate();
+//    test_asm_one_when_symbol_is_ldr_with_minus_immediate();
+//    test_asm_one_when_symbol_is_ldr_with_no_immediate();
+//    test_asm_one_when_is_ldr_with_label();
+//
+//    //// str
+//    test_asm_one_when_symbol_is_str();
+//
+//    // b
+//    test_asm_one_when_is_b();
+//    test_asm_one_when_is_b_with_after_label();
+//    test_asm_one_when_is_b_with_far_after_label();
+//
+//
+//    //// raw
+//    test_asm_one_when_symbol_is_raw_number_only();
+//    test_asm_one_when_symbol_is_raw_string();
+//    test_asm_one_when_symbol_is_raw_string_with_new_line();
+//    test_asm_one_when_symbol_is_raw_string_with_double_quart();
+//    test_asm_one_when_symbol_is_raw_string_with_escape();
+//    test_asm_one_when_symbol_is_raw_string_with_escape_2();
+//    test_asm_one_when_symbol_is_raw_string_with_escape_and_d_quart();
 
-    //// ldr
-    test_asm_one_when_symbol_is_ldr_with_immediate();
-    test_asm_one_when_symbol_is_ldr_with_minus_immediate();
-    test_asm_one_when_symbol_is_ldr_with_no_immediate();
-    test_asm_one_when_is_ldr_with_label();
-
-    //// str
-    test_asm_one_when_symbol_is_str();
-
-    // b
-    test_asm_one_when_is_b();
-    test_asm_one_when_is_b_with_after_label();
-    test_asm_one_when_is_b_with_far_after_label();
-
-
-    //// raw
-    test_asm_one_when_symbol_is_raw_number_only();
-    test_asm_one_when_symbol_is_raw_string();
-    test_asm_one_when_symbol_is_raw_string_with_new_line();
-    test_asm_one_when_symbol_is_raw_string_with_double_quart();
-    test_asm_one_when_symbol_is_raw_string_with_escape();
-    test_asm_one_when_symbol_is_raw_string_with_escape_2();
-    test_asm_one_when_symbol_is_raw_string_with_escape_and_d_quart();
+    //// add
+    test_asm_one_when_symbol_is_add();
 }
 
 
@@ -835,28 +898,28 @@ void write_binary_file(struct Emitter *emitter){
 
 
 
-//int main(int argc, char **argv) {
-//
-//    set_up();
-//
-//    unit_tests();
-//
-//    // アセンブル結果を渡す配列を準備
-//    struct Emitter emitter;
-//    initialize_result_arr(&emitter);
-//
-//    FILE *fp;
-//    fp = fopen(argv[1], "r");
-//
-//    if (fp == NULL) { printf("Not exist file");}
-//
-//    // .ksファイルをアセンブルする
-//    read_simple_assembly_file(fp, &emitter);
-//
-//    fclose(fp);
-//
-//    // バイナリ書き込み
-//    write_binary_file(&emitter);
-//
-//    return 0;
-//}
+int main(int argc, char **argv) {
+
+    set_up();
+
+    unit_tests();
+
+    // アセンブル結果を渡す配列を準備
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    FILE *fp;
+    fp = fopen(argv[1], "r");
+
+    if (fp == NULL) { printf("Not exist file");}
+
+    // .ksファイルをアセンブルする
+    read_simple_assembly_file(fp, &emitter);
+
+    fclose(fp);
+
+    // バイナリ書き込み
+    write_binary_file(&emitter);
+
+    return 0;
+}
