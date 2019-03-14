@@ -28,7 +28,6 @@ int RAW;
 int parse_one(char *str, int start, struct substring* out_sub_str);
 int parse_register(char *str, int start, int *out_register);
 int parse_immediate(char *str, int start, int *out_imm_value);
-int parse_raw_value(char *str, int start, unsigned int *out_raw_value);
 int parse_string(char *input, int start, char **out_str_value);
 int parse_address(char *str, int start, unsigned int *out_address);
 

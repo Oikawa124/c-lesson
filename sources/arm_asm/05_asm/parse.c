@@ -159,46 +159,6 @@ int parse_immediate(char *str, int start, int *out_imm_value){
     return pos;
 }
 
-//parse_raw_valueと重複している
-int parse_address(char *str, int start, unsigned int *out_address){
-    int pos = start;
-    pos = skip_space(str, pos);
-
-    // "0"読み飛ばし
-    if (str[pos] != '0') { return PARSE_FAIL;}
-    pos++;
-
-    // "x"読み飛ばし
-    if (str[pos] != 'x') { return PARSE_FAIL;}
-    pos++;
-
-
-    // 文字列の中の数字部分を取得
-    unsigned int hex_num = 0;
-    int res;
-    int one_hex;
-
-    while(isxdigit(str[pos])){
-
-        if (hex_num != 0) {
-            hex_num = hex_num << 4;
-        }
-
-        res = single_atoi_hex(&str[pos], &one_hex);
-
-        if (res == PARSE_FAIL) {return PARSE_FAIL; }
-
-        hex_num += one_hex;
-
-        pos++;
-    }
-
-    *out_address = hex_num;
-
-    return pos;
-}
-
-
 
 /*********************** parse string***************************************************/
 
@@ -278,7 +238,7 @@ int parse_string(char *input, int start, char **out_str_value) {
 
 /***********************************************************************************/
 
-int parse_raw_value(char *str, int start, unsigned int *out_raw_value){
+int parse_address(char *str, int start, unsigned int *out_address){
     int pos = start;
 
     pos = skip_space(str, pos);
@@ -313,7 +273,7 @@ int parse_raw_value(char *str, int start, unsigned int *out_raw_value){
         pos++;
     }
 
-    *out_raw_value = hex_num;
+    *out_address = hex_num;
     return pos;
 }
 
@@ -653,7 +613,7 @@ static void test_parse_immediate_with_imm0xFA(){
 
 /**************** parse raw **********************************/
 
-static void test_parse_raw_when_number_only(){
+static void test_parse_address_when_number_only(){
 
     // SetUp
     char *input = "0x12345678";
@@ -664,13 +624,13 @@ static void test_parse_raw_when_number_only(){
     unsigned int actual_raw_value;
 
     // Exercise
-    start = parse_raw_value(input, start, &actual_raw_value);
+    start = parse_address(input, start, &actual_raw_value);
 
     // Verify
     assert(expect_imm_value == actual_raw_value);
 }
 
-static void test_parse_raw_when_number_max(){
+static void test_parse_address_when_number_max(){
 
     // SetUp
     char *input = "0xFFFFFFFF";
@@ -681,7 +641,7 @@ static void test_parse_raw_when_number_max(){
     unsigned int actual_raw_value;
 
     // Exercise
-    start = parse_raw_value(input, start, &actual_raw_value);
+    start = parse_address(input, start, &actual_raw_value);
 
     // Verify
     assert(expect_imm_value == actual_raw_value);
@@ -884,9 +844,9 @@ static void unit_tests() {
     test_parse_string_when_double_quart();
     test_parse_string_when_backslash();
 
-    // parse_raw_value
-    test_parse_raw_when_number_only();
-    test_parse_raw_when_number_max();
+    // parse_address
+    test_parse_address_when_number_only();
+    test_parse_address_when_number_max();
 
     // parse left square bracket
     test_parse_left_sbracket();

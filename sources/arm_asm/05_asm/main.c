@@ -419,7 +419,7 @@ static int asm_raw_op(char *str, int start, struct Emitter *emitter){
 
     } else { // 数字パース
         unsigned int raw_num_val;
-        pos = parse_raw_value(str, pos, &raw_num_val);
+        pos = parse_address(str, pos, &raw_num_val);
         if (pos == PARSE_FAIL) { return pos; }
 
         emit_word(emitter, raw_num_val);
@@ -1034,18 +1034,18 @@ static void unit_tests() {
 
     // asm one
 
-//    //// mov
-//    test_asm_one_when_symbol_is_mov_with_reg();
-//    test_asm_one_when_symbol_is_mov_with_immediate();
-//
-//    //// ldr
-//    test_asm_one_when_symbol_is_ldr_with_immediate();
-//    test_asm_one_when_symbol_is_ldr_with_minus_immediate();
-//    test_asm_one_when_symbol_is_ldr_with_no_immediate();
-//    test_asm_one_when_is_ldr_with_label();
-//
-//    //// str
-//    test_asm_one_when_symbol_is_str();
+    //// mov
+    test_asm_one_when_symbol_is_mov_with_reg();
+    test_asm_one_when_symbol_is_mov_with_immediate();
+
+    //// ldr
+    test_asm_one_when_symbol_is_ldr_with_immediate();
+    test_asm_one_when_symbol_is_ldr_with_minus_immediate();
+    test_asm_one_when_symbol_is_ldr_with_no_immediate();
+    test_asm_one_when_is_ldr_with_label();
+
+    //// str
+    test_asm_one_when_symbol_is_str();
 
     // b
     test_asm_one_when_is_b();
@@ -1123,22 +1123,22 @@ int main(int argc, char **argv) {
 
     unit_tests();
 
-    // アセンブル結果を渡す配列を準備
-    struct Emitter emitter;
-    initialize_result_arr(&emitter);
-
-    FILE *fp;
-    fp = fopen(argv[1], "r");
-
-    if (fp == NULL) { printf("Not exist file");}
-
-    // .ksファイルをアセンブルする
-    read_simple_assembly_file(fp, &emitter);
-
-    fclose(fp);
-
-    // バイナリ書き込み
-    write_binary_file(&emitter);
-
-    return 0;
+//    // アセンブル結果を渡す配列を準備
+//    struct Emitter emitter;
+//    initialize_result_arr(&emitter);
+//
+//    FILE *fp;
+//    fp = fopen(argv[1], "r");
+//
+//    if (fp == NULL) { printf("Not exist file");}
+//
+//    // .ksファイルをアセンブルする
+//    read_simple_assembly_file(fp, &emitter);
+//
+//    fclose(fp);
+//
+//    // バイナリ書き込み
+//    write_binary_file(&emitter);
+//
+//    return 0;
 }
