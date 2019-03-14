@@ -1,7 +1,6 @@
 #include <stdio.h>
 
 #define PARSE_FAIL -1
-unsigned int memory_address;
 
 // 文字列
 struct substring {
@@ -17,6 +16,11 @@ int MOV;
 int LDR;
 int STR;
 int B;
+int ADD;
+int CMP;
+int LDRB;
+int BNE;
+
 int RAW;
 
 
@@ -26,6 +30,7 @@ int parse_register(char *str, int start, int *out_register);
 int parse_immediate(char *str, int start, int *out_imm_value);
 int parse_raw_value(char *str, int start, unsigned int *out_raw_value);
 int parse_string(char *input, int start, char **out_str_value);
+int parse_address(char *str, int start, unsigned int *out_address);
 
 int parse_left_sbracket(char *str, int start);
 int parse_right_sbracket(char *str, int start);

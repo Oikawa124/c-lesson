@@ -199,9 +199,25 @@ static int asm_ldr_or_str_register_only(char *str, int pos, int mnemonic,
 }
 
 
-static int asm_ldr_label(char *str, int pos,
+int is_address(char *str, int start) {
+    int pos = start;
+
+    pos = skip_space(str, pos);
+
+    if (str[pos] == '0' && str[++pos] == 'x') {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
+static int asm_ldr_label_or_address(char *str, int pos,
                          int sourse_reg,
                          struct Emitter *emitter) {
+
+    struct substring sub_str;
+    int label_symbol;
 
     unsigned int oneword = 0xE5900000;
     oneword += 0xF << 16;
@@ -213,11 +229,34 @@ static int asm_ldr_label(char *str, int pos,
     pos = skip_equal_sign(str, pos);
     if (pos == PARSE_FAIL) { return pos; }
 
-    struct substring sub_str;
+    if (is_address(str, pos)) {
+        unsigned int address;
+        pos = parse_address(str, pos, &address);
+        //最後にアドレスだけ埋め込む場合を考える
+
+        sub_str.str = "last_memory_address";
+        sub_str.len = 19;
+
+        label_symbol = to_label_symbol(&sub_str);
+
+        dict_put(label_symbol, address);
+
+
+        // ラベルのアドレスの解決に必要なものを覚えておく
+        int mnemonic = LDR;
+        unsigned int memory_address = get_last_memory_address(emitter);
+
+        // emitter.posは次のバイナリを入れる場所を示しているため、-1する。
+        add_unresolve_list(mnemonic, emitter->pos-1, memory_address, label_symbol);
+
+        return pos;
+    }
+
+
     pos = parse_one(str, pos, &sub_str); // ラベルをパース
     if (pos == PARSE_FAIL) { return pos; }
 
-    int label_symbol = to_label_symbol(&sub_str);
+    label_symbol = to_label_symbol(&sub_str);
 
     // ラベルのアドレスの解決に必要なものを覚えておく
     int mnemonic = LDR;
@@ -243,11 +282,12 @@ static int asm_single_data_transfer(char *str, int start, int mnemonic,
     if (pos == PARSE_FAIL) { return pos; }
 
 
-    // ldr rX, =address　の場合
+    // ldr rX, =label　または、アドレスの場合
     if (is_equal_sign(str, pos)) {
-        asm_ldr_label(str, pos, sourse_reg, emitter);
+        asm_ldr_label_or_address(str, pos, sourse_reg, emitter);
         return pos;
     }
+
 
     pos = parse_left_sbracket(str, pos);
     if (pos == PARSE_FAIL) { return pos; }
@@ -293,16 +333,16 @@ void resolve_address(struct Emitter *emitter){
         int offset;
         int is_minus_offset = 0;
 
-        // r15(pc)は8個先を示しているため、-8する
+        // r15(pc)は8個先を示しているため、-8 or +8(2の補数表現でoffsetをマイナス)する
         if (node->op_address < label_address) {
             offset = label_address - node->op_address - 8;
         } else {
-            offset = node->op_address - label_address - 8;
+            offset = node->op_address - label_address + 8;
             is_minus_offset = 1;
         }
 
-        if (is_minus_offset) {
-            offset = (~(-1*offset)) + 1; //2の補数表現
+        if (is_minus_offset == 1) {
+            offset = (~(offset)) + 1; //2の補数表現
         }
 
         if ((node->mnemonic == B) || node->mnemonic == BNE) {
@@ -631,6 +671,7 @@ static void test_asm_one_when_is_b(){
     resolve_address(&emitter);
 
     // Verify
+
     assert(expect == emitter.array[0]);
 
     // TearDown
@@ -935,6 +976,7 @@ static void test_asm_one_when_symbol_is_ldrb(){
     initialize_when_test();
 }
 
+
 static void test_asm_one_when_symbol_is_bne(){
 
     // SetUp
@@ -959,6 +1001,34 @@ static void test_asm_one_when_symbol_is_bne(){
 }
 
 
+static void test_asm_one_when_symbol_is_bne_far(){
+
+    // SetUp
+    char *input1 = "loop:";
+    char *input2 = "mov r1, r2";
+    char *input3 = "mov r1, r2";
+    char *input4 = "bne loop";
+
+    unsigned int expect = 0x1AFFFFFC;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input1, &emitter);
+    asm_one(input2, &emitter);
+    asm_one(input3, &emitter);
+    asm_one(input4, &emitter);
+
+    resolve_address(&emitter);
+
+    // Verify
+    assert(expect == emitter.array[2]);
+
+    // TearDown
+    initialize_when_test();
+}
+
 
 static void unit_tests() {
 
@@ -976,34 +1046,34 @@ static void unit_tests() {
 //
 //    //// str
 //    test_asm_one_when_symbol_is_str();
-//
-//    // b
-//    test_asm_one_when_is_b();
-//    test_asm_one_when_is_b_with_after_label();
-//    test_asm_one_when_is_b_with_far_after_label();
-//
-//
-//    //// raw
-//    test_asm_one_when_symbol_is_raw_number_only();
-//    test_asm_one_when_symbol_is_raw_string();
-//    test_asm_one_when_symbol_is_raw_string_with_new_line();
-//    test_asm_one_when_symbol_is_raw_string_with_double_quart();
-//    test_asm_one_when_symbol_is_raw_string_with_escape();
-//    test_asm_one_when_symbol_is_raw_string_with_escape_2();
-//    test_asm_one_when_symbol_is_raw_string_with_escape_and_d_quart();
-//
-//    //// add
-//    test_asm_one_when_symbol_is_add();
-//
-//    //// cmp
-//    test_asm_one_when_symbol_is_cmp();
-//
-//    //// ldrb
-//    test_asm_one_when_symbol_is_ldrb();
 
-    /// bne
+    // b
+    test_asm_one_when_is_b();
+    test_asm_one_when_is_b_with_after_label();
+    test_asm_one_when_is_b_with_far_after_label();
+
+
+    //// raw
+    test_asm_one_when_symbol_is_raw_number_only();
+    test_asm_one_when_symbol_is_raw_string();
+    test_asm_one_when_symbol_is_raw_string_with_new_line();
+    test_asm_one_when_symbol_is_raw_string_with_double_quart();
+    test_asm_one_when_symbol_is_raw_string_with_escape();
+    test_asm_one_when_symbol_is_raw_string_with_escape_2();
+    test_asm_one_when_symbol_is_raw_string_with_escape_and_d_quart();
+
+    //// add
+    test_asm_one_when_symbol_is_add();
+
+    //// cmp
+    test_asm_one_when_symbol_is_cmp();
+
+    //// ldrb
+    test_asm_one_when_symbol_is_ldrb();
+
+    //// bne
     test_asm_one_when_symbol_is_bne();
-
+    test_asm_one_when_symbol_is_bne_far();
 }
 
 
@@ -1029,7 +1099,7 @@ void read_simple_assembly_file(FILE *fp, struct Emitter *emitter){
 
         if (res == PARSE_FAIL) {
             printf("PARSE FAIL\n");
-            printf("line num: %d", memory_address);
+            printf("line num: %d", emitter->pos);
             break;
         }
     }

@@ -130,7 +130,7 @@ int parse_immediate(char *str, int start, int *out_imm_value){
     pos++;
 
 
-    // 文字列の中の数字部分の範囲を取得
+    // 文字列の中の数字部分を取得
     unsigned int hex_num = 0;
     int res;
     int one_hex;
@@ -159,7 +159,44 @@ int parse_immediate(char *str, int start, int *out_imm_value){
     return pos;
 }
 
+//parse_raw_valueと重複している
+int parse_address(char *str, int start, unsigned int *out_address){
+    int pos = start;
+    pos = skip_space(str, pos);
 
+    // "0"読み飛ばし
+    if (str[pos] != '0') { return PARSE_FAIL;}
+    pos++;
+
+    // "x"読み飛ばし
+    if (str[pos] != 'x') { return PARSE_FAIL;}
+    pos++;
+
+
+    // 文字列の中の数字部分を取得
+    unsigned int hex_num = 0;
+    int res;
+    int one_hex;
+
+    while(isxdigit(str[pos])){
+
+        if (hex_num != 0) {
+            hex_num = hex_num << 4;
+        }
+
+        res = single_atoi_hex(&str[pos], &one_hex);
+
+        if (res == PARSE_FAIL) {return PARSE_FAIL; }
+
+        hex_num += one_hex;
+
+        pos++;
+    }
+
+    *out_address = hex_num;
+
+    return pos;
+}
 
 
 

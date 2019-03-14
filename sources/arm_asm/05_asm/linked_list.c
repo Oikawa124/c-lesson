@@ -36,10 +36,18 @@ void add_unresolve_list(int mnemonic,
 
     unresolve_list *new_unresolve_list = create_unresolve_list(mnemonic, emit_arr_pos, op_address, label_symbol);
 
-    // unresolve_list_headは常に最新のノードになる
-    unresolve_list *prev_node = unresolve_list_head;
-    unresolve_list_head = new_unresolve_list;
-    unresolve_list_head->next = prev_node;
+
+    unresolve_list *node = unresolve_list_head;
+
+    unresolve_list *prev_node = NULL;
+
+    while (node != NULL) {
+        prev_node = node;
+        node = node->next;
+    }
+
+    prev_node->next = new_unresolve_list;
+
 }
 
 
