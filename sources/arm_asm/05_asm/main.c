@@ -79,6 +79,32 @@ static int asm_add_op(char *str, int start, struct Emitter *emitter){
     return pos;
 }
 
+static int asm_cmp_op(char *str, int start, struct Emitter *emitter){
+
+    int pos = start;
+
+    unsigned int oneword = 0xE3500000;
+
+    int reg_1st;
+    pos = parse_register(str, pos, &reg_1st);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = skip_comma(str, pos);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    int imm_value;
+    pos = parse_immediate(str, pos, &imm_value);
+    if (pos == PARSE_FAIL) { return pos; }
+
+
+    oneword += reg_1st << 16;
+    oneword += imm_value;
+
+    emit_word(emitter, oneword);
+
+    return pos;
+}
+
 
 static int asm_ldr_relative_offset(char *str, int pos,
                                    int base_reg, int sourse_reg,
@@ -351,16 +377,16 @@ int asm_one(char *buf, struct Emitter *emitter) {
 
 
     // mnemonicで分岐
-    if (mnemonic_symbol == MOV){
+    if (mnemonic_symbol == MOV) {
 
         res = asm_mov_op(buf, start, emitter);
 
     } else if ((mnemonic_symbol == LDR)
-                || (mnemonic_symbol == STR)){
+               || (mnemonic_symbol == STR)) {
 
         res = asm_single_data_transfer(buf, start, mnemonic_symbol, emitter);
 
-    } else if (mnemonic_symbol == B){
+    } else if (mnemonic_symbol == B) {
 
         res = asm_branch(buf, start, emitter);
 
@@ -371,6 +397,10 @@ int asm_one(char *buf, struct Emitter *emitter) {
     } else if (mnemonic_symbol == ADD) {
 
         res = asm_add_op(buf, start, emitter);
+
+    } else if (mnemonic_symbol == CMP) {
+
+        res = asm_cmp_op(buf, start, emitter);
 
     } else {
         printf("Not Implemented");
@@ -819,6 +849,26 @@ static void test_asm_one_when_symbol_is_add(){
 }
 
 
+static void test_asm_one_when_symbol_is_cmp(){
+
+    // SetUp
+    char *input = "cmp r3, #0x0";
+    unsigned int expect = 0xE3530000;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+
+    // Verify
+    assert(expect == actual);
+
+    // TearDown
+    initialize_when_test();
+}
+
 
 
 static void unit_tests() {
@@ -852,9 +902,12 @@ static void unit_tests() {
 //    test_asm_one_when_symbol_is_raw_string_with_escape();
 //    test_asm_one_when_symbol_is_raw_string_with_escape_2();
 //    test_asm_one_when_symbol_is_raw_string_with_escape_and_d_quart();
+//
+//    //// add
+//    test_asm_one_when_symbol_is_add();
 
-    //// add
-    test_asm_one_when_symbol_is_add();
+    //// cmp
+    test_asm_one_when_symbol_is_cmp();
 }
 
 
