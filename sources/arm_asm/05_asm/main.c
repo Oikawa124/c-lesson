@@ -305,7 +305,7 @@ void resolve_address(struct Emitter *emitter){
             offset = (~(-1*offset)) + 1; //2の補数表現
         }
 
-        if (node->mnemonic == B) {
+        if ((node->mnemonic == B) || node->mnemonic == BNE) {
             offset = (offset >> 2) & 0xFFFFFF; // bの場合、右に2bitシフトして24bit分マスク
         }
 
@@ -314,10 +314,18 @@ void resolve_address(struct Emitter *emitter){
     }
 }
 
-static int asm_branch(char *str, int start, struct Emitter *emitter){
+static int asm_branch(char *str, int start, int mnemonic, struct Emitter *emitter){
     int pos = start;
 
-    unsigned int oneword =  0xEA000000;
+    unsigned int oneword = 0;
+    if (mnemonic == B) {
+        oneword = 0xEA000000;
+    } else if(mnemonic == BNE){
+        oneword = 0x1A000000;
+    } else {
+        printf("Not Implemented");
+    }
+
     emit_word(emitter, oneword);
 
     struct substring sub_str;
@@ -327,7 +335,6 @@ static int asm_branch(char *str, int start, struct Emitter *emitter){
     int label_symbol = to_label_symbol(&sub_str);
 
     // ラベルのアドレスの解決に必要なものを覚えておく
-    int mnemonic = B;
     unsigned int memory_address = get_last_memory_address(emitter);
 
     // emitter.posは次のバイナリを入れる場所を示しているため、-1する。
@@ -419,9 +426,10 @@ int asm_one(char *buf, struct Emitter *emitter) {
 
         res = asm_single_data_transfer(buf, start, mnemonic_symbol, emitter);
 
-    } else if (mnemonic_symbol == B) {
+    } else if ((mnemonic_symbol == B)
+               || (mnemonic_symbol == BNE)) {
 
-        res = asm_branch(buf, start, emitter);
+        res = asm_branch(buf, start, mnemonic_symbol, emitter);
 
     } else if (mnemonic_symbol == RAW) {
 
@@ -927,6 +935,29 @@ static void test_asm_one_when_symbol_is_ldrb(){
     initialize_when_test();
 }
 
+static void test_asm_one_when_symbol_is_bne(){
+
+    // SetUp
+    char *input1 = "loop:";
+    char *input2 = "bne loop";
+
+    unsigned int expect = 0x1AFFFFFE ;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input1, &emitter);
+    asm_one(input2, &emitter);
+    resolve_address(&emitter);
+
+    // Verify
+    assert(expect == emitter.array[0]);
+
+    // TearDown
+    initialize_when_test();
+}
+
 
 
 static void unit_tests() {
@@ -967,8 +998,11 @@ static void unit_tests() {
 //    //// cmp
 //    test_asm_one_when_symbol_is_cmp();
 //
-    //// ldrb
-    test_asm_one_when_symbol_is_ldrb();
+//    //// ldrb
+//    test_asm_one_when_symbol_is_ldrb();
+
+    /// bne
+    test_asm_one_when_symbol_is_bne();
 
 }
 
