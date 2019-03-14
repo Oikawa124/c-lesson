@@ -373,6 +373,12 @@ fwrite(emitter->array, sizeof(emitter->array), emitter->pos, fp);
 バイナリが変わった。
 
 
+### 結論
+
+ポインタ(int型)の大きさが違う。
+Clionが32bitで、cmdが64bitだから。
+
+
 
 ## ファイル分割
 
@@ -398,7 +404,7 @@ leftはstrcmpしてマイナスの時に行く、+だったらrightに行く。�
 参考  
 [strcmp](http://www9.plala.or.jp/sgwr-t/lib/strcmp.html)
 
-### staticofについて
+### sizeofについて
 
 sizeofは静的に決まるサイズしか返さない。
 mallocしたものをくわせても、そのサイズは教えてくれず、そのポインタを入れるのに必要なサイズしか教えてくれない。
@@ -610,6 +616,33 @@ msg:
    4:   6c6c6568        cfstr64vs       mvdx6, [ip], #-416      ; 0xfffffe60
    8:   0000006f        andeq   r0, r0, pc, rrx
    c:   00010004        andeq   r0, r1, r4
+
+
+
+## print_loopの実装
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 
