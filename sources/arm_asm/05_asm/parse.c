@@ -28,6 +28,19 @@ int skip_comma(char *str, int start){
     return pos;
 }
 
+int skip_equal_sign(char *str, int start){
+    int pos = start;
+
+    // スペース読み飛ばし
+    while (str[pos] == ' ') { pos++;}
+
+    // コンマ読み飛ばし
+    if (str[pos] != '=') { return PARSE_FAIL; }
+    pos++;
+
+    return pos;
+}
+
 
 
 // トークン切り出し
@@ -333,6 +346,19 @@ int is_colon(char *str, int start) {
     }
 }
 
+
+int is_equal_sign(char *str, int start) {
+    int pos = start;
+
+    pos = skip_space(str, pos);
+
+    if (str[pos] == '=') {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
 
 
 
@@ -777,6 +803,21 @@ static void test_is_comma(){
     assert(expect == actual);
 }
 
+static void test_is_equal_sign(){
+
+    // SetUp
+    char *input = "=";
+    int start = 0;
+
+    int expect = 1;
+
+    // Exercise
+    int actual = is_equal_sign(input, start);
+
+    // Verify
+    assert(expect == actual);
+}
+
 
 
 static void unit_tests() {
@@ -819,6 +860,7 @@ static void unit_tests() {
     // is_XXX
     test_is_register();
     test_is_comma();
+    test_is_equal_sign();
 }
 
 //int main() {

@@ -14,18 +14,15 @@ static int asm_mov_op(char *str, int start, struct Emitter *emitter){
     int reg_1st;
 
     pos = parse_register(str, pos, &reg_1st);
-
     if (pos == PARSE_FAIL) { return pos; }
 
     pos = skip_comma(str, pos);
-
     if (pos == PARSE_FAIL) { return pos; }
 
     if (is_register(str, pos)) { // レジスタの場合
 
         int reg_2nd;
         pos = parse_register(str, pos, &reg_2nd);
-
         if (pos == PARSE_FAIL) { return pos; }
 
         oneword = 0xE1A00000;
@@ -36,14 +33,12 @@ static int asm_mov_op(char *str, int start, struct Emitter *emitter){
 
         int imm_value;
         pos = parse_immediate(str, pos, &imm_value);
-
         if (pos == PARSE_FAIL) { return pos; }
 
         oneword = 0xE3A00000;
         oneword += reg_1st << 12;
         oneword += imm_value;
     }
-
 
     emit_word(emitter, oneword);
     return pos;
@@ -59,11 +54,9 @@ static int asm_ldr_relative_offset(char *str, int pos,
 
     int imm_value;
     pos = parse_immediate(str, pos, &imm_value);
-
     if (pos == PARSE_FAIL) { return pos; }
 
     pos = parse_right_sbracket(str, pos);
-
     if (pos == PARSE_FAIL) { return pos; }
 
 
@@ -86,31 +79,6 @@ static int asm_ldr_relative_offset(char *str, int pos,
     return pos;
 }
 
-int is_equal_sign(char *str, int start) {
-    int pos = start;
-
-    pos = skip_space(str, pos);
-
-    if (str[pos] == '=') {
-        return 1;
-    }
-    else {
-        return 0;
-    }
-}
-
-int skip_equal_sign(char *str, int start){
-    int pos = start;
-
-    // スペース読み飛ばし
-    while (str[pos] == ' ') { pos++;}
-
-    // コンマ読み飛ばし
-    if (str[pos] != '=') { return PARSE_FAIL; }
-    pos++;
-
-    return pos;
-}
 
 static int asm_ldr_or_str_register_only(char *str, int pos, int mnemonic,
                                         int base_reg, int sourse_reg,
@@ -126,7 +94,6 @@ static int asm_ldr_or_str_register_only(char *str, int pos, int mnemonic,
     }
 
     pos = parse_right_sbracket(str, pos);
-
     if (pos == PARSE_FAIL) { return pos; }
 
     oneword += base_reg << 16;
@@ -193,7 +160,6 @@ static int asm_single_data_transfer(char *str, int start, int mnemonic,
 
     // baseレジスタ切り出し
     int base_reg;
-
     pos = parse_register(str, pos, &base_reg);
     if (pos == PARSE_FAIL) { return pos; }
 
@@ -625,6 +591,9 @@ static void test_asm_one_when_symbol_is_raw_number_only(){
 
     // Verify
     assert(expect == actual);
+
+    // TearDown
+    initialize_when_test();
 }
 
 static void test_asm_one_when_symbol_is_raw_string(){
@@ -642,6 +611,9 @@ static void test_asm_one_when_symbol_is_raw_string(){
 
     // Verify
     assert(expect == actual);
+
+    // TearDown
+    initialize_when_test();
 ;
 }
 
@@ -666,6 +638,9 @@ static void test_asm_one_when_symbol_is_raw_string_with_new_line(){
     assert(expect1 == actual1);
     assert(expect2 == actual2);
     assert(expect3 == actual3);
+
+    // TearDown
+    initialize_when_test();
 }
 
 static void test_asm_one_when_symbol_is_raw_string_with_double_quart(){
@@ -693,6 +668,9 @@ static void test_asm_one_when_symbol_is_raw_string_with_double_quart(){
     assert(expect2 == actual2);
     assert(expect3 == actual3);
     assert(expect4 == actual4);
+
+    // TearDown
+    initialize_when_test();
 }
 
 static void test_asm_one_when_symbol_is_raw_string_with_escape(){
@@ -720,6 +698,9 @@ static void test_asm_one_when_symbol_is_raw_string_with_escape(){
     assert(expect2 == actual2);
     assert(expect3 == actual3);
     assert(expect4 == actual4);
+
+    // TearDown
+    initialize_when_test();
 }
 
 static void test_asm_one_when_symbol_is_raw_string_with_escape_2(){
@@ -743,6 +724,9 @@ static void test_asm_one_when_symbol_is_raw_string_with_escape_2(){
     assert(expect1 == actual1);
     assert(expect2 == actual2);
     assert(expect3 == actual3);
+
+    // TearDown
+    initialize_when_test();
 }
 
 static void test_asm_one_when_symbol_is_raw_string_with_escape_and_d_quart(){
@@ -770,6 +754,9 @@ static void test_asm_one_when_symbol_is_raw_string_with_escape_and_d_quart(){
     assert(expect2 == actual2);
     assert(expect3 == actual3);
     assert(expect4 == actual4);
+
+    // TearDown
+    initialize_when_test();
 }
 
 
@@ -848,11 +835,11 @@ void write_binary_file(struct Emitter *emitter){
 
 
 
-int main(int argc, char **argv) {
-
-    set_up();
-
-    unit_tests();
+//int main(int argc, char **argv) {
+//
+//    set_up();
+//
+//    unit_tests();
 //
 //    // アセンブル結果を渡す配列を準備
 //    struct Emitter emitter;
@@ -870,6 +857,6 @@ int main(int argc, char **argv) {
 //
 //    // バイナリ書き込み
 //    write_binary_file(&emitter);
-
-    return 0;
-}
+//
+//    return 0;
+//}

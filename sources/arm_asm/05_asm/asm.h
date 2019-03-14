@@ -9,8 +9,6 @@ struct substring {
     int len;
 };
 
-
-
 /* initialize.c*/
 void set_up();
 void initialize_when_test();
@@ -35,9 +33,11 @@ int parse_right_sbracket(char *str, int start);
 int is_register(char *str, int start);
 int is_comma(char *str, int start);
 int is_colon(char *str, int start);
+int is_equal_sign(char *str, int start);
 
 int skip_space(char *str, int start);
 int skip_comma(char *str, int start);
+int skip_equal_sign(char *str, int start);
 
 
 
