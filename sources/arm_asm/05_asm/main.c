@@ -106,6 +106,39 @@ static int asm_cmp_op(char *str, int start, struct Emitter *emitter){
 }
 
 
+static int asm_ldrb_op(char *str, int start, struct Emitter *emitter){
+
+    int pos = start;
+
+    unsigned int oneword = 0xE5D00000;
+
+    int destination_reg;
+    pos = parse_register(str, pos, &destination_reg);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = skip_comma(str, pos);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = parse_left_sbracket(str, pos);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    int base_reg;
+    pos = parse_register(str, pos, &base_reg);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = parse_right_sbracket(str, pos);
+    if (pos == PARSE_FAIL) { return pos; }
+
+
+    oneword += destination_reg << 12;
+    oneword += base_reg << 16;
+
+    emit_word(emitter, oneword);
+
+    return pos;
+}
+
+
 static int asm_ldr_relative_offset(char *str, int pos,
                                    int base_reg, int sourse_reg,
                                    struct Emitter *emitter) {
@@ -401,6 +434,10 @@ int asm_one(char *buf, struct Emitter *emitter) {
     } else if (mnemonic_symbol == CMP) {
 
         res = asm_cmp_op(buf, start, emitter);
+
+    } else if (mnemonic_symbol == LDRB) {
+
+        res = asm_ldrb_op(buf, start, emitter);
 
     } else {
         printf("Not Implemented");
@@ -870,6 +907,27 @@ static void test_asm_one_when_symbol_is_cmp(){
 }
 
 
+static void test_asm_one_when_symbol_is_ldrb(){
+
+    // SetUp
+    char *input = "ldrb r3, [r1]";
+    unsigned int expect = 0xE5d13000;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+
+    // Verify
+    assert(expect == actual);
+
+    // TearDown
+    initialize_when_test();
+}
+
+
 
 static void unit_tests() {
 
@@ -905,9 +963,13 @@ static void unit_tests() {
 //
 //    //// add
 //    test_asm_one_when_symbol_is_add();
+//
+//    //// cmp
+//    test_asm_one_when_symbol_is_cmp();
+//
+    //// ldrb
+    test_asm_one_when_symbol_is_ldrb();
 
-    //// cmp
-    test_asm_one_when_symbol_is_cmp();
 }
 
 
