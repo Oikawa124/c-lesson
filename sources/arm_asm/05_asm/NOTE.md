@@ -861,12 +861,13 @@ msg2:
 ####objdump結果
 
 ```
-   0:   e59f005c        ldr     r0, [pc, #92]   ; 0x64
+00000000 <.data>:
+   0:   e59f0060        ldr     r0, [pc, #96]   ; 0x68
    4:   eb000005        bl      0x20
-   8:   e59f0058        ldr     r0, [pc, #88]   ; 0x68
+   8:   e59f005c        ldr     r0, [pc, #92]   ; 0x6c
    c:   eb000003        bl      0x20
   10:   eafffffe        b       0x10
-  14:   e59f1050        ldr     r1, [pc, #80]   ; 0x6c
+  14:   e59f1054        ldr     r1, [pc, #84]   ; 0x70
   18:   e5810000        str     r0, [r1]
   1c:   e1a0f00e        mov     pc, lr
   20:   e5d03000        ldrb    r3, [r0]
@@ -882,16 +883,21 @@ msg2:
   48:   73726946        cmnvc   r2, #1146880    ; 0x118000
   4c:   65742074        ldrbvs  r2, [r4, #-116]!        ; 0xffffff8c
   50:   0a2e7478        beq     0xb9d238
-  54:   6f636553        svcvs   0x00636553
-  58:   7420646e        strtvc  r6, [r0], #-1134        ; 0xfffffb92
-  5c:   21747865        cmncs   r4, r5, ror #16
-  60:   0000000a        andeq   r0, r0, sl
-  64:   00010048        andeq   r0, r1, r8, asr #32
-  68:   00010054        andeq   r0, r1, r4, asr r0
-  6c:   101f1000        andsne  r1, pc, r0
+  54:   00000000        andeq   r0, r0, r0
+  58:   6f636553        svcvs   0x00636553
+  5c:   7420646e        strtvc  r6, [r0], #-1134        ; 0xfffffb92
+  60:   21747865        cmncs   r4, r5, ror #16
+  64:   0000000a        andeq   r0, r0, sl
+  68:   00010048        andeq   r0, r1, r8, asr #32
+  6c:   00010058        andeq   r0, r1, r8, asr r0
+  70:   101f1000        andsne  r1, pc, r0
 ```
 
 
+### 今回の実装のnull文字の扱い
+
+今回の実装では、文字列のバイナリが8byteの間で収まった場合、
+上の54のように、8byteでnull文字を表す。
 
 
 
