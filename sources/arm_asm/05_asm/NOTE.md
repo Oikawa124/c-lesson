@@ -736,8 +736,165 @@ bne loop
 ```
 ex
 mov r1, r2
+
 mov r3, r4
 ```
+上記の例では、改行文字が２つになっている？
+
+
+## 残りの命令の実装
+
+
+### putchar_bad.s入力
+```
+  ldr r0,=msg1
+  bl print
+  ldr r0,=msg2
+  bl print
+end:
+  b end
+
+/*
+  putchar:
+    arg r0: target character which is printed.
+    used internal register: r1.
+*/
+putchar:
+  ldr r1,=0x101f1000
+  str r0, [r1]
+  mov r15, r14
+
+
+/*
+  print:
+    arg r0: Address of target string, must end by \0.
+    used internal register: r0, r1, r3.
+*/
+
+print:
+  ldrb r3,[r0]
+  mov r2, r0
+  mov r4, r14
+
+_loop:
+  /*
+  str r3, [r1]
+  */
+  mov r0, r3
+  bl putchar
+
+  add r2, r2, #1
+  ldrb r3,[r2]
+  cmp r3,#0
+  bne _loop
+  mov r15, r4
+
+msg1: .asciz "First text.\n"
+msg2: .asciz "Second text!\n"
+
+```
+
+### objdump結果
+
+```
+00000000 <.data>:
+   0:   e59f005c        ldr     r0, [pc, #92]   ; 0x64
+   4:   eb000005        bl      0x20
+   8:   e59f0058        ldr     r0, [pc, #88]   ; 0x68
+   c:   eb000003        bl      0x20
+  10:   eafffffe        b       0x10
+  14:   e59f1050        ldr     r1, [pc, #80]   ; 0x6c
+  18:   e5810000        str     r0, [r1]
+  1c:   e1a0f00e        mov     pc, lr
+  20:   e5d03000        ldrb    r3, [r0]
+  24:   e1a02000        mov     r2, r0
+  28:   e1a0400e        mov     r4, lr
+  2c:   e1a00003        mov     r0, r3
+  30:   ebfffff7        bl      0x14
+  34:   e2822001        add     r2, r2, #1
+  38:   e5d23000        ldrb    r3, [r2]
+  3c:   e3530000        cmp     r3, #0
+  40:   1afffff9        bne     0x2c
+  44:   e1a0f004        mov     pc, r4
+  48:   73726946        cmnvc   r2, #1146880    ; 0x118000
+  4c:   65742074        ldrbvs  r2, [r4, #-116]!        ; 0xffffff8c
+  50:   0a2e7478        beq     0xb9d238
+  54:   63655300        cmnvs   r5, #0, 6
+  58:   20646e6f        rsbcs   r6, r4, pc, ror #28
+  5c:   74786574        ldrbtvc r6, [r8], #-1396        ; 0xfffffa8c
+  60:   00000a21        andeq   r0, r0, r1, lsr #20
+  64:   00010048        andeq   r0, r1, r8, asr #32
+  68:   00010055        andeq   r0, r1, r5, asr r0
+  6c:   101f1000        andsne  r1, pc, r0
+
+```
+
+
+
+
+### putchar_bad.ks 入力
+
+```
+putchar:
+  ldr r1,=0x101f1000
+  str r0, [r1]
+  mov r15, r14
+print:
+  ldrb r3,[r0]
+  mov r2, r0
+  mov r4, r14
+_loop:
+  mov r0, r3
+  bl putchar
+  add r2, r2, #0x1
+  ldrb r3,[r2]
+  cmp r3,#0x0
+  bne _loop
+  mov r15, r4
+msg1:
+.raw "First text.\n"
+msg2:
+.raw "Second text!\n"
+
+```
+
+####objdump結果
+
+```
+   0:   e59f005c        ldr     r0, [pc, #92]   ; 0x64
+   4:   eb000005        bl      0x20
+   8:   e59f0058        ldr     r0, [pc, #88]   ; 0x68
+   c:   eb000003        bl      0x20
+  10:   eafffffe        b       0x10
+  14:   e59f1050        ldr     r1, [pc, #80]   ; 0x6c
+  18:   e5810000        str     r0, [r1]
+  1c:   e1a0f00e        mov     pc, lr
+  20:   e5d03000        ldrb    r3, [r0]
+  24:   e1a02000        mov     r2, r0
+  28:   e1a0400e        mov     r4, lr
+  2c:   e1a00003        mov     r0, r3
+  30:   ebfffff7        bl      0x14
+  34:   e2822001        add     r2, r2, #1
+  38:   e5d23000        ldrb    r3, [r2]
+  3c:   e3530000        cmp     r3, #0
+  40:   1afffff9        bne     0x2c
+  44:   e1a0f004        mov     pc, r4
+  48:   73726946        cmnvc   r2, #1146880    ; 0x118000
+  4c:   65742074        ldrbvs  r2, [r4, #-116]!        ; 0xffffff8c
+  50:   0a2e7478        beq     0xb9d238
+  54:   6f636553        svcvs   0x00636553
+  58:   7420646e        strtvc  r6, [r0], #-1134        ; 0xfffffb92
+  5c:   21747865        cmncs   r4, r5, ror #16
+  60:   0000000a        andeq   r0, r0, sl
+  64:   00010048        andeq   r0, r1, r8, asr #32
+  68:   00010054        andeq   r0, r1, r4, asr r0
+  6c:   101f1000        andsne  r1, pc, r0
+```
+
+
+
+
+
 
 
 

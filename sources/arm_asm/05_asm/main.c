@@ -325,7 +325,9 @@ void resolve_address(struct Emitter *emitter){
             offset = (~(offset)) + 1; //2の補数表現
         }
 
-        if ((node->mnemonic == B) || node->mnemonic == BNE) {
+        if ((node->mnemonic == B)
+             || node->mnemonic == BNE
+             || node->mnemonic== BL ) {
             offset = (offset >> 2) & 0xFFFFFF; // bの場合、右に2bitシフトして24bit分マスク
         }
 
@@ -341,8 +343,10 @@ static int asm_branch(char *str, int start, int mnemonic, struct Emitter *emitte
 
     if (mnemonic == B) {
         oneword = 0xEA000000;
-    } else if(mnemonic == BNE){
+    } else if(mnemonic == BNE) {
         oneword = 0x1A000000;
+    } else if (mnemonic == BL) {
+        oneword = 0xEB000000;
     } else {
         printf("Not Implemented");
     }
@@ -448,7 +452,8 @@ int asm_one(char *buf, struct Emitter *emitter) {
         res = asm_single_data_transfer(buf, start, mnemonic_symbol, emitter);
 
     } else if ((mnemonic_symbol == B)
-               || (mnemonic_symbol == BNE)) {
+               || (mnemonic_symbol == BNE)
+               || (mnemonic_symbol == BL)) {
 
         res = asm_branch(buf, start, mnemonic_symbol, emitter);
 
@@ -1010,6 +1015,29 @@ static void test_asm_one_when_symbol_is_bne_far(){
     initialize_when_test();
 }
 
+static void test_asm_one_when_symbol_is_bl(){
+
+    // SetUp
+    char *input1 = "bl loop";
+    char *input2 = "loop:";
+
+    unsigned int expect = 0xEBFFFFFF;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input1, &emitter);
+    asm_one(input2, &emitter);
+    resolve_address(&emitter);
+
+    // Verify
+    assert(expect == emitter.array[0]);
+
+    // TearDown
+    initialize_when_test();
+}
+
 
 static void unit_tests() {
 
@@ -1055,6 +1083,9 @@ static void unit_tests() {
     //// bne
     test_asm_one_when_symbol_is_bne();
     test_asm_one_when_symbol_is_bne_far();
+
+    //// bl
+    test_asm_one_when_symbol_is_bl();
 }
 
 
@@ -1097,29 +1128,28 @@ void write_binary_file(struct Emitter *emitter){
 }
 
 
-
 int main(int argc, char **argv) {
 
     set_up();
 
-    unit_tests();
+    // unit_tests();
 
-//    // アセンブル結果を渡す配列を準備
-//    struct Emitter emitter;
-//    initialize_result_arr(&emitter);
-//
-//    FILE *fp;
-//    fp = fopen(argv[1], "r");
-//
-//    if (fp == NULL) { printf("Not exist file");}
-//
-//    // .ksファイルをアセンブルする
-//    read_simple_assembly_file(fp, &emitter);
-//
-//    fclose(fp);
-//
-//    // バイナリ書き込み
-//    write_binary_file(&emitter);
-//
-//    return 0;
+    // アセンブル結果を渡す配列を準備
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    FILE *fp;
+    fp = fopen(argv[1], "r");
+
+    if (fp == NULL) { printf("Not exist file");}
+
+    // .ksファイルをアセンブルする
+    read_simple_assembly_file(fp, &emitter);
+
+    fclose(fp);
+
+    // バイナリ書き込み
+    write_binary_file(&emitter);
+
+    return 0;
 }

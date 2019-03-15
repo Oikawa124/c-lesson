@@ -20,6 +20,7 @@ int ADD;
 int CMP;
 int LDRB;
 int BNE;
+int BL;
 
 int RAW;
 

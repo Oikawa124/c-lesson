@@ -21,10 +21,10 @@ void set_up(){
     ADD  = str_to_mnemonic_symbol("add", 3);
     CMP  = str_to_mnemonic_symbol("cmp", 3);
     LDRB = str_to_mnemonic_symbol("ldrb", 4);
-    BNE   = str_to_mnemonic_symbol("bne", 3);
+    BNE  = str_to_mnemonic_symbol("bne", 3);
+    BL   = str_to_mnemonic_symbol("bl", 2);
 
     RAW = str_to_mnemonic_symbol(".raw", 4);
-
 }
 
 void initialize_when_test(){
