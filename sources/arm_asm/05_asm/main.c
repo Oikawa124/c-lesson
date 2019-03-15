@@ -395,6 +395,11 @@ static int asm_raw_op(char *str, int start, struct Emitter *emitter){
                 emit_word(emitter, oneword);
                 oneword = 0;
                 i = 0;
+
+                if (str_val[str_pos] == '\0') {
+                    oneword = 0x00;
+                    emit_word(emitter, oneword);
+                }
             }
         }
 
@@ -1100,6 +1105,7 @@ void read_simple_assembly_file(FILE *fp, struct Emitter *emitter){
 
         // 一行読み込み
         int buf_len = 0;
+
         buf_len = cl_getline(&buf);
 
         if (buf_len == EOF) {
