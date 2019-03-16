@@ -45,6 +45,42 @@ static int asm_mov_op(char *str, int start, struct Emitter *emitter){
 }
 
 
+static int asm_lsr_op(char *str, int start, struct Emitter *emitter){
+
+    int pos = start;
+
+    unsigned int oneword;
+
+    int reg_1st;
+    pos = parse_register(str, pos, &reg_1st);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = skip_comma(str, pos);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    int destination_reg;
+    pos = parse_register(str, pos, &destination_reg);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = skip_comma(str, pos);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    int shift_reg;
+    pos = parse_register(str, pos, &shift_reg);
+
+    int shift_type = 0x3;
+
+    oneword = 0xE1A00000;
+    oneword += reg_1st << 12;
+    oneword += destination_reg << 16;
+    oneword += shift_reg << 8;
+    oneword += shift_type << 4;
+
+    emit_word(emitter, oneword);
+    return pos;
+}
+
+
 static int asm_add_op(char *str, int start, struct Emitter *emitter){
 
     int pos = start;
@@ -78,6 +114,77 @@ static int asm_add_op(char *str, int start, struct Emitter *emitter){
 
     return pos;
 }
+
+static int asm_sub_op(char *str, int start, struct Emitter *emitter){
+
+    int pos = start;
+
+    unsigned int oneword = 0xE2400000;
+
+    int reg_1st;
+    pos = parse_register(str, pos, &reg_1st);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = skip_comma(str, pos);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    int destination_reg;
+    pos = parse_register(str, pos, &destination_reg);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = skip_comma(str, pos);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    int imm_value;
+    pos = parse_immediate(str, pos, &imm_value);
+    if (pos == PARSE_FAIL) { return pos; }
+
+
+    oneword += reg_1st << 16;
+    oneword += destination_reg << 12;
+    oneword += imm_value;
+
+    emit_word(emitter, oneword);
+
+    return pos;
+}
+
+static int asm_and_op(char *str, int start, struct Emitter *emitter){
+
+    int pos = start;
+
+    unsigned int oneword = 0xE2000000;
+
+    int reg_1st;
+    pos = parse_register(str, pos, &reg_1st);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = skip_comma(str, pos);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    int destination_reg;
+    pos = parse_register(str, pos, &destination_reg);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = skip_comma(str, pos);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    int imm_value;
+    pos = parse_immediate(str, pos, &imm_value);
+    if (pos == PARSE_FAIL) { return pos; }
+
+
+    oneword += reg_1st << 16;
+    oneword += destination_reg << 12;
+    oneword += imm_value;
+
+    emit_word(emitter, oneword);
+
+    return pos;
+}
+
+
+
 
 static int asm_cmp_op(char *str, int start, struct Emitter *emitter){
 
@@ -326,8 +433,11 @@ void resolve_address(struct Emitter *emitter){
         }
 
         if ((node->mnemonic == B)
-             || node->mnemonic == BNE
-             || node->mnemonic== BL ) {
+            || (node->mnemonic == BNE)
+            || (node->mnemonic == BL)
+            || (node->mnemonic == BGE)
+            || (node->mnemonic == BLT)) {
+
             offset = (offset >> 2) & 0xFFFFFF; // bの場合、右に2bitシフトして24bit分マスク
         }
 
@@ -349,6 +459,8 @@ static int asm_branch(char *str, int start, int mnemonic, struct Emitter *emitte
         oneword = 0xEB000000;
     } else if (mnemonic == BLT) {
         oneword = 0xBA000000;
+    } else if (mnemonic == BGE) {
+        oneword = 0xAA000000;
     } else {
         printf("Not Implemented");
     }
@@ -461,8 +573,8 @@ int asm_one(char *buf, struct Emitter *emitter) {
     } else if ((mnemonic_symbol == B)
                || (mnemonic_symbol == BNE)
                || (mnemonic_symbol == BL)
-               || (mnemonic_symbol == BGE
-               || (mnemonic_symbol == BLT))) {
+               || (mnemonic_symbol == BGE)
+               || (mnemonic_symbol == BLT)) {
 
         res = asm_branch(buf, start, mnemonic_symbol, emitter);
 
@@ -481,13 +593,21 @@ int asm_one(char *buf, struct Emitter *emitter) {
     } else if (mnemonic_symbol == LDRB) {
 
         res = asm_ldrb_op(buf, start, emitter);
+
     } else if (mnemonic_symbol == LSR) {
+
+        res = asm_lsr_op(buf, start, emitter);
 
     } else if (mnemonic_symbol == AND) {
 
+        res = asm_and_op(buf, start, emitter);
+
     } else if (mnemonic_symbol == SUB) {
 
+        res = asm_sub_op(buf, start, emitter);
+
     } else {
+
         printf("Not Implemented");
     }
 
@@ -1122,7 +1242,7 @@ static void test_asm_one_when_symbol_is_sub(){
 static void test_asm_one_when_symbol_is_and(){
 
     // SetUp
-    char *input = "and r2, r2, #0x15";
+    char *input = "and r2, r2, #0xF";
     unsigned int expect = 0xE202200F;
 
     struct Emitter emitter;
@@ -1219,8 +1339,10 @@ static void unit_tests() {
     test_asm_one_when_symbol_is_sub();
 
     //// lsr
+    test_asm_one_when_symbol_is_lsr();
 
     //// and
+    test_asm_one_when_symbol_is_and();
 }
 
 
@@ -1269,7 +1391,7 @@ int main(int argc, char **argv) {
 
     set_up();
 
-    // unit_tests();
+    //unit_tests();
 
     // アセンブル結果を渡す配列を準備
     struct Emitter emitter;
