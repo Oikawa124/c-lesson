@@ -897,7 +897,7 @@ msg2:
 ### 今回の実装のnull文字の扱い
 
 今回の実装では、文字列のバイナリが8byteの間で収まった場合、
-上の54のように、8byteでnull文字を表す。
+上の54のように、4byteでnull文字を表す。
 
 
 
@@ -991,22 +991,105 @@ end:
 
 #### 実装必要な命令
 
-lsr
-and
-sub
+lsr 実装した。
+and 実装した。
+sub 実装した。
 
 bge 実装した。
 blt 実装した。
 
 
-
-
 ### objdump 結果
 
 ```
+   0:   e59f105c        ldr     r1, [pc, #92]   ; 0x64
+   4:   e1a0000f        mov     r0, pc
+   8:   eb000002        bl      0x18
+   c:   e3a00068        mov     r0, #104        ; 0x68
+  10:   eb000000        bl      0x18
+  14:   ea000011        b       0x60
+  18:   e3a03028        mov     r3, #40 ; 0x28
+  1c:   e3a02030        mov     r2, #48 ; 0x30
+  20:   e5812000        str     r2, [r1]
+  24:   e3a02078        mov     r2, #120        ; 0x78
+  28:   e5812000        str     r2, [r1]
+  2c:   e1a02330        lsr     r2, r0, r3
+  30:   e202200f        and     r2, r2, #15
+  34:   e352000a        cmp     r2, #10
+  38:   ba000000        blt     0x40
+  3c:   e2822007        add     r2, r2, #7
+  40:   e2822030        add     r2, r2, #48     ; 0x30
+  44:   e5812000        str     r2, [r1]
+  48:   e2433004        sub     r3, r3, #4
+  4c:   e3530000        cmp     r3, #0
+  50:   aafffff5        bge     0x2c
+  54:   e3a0200a        mov     r2, #10
+  58:   e5812000        str     r2, [r1]
+  5c:   e1a0f00e        mov     pc, lr
+  60:   eafffffe        b       0x60
+  64:   101f1000        andsne  r1, pc, r0
+```
 
+### print_hex.ks 入力
 
 ```
+    ldr r0,=0x101f1000
+    ldr r1,=0xdeadbeaf
+    b print_hex
+print_hex:
+    mov r3, #0x1c
+    mov r2, #0x30
+    str r2, [r0]
+    mov r2, #0x78
+    str r2, [r0]
+_loop:
+    lsr r2, r1, r3
+    and r2, r2, #0x0f
+    cmp r2, #0x0a
+    blt _under_ten
+    add r2, r2, #0x07
+_under_ten:
+    add r2, r2, #0x30
+    str r2, [r0]
+    sub r3, r3, #0x4
+    cmp r3, #0x0
+    bge _loop
+    b busy
+busy:
+    b busy
+
+```
+
+
+### objdump結果
+```
+00000000 <.data>:
+   0:   e59f0048        ldr     r0, [pc, #72]   ; 0x50
+   4:   e59f1048        ldr     r1, [pc, #72]   ; 0x54
+   8:   eaffffff        b       0xc
+   c:   e3a0301c        mov     r3, #28
+  10:   e3a02030        mov     r2, #48 ; 0x30
+  14:   e5802000        str     r2, [r0]
+  18:   e3a02078        mov     r2, #120        ; 0x78
+  1c:   e5802000        str     r2, [r0]
+  20:   e1a02331        lsr     r2, r1, r3
+  24:   e202200f        and     r2, r2, #15
+  28:   e352000a        cmp     r2, #10
+  2c:   ba000000        blt     0x34
+  30:   e2822007        add     r2, r2, #7
+  34:   e2822030        add     r2, r2, #48     ; 0x30
+  38:   e5802000        str     r2, [r0]
+  3c:   e2433004        sub     r3, r3, #4
+  40:   e3530000        cmp     r3, #0
+  44:   aafffff5        bge     0x20
+  48:   eaffffff        b       0x4c
+  4c:   eafffffe        b       0x4c
+  50:   101f1000        andsne  r1, pc, r0
+  54:   deadbeaf        cdple   14, 10, cr11, cr13, cr15, {5}
+```
+
+
+
 
 
 

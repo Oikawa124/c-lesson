@@ -51,15 +51,15 @@ static int asm_lsr_op(char *str, int start, struct Emitter *emitter){
 
     unsigned int oneword;
 
-    int reg_1st;
-    pos = parse_register(str, pos, &reg_1st);
+    int destination_reg;
+    pos = parse_register(str, pos, &destination_reg);
     if (pos == PARSE_FAIL) { return pos; }
 
     pos = skip_comma(str, pos);
     if (pos == PARSE_FAIL) { return pos; }
 
-    int destination_reg;
-    pos = parse_register(str, pos, &destination_reg);
+    int reg_2nd;
+    pos = parse_register(str, pos, &reg_2nd);
     if (pos == PARSE_FAIL) { return pos; }
 
     pos = skip_comma(str, pos);
@@ -71,10 +71,10 @@ static int asm_lsr_op(char *str, int start, struct Emitter *emitter){
     int shift_type = 0x3;
 
     oneword = 0xE1A00000;
-    oneword += reg_1st << 12;
-    oneword += destination_reg << 16;
+    oneword += destination_reg << 12;
     oneword += shift_reg << 8;
     oneword += shift_type << 4;
+    oneword += reg_2nd;
 
     emit_word(emitter, oneword);
     return pos;
@@ -328,10 +328,17 @@ static int asm_ldr_label_or_address(char *str, int pos,
     if (is_address(str, pos)) {
         unsigned int address;
         pos = parse_address(str, pos, &address);
-        //最後にアドレスだけ埋め込む場合を考える
 
-        sub_str.str = "last_memory_address";
-        sub_str.len = 19;
+        // ラベルはaddress memoryの数字を文字列に変更したものとする。
+        // ldr rX =XXX が2回以上呼ばれた場合、ラベルの名前をかぶらないようにするため。
+
+        char label_buff[10];
+        itoa(emitter->pos, label_buff, 10);;
+        sub_str.str = label_buff;
+        sub_str.len = strlen(label_buff);
+
+//        sub_str.str = "last_memory_address";
+//        sub_str.len = 19;
 
         label_symbol = to_label_symbol(&sub_str);
 
