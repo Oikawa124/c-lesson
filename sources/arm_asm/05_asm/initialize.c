@@ -23,6 +23,14 @@ void set_up(){
     LDRB = str_to_mnemonic_symbol("ldrb", 4);
     BNE  = str_to_mnemonic_symbol("bne", 3);
     BL   = str_to_mnemonic_symbol("bl", 2);
+    BGE  = str_to_mnemonic_symbol("bge", 3);
+    BLT  = str_to_mnemonic_symbol("blt", 3);
+    SUB  = str_to_mnemonic_symbol("sub", 3);
+    LSR  = str_to_mnemonic_symbol("lsr", 3);
+    AND  = str_to_mnemonic_symbol("and", 3);
+
+
+
 
     RAW = str_to_mnemonic_symbol(".raw", 4);
 }

@@ -347,6 +347,8 @@ static int asm_branch(char *str, int start, int mnemonic, struct Emitter *emitte
         oneword = 0x1A000000;
     } else if (mnemonic == BL) {
         oneword = 0xEB000000;
+    } else if (mnemonic == BLT) {
+        oneword = 0xBA000000;
     } else {
         printf("Not Implemented");
     }
@@ -458,7 +460,9 @@ int asm_one(char *buf, struct Emitter *emitter) {
 
     } else if ((mnemonic_symbol == B)
                || (mnemonic_symbol == BNE)
-               || (mnemonic_symbol == BL)) {
+               || (mnemonic_symbol == BL)
+               || (mnemonic_symbol == BGE
+               || (mnemonic_symbol == BLT))) {
 
         res = asm_branch(buf, start, mnemonic_symbol, emitter);
 
@@ -477,6 +481,11 @@ int asm_one(char *buf, struct Emitter *emitter) {
     } else if (mnemonic_symbol == LDRB) {
 
         res = asm_ldrb_op(buf, start, emitter);
+    } else if (mnemonic_symbol == LSR) {
+
+    } else if (mnemonic_symbol == AND) {
+
+    } else if (mnemonic_symbol == SUB) {
 
     } else {
         printf("Not Implemented");
@@ -1043,6 +1052,114 @@ static void test_asm_one_when_symbol_is_bl(){
     initialize_when_test();
 }
 
+static void test_asm_one_when_symbol_is_bge(){
+
+    // SetUp
+    char *input1 = "bge loop";
+    char *input2 = "loop:";
+
+    unsigned int expect = 0xAAFFFFFF;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input1, &emitter);
+    asm_one(input2, &emitter);
+    resolve_address(&emitter);
+
+    // Verify
+    assert(expect == emitter.array[0]);
+
+    // TearDown
+    initialize_when_test();
+}
+
+static void test_asm_one_when_symbol_is_blt(){
+
+    // SetUp
+    char *input1 = "blt loop";
+    char *input2 = "loop:";
+
+    unsigned int expect = 0xBAFFFFFF;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input1, &emitter);
+    asm_one(input2, &emitter);
+    resolve_address(&emitter);
+
+    // Verify
+    assert(expect == emitter.array[0]);
+
+    // TearDown
+    initialize_when_test();
+}
+
+
+static void test_asm_one_when_symbol_is_sub(){
+
+    // SetUp
+    char *input = "sub r3, r3, #0x4";
+    unsigned int expect = 0xE2433004;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+
+    // Verify
+    assert(expect == actual);
+
+    // TearDown
+    initialize_when_test();
+}
+
+static void test_asm_one_when_symbol_is_and(){
+
+    // SetUp
+    char *input = "and r2, r2, #0x15";
+    unsigned int expect = 0xE202200F;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+
+    // Verify
+    assert(expect == actual);
+
+    // TearDown
+    initialize_when_test();
+}
+
+
+static void test_asm_one_when_symbol_is_lsr(){
+
+    // SetUp
+    char *input = "lsr r2, r0, r3";
+    unsigned int expect = 0xE1A02330 ;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+
+    // Verify
+    assert(expect == actual);
+
+    // TearDown
+    initialize_when_test();
+}
+
 
 static void unit_tests() {
 
@@ -1091,6 +1208,19 @@ static void unit_tests() {
 
     //// bl
     test_asm_one_when_symbol_is_bl();
+
+    //// bge
+    test_asm_one_when_symbol_is_bge();
+
+    //// blt
+    test_asm_one_when_symbol_is_blt();
+
+    //// sub
+    test_asm_one_when_symbol_is_sub();
+
+    //// lsr
+
+    //// and
 }
 
 
@@ -1117,7 +1247,8 @@ void read_simple_assembly_file(FILE *fp, struct Emitter *emitter){
 
         if (res == PARSE_FAIL) {
             printf("PARSE FAIL\n");
-            printf("line num: %d", emitter->pos);
+            printf("line num: %d\n", emitter->pos);
+            printf("%s", buf);
             break;
         }
     }

@@ -12,16 +12,27 @@ struct substring {
 void set_up();
 void initialize_when_test();
 
+// 命令：Data Processing
 int MOV;
-int LDR;
-int STR;
-int B;
 int ADD;
 int CMP;
+int LSR;
+int AND;
+int SUB;
+
+// 命令: Single Data Transfer
+int LDR;
+int STR;
 int LDRB;
+
+// 命令：branch
+int B;
 int BNE;
 int BL;
+int BGE;
+int BLT;
 
+// 疑似命令　
 int RAW;
 
 

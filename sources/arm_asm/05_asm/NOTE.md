@@ -900,20 +900,113 @@ msg2:
 上の54のように、8byteでnull文字を表す。
 
 
+
 ## 残りの命令
 
+### print_nomem.ks 入力
+```
+  ldr r0,=msg1
+  bl print
+  ldr r0,=msg2
+  bl print
+end:
+  b end
+print:
+  ldrb r3,[r0]
+  ldr r1,=0x101f1000
+loop:
+  str r3,[r1]
+  add r0, r0, #0x1
+  ldrb r3,[r0]
+  cmp r3,#0x0
+  bne loop
+  mov r15, r14
+msg1:
+.raw "First text.\n"
+msg2:
+.raw "Second text!\n"
+```
+
+### objdump 結果
+
+```
+   0:   e59f004c        ldr     r0, [pc, #76]   ; 0x54
+   4:   eb000002        bl      0x14
+   8:   e59f0048        ldr     r0, [pc, #72]   ; 0x58
+   c:   eb000000        bl      0x14
+  10:   eafffffe        b       0x10
+  14:   e5d03000        ldrb    r3, [r0]
+  18:   e59f103c        ldr     r1, [pc, #60]   ; 0x5c
+  1c:   e5813000        str     r3, [r1]
+  20:   e2800001        add     r0, r0, #1
+  24:   e5d03000        ldrb    r3, [r0]
+  28:   e3530000        cmp     r3, #0
+  2c:   1afffffa        bne     0x1c
+  30:   e1a0f00e        mov     pc, lr
+  34:   73726946        cmnvc   r2, #1146880    ; 0x118000
+  38:   65742074        ldrbvs  r2, [r4, #-116]!        ; 0xffffff8c
+  3c:   0a2e7478        beq     0xb9d224
+  40:   00000000        andeq   r0, r0, r0
+  44:   6f636553        svcvs   0x00636553
+  48:   7420646e        strtvc  r6, [r0], #-1134        ; 0xfffffb92
+  4c:   21747865        cmncs   r4, r5, ror #16
+  50:   0000000a        andeq   r0, r0, sl
+  54:   00010034        andeq   r0, r1, r4, lsr r0
+  58:   00010044        andeq   r0, r1, r4, asr #32
+  5c:   101f1000        andsne  r1, pc, r0
+```
+
+### print_hex_bl.ks 入力
+```
+    ldr r1,=0x101f1000
+    mov r0, r15
+    bl print_hex
+    mov r0, #0x68
+    bl print_hex
+    b end
+print_hex:
+    mov r3, #0x28
+    mov r2, #0x30
+    str r2, [r1]
+    mov r2, #0x78
+    str r2, [r1]
+_loop:
+    lsr r2, r0, r3
+    and r2, r2, #0x0f
+    cmp r2, #0x0a
+    blt _under_ten
+    add r2, r2, #0x07
+_under_ten:
+    add r2, r2, #0x30
+    str r2, [r1]
+    sub r3, r3, #0x4
+    cmp r3, #0x0
+    bge _loop
+    mov r2, #0x0a
+    str r2, [r1]
+    mov r15, r14
+end:
+    b end
+```
+
+#### 実装必要な命令
+
+lsr
+and
+sub
+
+bge 実装した。
+blt 実装した。
 
 
 
 
+### objdump 結果
+
+```
 
 
-
-
-
-
-
-
+```
 
 
 
