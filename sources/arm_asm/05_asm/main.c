@@ -6,6 +6,9 @@
 
 #include "asm.h"
 
+
+/********************** Data Processing*****************************/
+
 static int asm_mov_op(char *str, int start, struct Emitter *emitter){
 
     int pos = start;
@@ -183,9 +186,6 @@ static int asm_and_op(char *str, int start, struct Emitter *emitter){
     return pos;
 }
 
-
-
-
 static int asm_cmp_op(char *str, int start, struct Emitter *emitter){
 
     int pos = start;
@@ -212,6 +212,26 @@ static int asm_cmp_op(char *str, int start, struct Emitter *emitter){
     return pos;
 }
 
+
+
+
+/********************* Block data transfer*****************************/
+
+int asm_stmdb_op(char *str, int start, struct Emitter *emitter) {
+    int pos = start;
+
+    return pos;
+}
+
+
+
+
+
+
+
+
+
+/********************* single data transfer*****************************/
 
 static int asm_ldrb_op(char *str, int start, struct Emitter *emitter){
 
@@ -1419,3 +1439,5 @@ int main(int argc, char **argv) {
 
     return 0;
 }
+
+//todo putchar_memに関する命令を実装 stmfd, ldmfd
