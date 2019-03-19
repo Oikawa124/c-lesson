@@ -1307,6 +1307,26 @@ static void test_asm_one_when_symbol_is_lsr(){
     initialize_when_test();
 }
 
+static void test_asm_one_when_symbol_is_stmdb(){
+
+    // SetUp
+    char *input = "stmdb r13!, {r0}";
+    unsigned int expect = 0xE92D0001;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+
+    // Verify
+    assert(expect == actual);
+
+    // TearDown
+    initialize_when_test();
+}
+
 
 static void unit_tests() {
 
@@ -1370,6 +1390,9 @@ static void unit_tests() {
 
     //// and
     test_asm_one_when_symbol_is_and();
+
+    //// stmdb
+    test_asm_one_when_symbol_is_stmdb();
 }
 
 
