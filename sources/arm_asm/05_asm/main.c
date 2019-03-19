@@ -231,6 +231,8 @@ int asm_stmdb_op(char *str, int start, struct Emitter *emitter) {
 
 
 
+
+
 /********************* single data transfer*****************************/
 
 static int asm_ldrb_op(char *str, int start, struct Emitter *emitter){
@@ -326,7 +328,6 @@ static int asm_ldr_or_str_register_only(char *str, int pos, int mnemonic,
 }
 
 
-
 static int asm_ldr_label_or_address(char *str, int pos,
                          int sourse_reg,
                          struct Emitter *emitter) {
@@ -357,9 +358,6 @@ static int asm_ldr_label_or_address(char *str, int pos,
         sub_str.str = label_buff;
         sub_str.len = strlen(label_buff);
 
-//        sub_str.str = "last_memory_address";
-//        sub_str.len = 19;
-
         label_symbol = to_label_symbol(&sub_str);
 
         dict_put(label_symbol, address);
@@ -371,7 +369,6 @@ static int asm_ldr_label_or_address(char *str, int pos,
 
         label_symbol = to_label_symbol(&sub_str);
     }
-
 
     // ラベルのアドレスの解決に必要なものを覚えておく
     int mnemonic = LDR;
@@ -425,53 +422,7 @@ static int asm_single_data_transfer(char *str, int start, int mnemonic,
 }
 
 
-
-void resolve_address(struct Emitter *emitter){
-    // ここでラベルのアドレスを解決する。
-
-    unresolve_list *node = unresolve_list_head;
-
-    // 命令: b, ldrに対応
-    while (node != NULL) {
-
-        unsigned int label_address;
-        dict_get(node->label_symbol, &label_address);
-
-        if (node->mnemonic == LDR) { //ldrの場合　一番後ろにラベルの位置へのアドレスを追加する
-            emit_word(emitter, label_address);
-            unsigned int memory_address = get_last_memory_address(emitter);
-
-            label_address = memory_address;
-        }
-
-        int offset;
-        int is_minus_offset = 0;
-
-        // r15(pc)は8個先を示しているため、-8 or +8(2の補数表現でoffsetをマイナス)する
-        if (node->op_address < label_address) {
-            offset = label_address - node->op_address - 8;
-        } else {
-            offset = node->op_address - label_address + 8;
-            is_minus_offset = 1;
-        }
-
-        if (is_minus_offset == 1) {
-            offset = (~(offset)) + 1; //2の補数表現
-        }
-
-        if ((node->mnemonic == B)
-            || (node->mnemonic == BNE)
-            || (node->mnemonic == BL)
-            || (node->mnemonic == BGE)
-            || (node->mnemonic == BLT)) {
-
-            offset = (offset >> 2) & 0xFFFFFF; // bの場合、右に2bitシフトして24bit分マスク
-        }
-
-        emitter->array[node->emit_arr_pos] += offset;
-        node = node->next;
-    }
-}
+/********************* branch *****************************/
 
 static int asm_branch(char *str, int start, int mnemonic, struct Emitter *emitter){
     int pos = start;
@@ -509,6 +460,8 @@ static int asm_branch(char *str, int start, int mnemonic, struct Emitter *emitte
     return pos;
 };
 
+
+/********************* .raw  *****************************/
 
 static int asm_raw_op(char *str, int start, struct Emitter *emitter){
 
@@ -559,6 +512,56 @@ static int asm_raw_op(char *str, int start, struct Emitter *emitter){
 }
 
 
+
+/*********************** resolve_address ********************************/
+
+void resolve_address(struct Emitter *emitter){
+
+    unresolve_list *node = unresolve_list_head;
+
+    while (node != NULL) {
+
+        unsigned int label_address;
+        dict_get(node->label_symbol, &label_address);
+
+        if (node->mnemonic == LDR) { //ldrの場合　一番後ろにラベルの位置へのアドレスを追加する
+            emit_word(emitter, label_address);
+            unsigned int memory_address = get_last_memory_address(emitter);
+
+            label_address = memory_address;
+        }
+
+        int offset;
+        int is_minus_offset = 0;
+
+        // r15(pc)は8個先を示しているため、-8 or +8(2の補数表現でoffsetをマイナス)する
+        if (node->op_address < label_address) {
+            offset = label_address - node->op_address - 8;
+        } else {
+            offset = node->op_address - label_address + 8;
+            is_minus_offset = 1;
+        }
+
+        if (is_minus_offset == 1) {
+            offset = (~(offset)) + 1; //2の補数表現
+        }
+
+        if ((node->mnemonic == B)
+            || (node->mnemonic == BNE)
+            || (node->mnemonic == BL)
+            || (node->mnemonic == BGE)
+            || (node->mnemonic == BLT)) {
+
+            offset = (offset >> 2) & 0xFFFFFF; // branchの命令の場合、右に2bitシフトして24bit分マスクする
+        }
+
+        emitter->array[node->emit_arr_pos] += offset;
+        node = node->next;
+    }
+}
+
+
+/*********************** asm one ********************************/
 
 // 先頭のトークンを読み出して，結果によって分岐する
 int asm_one(char *buf, struct Emitter *emitter) {
