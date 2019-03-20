@@ -50,15 +50,23 @@ int parse_address(char *str, int start, unsigned int *out_address);
 int parse_left_sbracket(char *str, int start);
 int parse_right_sbracket(char *str, int start);
 
+int parse_left_cbracket(char *str, int start);
+int parse_right_cbracket(char *str, int start);
+
 int is_register(char *str, int start);
 int is_comma(char *str, int start);
 int is_colon(char *str, int start);
 int is_equal_sign(char *str, int start);
 int is_address(char *str, int start);
+int is_right_cbracket(char *str, int start);
+int is_minus_sign(char *str, int start);
 
 int skip_space(char *str, int start);
 int skip_comma(char *str, int start);
 int skip_equal_sign(char *str, int start);
+int skip_exclamation_mark(char *str, int start);
+int skip_minus_sign(char *str, int start);
+
 
 
 

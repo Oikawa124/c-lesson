@@ -41,6 +41,24 @@ int skip_equal_sign(char *str, int start){
     return pos;
 }
 
+int skip_exclamation_mark(char *str, int start){
+    int pos = start;
+
+    // !読み飛ばし
+    while (str[pos] == '!') { pos++;}
+
+    return pos;
+}
+
+int skip_minus_sign(char *str, int start){
+    int pos = start;
+
+    // !読み飛ばし
+    while (str[pos] == '-') { pos++;}
+
+    return pos;
+}
+
 
 
 // トークン切り出し
@@ -303,6 +321,33 @@ int parse_right_sbracket(char *str, int start){
 }
 
 
+
+int parse_left_cbracket(char *str, int start){
+    int pos = start;
+
+    pos = skip_space(str, pos);
+
+    // 左中括弧読み飛ばし
+    if (str[pos] != '{') { return PARSE_FAIL; }
+    pos++;
+
+    return pos;
+}
+
+int parse_right_cbracket(char *str, int start){
+    int pos = start;
+
+    pos = skip_space(str, pos);
+
+    // 右中括弧読み飛ばし
+    if (str[pos] != '}') { return PARSE_FAIL; }
+    pos++;
+
+    return pos;
+}
+
+
+
 int is_register(char *str, int start) {
     int pos = start;
 
@@ -369,6 +414,33 @@ int is_address(char *str, int start) {
         return 0;
     }
 }
+
+int is_right_cbracket(char *str, int start) {
+    int pos = start;
+
+    pos = skip_space(str, pos);
+
+    if (str[pos] == '}') {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
+int is_minus_sign(char *str, int start) {
+    int pos = start;
+
+    pos = skip_space(str, pos);
+
+    if (str[pos] == '-') {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
 
 
 /**************** Unit Tests ************************************/
@@ -779,6 +851,40 @@ static void test_parse_right_sbracket(){
     assert(expect == actual);
 }
 
+/**************** parse right curly bracket ***********************/
+
+static void test_parse_right_cbracket(){
+
+    // SetUp
+    char *input = "}";
+    int start = 0;
+
+    int expect = 1;
+
+    // Exercise
+    int actual = parse_right_cbracket(input, start);
+
+    // Verify
+    assert(expect == actual);
+}
+
+
+static void test_parse_left_cbracket(){
+
+    // SetUp
+    char *input = "{";
+    int start = 0;
+
+    int expect = 1;
+
+    // Exercise
+    int actual = parse_left_cbracket(input, start);
+
+    // Verify
+    assert(expect == actual);
+}
+
+
 
 /**************** is_XXX  ************************************/
 
@@ -836,7 +942,22 @@ static void test_is_address(){
     int expect = 1;
 
     // Exercise
-    int actual = is_equal_sign(input, start);
+    int actual = is_address(input, start);
+
+    // Verify
+    assert(expect == actual);
+}
+
+static void test_is_mimus_sign(){
+
+    // SetUp
+    char *input = "-";
+    int start = 0;
+
+    int expect = 1;
+
+    // Exercise
+    int actual = is_minus_sign(input, start);
 
     // Verify
     assert(expect == actual);
@@ -880,11 +1001,18 @@ static void unit_tests() {
     // parse right square bracket
     test_parse_right_sbracket();
 
+    // parse left curly bracket
+    test_parse_left_cbracket();
+
+    // parse right curly bracket
+    test_parse_right_cbracket();
+
     // is_XXX
     test_is_register();
     test_is_comma();
     test_is_equal_sign();
     test_is_address();
+    test_is_mimus_sign();
 }
 
 //int main() {
