@@ -246,19 +246,32 @@ int parse_right_cbracket(char *str, int start){
     return pos;
 }
 
+int is_right_cbracket(char *str, int start) {
+    int pos = start;
+
+    pos = skip_space(str, pos);
+
+    if (str[pos] == '}') {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
+
 
 
 /********************* Block data transfer*****************************/
 
 int asm_stmdb_op(char *str, int start, struct Emitter *emitter) {
 
-    // setup
+    // Setup
     int pos = start;
 
     unsigned int oneword = 0xE9200000;
     int reg_list_bin = 0;
 
-    //parse
+    //Parse
     int base_reg;
     pos = parse_register(str, pos, &base_reg);
     if (pos == PARSE_FAIL) { return pos; }
@@ -272,27 +285,40 @@ int asm_stmdb_op(char *str, int start, struct Emitter *emitter) {
     pos = parse_left_cbracket(str, pos);
     if (pos == PARSE_FAIL) { return pos; }
 
-    int reg;
-    pos = parse_register(str, pos, &reg);
-    if (pos == PARSE_FAIL) { return pos; }
 
-    reg_list_bin = 0b1 << reg;
-    pos = parse_right_cbracket(str, pos);
-    if (pos == PARSE_FAIL) { return pos; }
+    // スタックに積むレジスタのパース
+
+    while (1) {
+        int reg;
+        pos = parse_register(str, pos, &reg);
+        if (pos == PARSE_FAIL) { return pos; }
+
+        reg_list_bin += 0b1 << reg;
+
+        if (is_right_cbracket(str, pos)) { break; }
+
+        pos = skip_comma(str, pos);
+        if (pos == PARSE_FAIL) { return pos; }
+    }
+
+//
+//    pos = parse_right_cbracket(str, pos);
+//    if (pos == PARSE_FAIL) { return pos; }
 
 
-    // make binary
+    // Make binary
 
     oneword += base_reg << 16;
     oneword += reg_list_bin;
 
-    // emit binary
+    // Emit binary
     emit_word(emitter, oneword);
 
     return pos;
 }
 
 
+//todo スタックにつむレジスタが二個以上ある場合の実装を追加
 
 
 
