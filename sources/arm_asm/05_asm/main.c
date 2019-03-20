@@ -259,6 +259,18 @@ int is_right_cbracket(char *str, int start) {
     }
 }
 
+int is_minus_sign(char *str, int start) {
+    int pos = start;
+
+    pos = skip_space(str, pos);
+
+    if (str[pos] == '-') {
+        return 1;
+    }
+    else {
+        return 0;
+    }
+}
 
 
 /********************* Block data transfer*****************************/
@@ -288,23 +300,42 @@ int asm_stmdb_op(char *str, int start, struct Emitter *emitter) {
 
     // スタックに積むレジスタのパース
 
+    int stack_reg_list[16];
+    int s_reg_pos = 0;
+
     while (1) {
         int reg;
         pos = parse_register(str, pos, &reg);
         if (pos == PARSE_FAIL) { return pos; }
 
-        reg_list_bin += 0b1 << reg;
+        stack_reg_list[s_reg_pos++] = reg;
 
-        if (is_right_cbracket(str, pos)) { break; }
+        if (is_right_cbracket(str, pos)) {
+            break;
+        }
+
+        if (is_minus_sign(str, pos)) { // ex. stmdb r13!, {r1-r3}
+            pos++;
+            pos = parse_register(str, pos, &reg);
+            if (pos == PARSE_FAIL) { return pos; }
+
+
+            for (int i = stack_reg_list[s_reg_pos - 1] + 1; i <= reg; ++i) {
+                stack_reg_list[s_reg_pos++] = i;
+            }
+
+            if (is_right_cbracket(str, pos)) { break; }
+        }
 
         pos = skip_comma(str, pos);
         if (pos == PARSE_FAIL) { return pos; }
     }
 
-//
-//    pos = parse_right_cbracket(str, pos);
-//    if (pos == PARSE_FAIL) { return pos; }
 
+    // stack_reg_listから、対応する数字に変換する
+    for (int i = 0; i < s_reg_pos; ++i) {
+        reg_list_bin += 0b1 << stack_reg_list[i];
+    }
 
     // Make binary
 
@@ -1450,6 +1481,67 @@ static void test_asm_one_when_symbol_is_stmdb_with_two_registers(){
     initialize_when_test();
 }
 
+static void test_asm_one_when_symbol_is_stmdb_with_two_registers_different_notation(){
+
+    // SetUp
+    char *input = "stmdb r13!, {r0-r1}";
+    unsigned int expect = 0xE92D0003;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+
+    // Verify
+    assert(expect == actual);
+
+    // TearDown
+    initialize_when_test();
+}
+
+static void test_asm_one_when_symbol_is_stmdb_with_many_registers(){
+
+    // SetUp
+    char *input = "stmdb r13!, {r0-r15}";
+    unsigned int expect = 0xE92dffff;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+    printf("%x", actual);
+
+    // Verify
+    assert(expect == actual);
+
+    // TearDown
+    initialize_when_test();
+}
+
+static void test_asm_one_when_symbol_is_stmdb_with_two_notations(){
+
+    // SetUp
+    char *input = "stmdb r13!, {r0, r1-r5}";
+    unsigned int expect = 0xE92d003f;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+
+    // Verify
+    assert(expect == actual);
+
+    // TearDown
+    initialize_when_test();
+}
+
 static void unit_tests() {
 
     // asm one
@@ -1514,8 +1606,12 @@ static void unit_tests() {
     test_asm_one_when_symbol_is_and();
 
     //// stmdb
-    test_asm_one_when_symbol_is_stmdb();
-    test_asm_one_when_symbol_is_stmdb_with_two_registers();
+//    test_asm_one_when_symbol_is_stmdb();
+//    test_asm_one_when_symbol_is_stmdb_with_two_registers();
+//    test_asm_one_when_symbol_is_stmdb_with_two_registers_different_notation();
+//    test_asm_one_when_symbol_is_stmdb_with_many_registers();
+    test_asm_one_when_symbol_is_stmdb_with_two_notations();
+
 }
 
 
