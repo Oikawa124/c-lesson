@@ -293,20 +293,14 @@ int asm_stmdb_op(char *str, int start, struct Emitter *emitter) {
 
     unsigned int oneword = 0xE9200000;
 
-    int pos = _block_data_tansfer(str, start, oneword, emitter);
-    if (pos == PARSE_FAIL) { return pos; }
-
-    return pos;
+    return _block_data_tansfer(str, start, oneword, emitter);
 }
 
 int asm_ldmia_op(char *str, int start, struct Emitter *emitter) {
 
     unsigned int oneword = 0xE8B00000;
 
-    int pos = _block_data_tansfer(str, start, oneword, emitter);
-    if (pos == PARSE_FAIL) { return pos; }
-
-    return pos;
+    return _block_data_tansfer(str, start, oneword, emitter);
 }
 
 
