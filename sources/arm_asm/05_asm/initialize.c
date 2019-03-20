@@ -14,23 +14,22 @@ static int str_to_mnemonic_symbol(char *str, int len) {
 void set_up(){
     initialize_mnemonic_root();
 
-    MOV  = str_to_mnemonic_symbol("mov", 3);
-    STR  = str_to_mnemonic_symbol("str", 3);
-    LDR  = str_to_mnemonic_symbol("ldr", 3);
-    B    = str_to_mnemonic_symbol("b", 1);
-    ADD  = str_to_mnemonic_symbol("add", 3);
-    CMP  = str_to_mnemonic_symbol("cmp", 3);
-    LDRB = str_to_mnemonic_symbol("ldrb", 4);
-    BNE  = str_to_mnemonic_symbol("bne", 3);
-    BL   = str_to_mnemonic_symbol("bl", 2);
-    BGE  = str_to_mnemonic_symbol("bge", 3);
-    BLT  = str_to_mnemonic_symbol("blt", 3);
-    SUB  = str_to_mnemonic_symbol("sub", 3);
-    LSR  = str_to_mnemonic_symbol("lsr", 3);
-    AND  = str_to_mnemonic_symbol("and", 3);
-
-
-
+    MOV   = str_to_mnemonic_symbol("mov", 3);
+    STR   = str_to_mnemonic_symbol("str", 3);
+    LDR   = str_to_mnemonic_symbol("ldr", 3);
+    B     = str_to_mnemonic_symbol("b", 1);
+    ADD   = str_to_mnemonic_symbol("add", 3);
+    CMP   = str_to_mnemonic_symbol("cmp", 3);
+    LDRB  = str_to_mnemonic_symbol("ldrb", 4);
+    BNE   = str_to_mnemonic_symbol("bne", 3);
+    BL    = str_to_mnemonic_symbol("bl", 2);
+    BGE   = str_to_mnemonic_symbol("bge", 3);
+    BLT   = str_to_mnemonic_symbol("blt", 3);
+    SUB   = str_to_mnemonic_symbol("sub", 3);
+    LSR   = str_to_mnemonic_symbol("lsr", 3);
+    AND   = str_to_mnemonic_symbol("and", 3);
+    STMDB = str_to_mnemonic_symbol("stmdb", 5);
+    LDMIA = str_to_mnemonic_symbol("ldmia", 5);
 
     RAW = str_to_mnemonic_symbol(".raw", 4);
 }

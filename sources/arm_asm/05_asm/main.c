@@ -222,6 +222,15 @@ int skip_exclamation_mark(char *str, int start){
     return pos;
 }
 
+int skip_minus_sign(char *str, int start){
+    int pos = start;
+
+    // !読み飛ばし
+    while (str[pos] == '-') { pos++;}
+
+    return pos;
+}
+
 int parse_left_cbracket(char *str, int start){
     int pos = start;
 
@@ -315,7 +324,8 @@ int asm_stmdb_op(char *str, int start, struct Emitter *emitter) {
         }
 
         if (is_minus_sign(str, pos)) { // ex. stmdb r13!, {r1-r3}
-            pos++;
+            pos = skip_minus_sign(str, pos);
+
             pos = parse_register(str, pos, &reg);
             if (pos == PARSE_FAIL) { return pos; }
 
@@ -349,7 +359,79 @@ int asm_stmdb_op(char *str, int start, struct Emitter *emitter) {
 }
 
 
-//todo スタックにつむレジスタが二個以上ある場合の実装を追加
+int asm_ldmia_op(char *str, int start, struct Emitter *emitter) {
+
+    // Setup
+    int pos = start;
+
+    unsigned int oneword = 0xE8B00000;
+    int reg_list_bin = 0;
+
+    //Parse
+    int base_reg;
+    pos = parse_register(str, pos, &base_reg);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = skip_exclamation_mark(str, pos);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = skip_comma(str, pos);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = parse_left_cbracket(str, pos);
+    if (pos == PARSE_FAIL) { return pos; }
+
+
+    // スタックに積むレジスタのパース
+
+    int stack_reg_list[16];
+    int s_reg_pos = 0;
+
+    while (1) {
+        int reg;
+        pos = parse_register(str, pos, &reg);
+        if (pos == PARSE_FAIL) { return pos; }
+
+        stack_reg_list[s_reg_pos++] = reg;
+
+        if (is_right_cbracket(str, pos)) {
+            break;
+        }
+
+        if (is_minus_sign(str, pos)) { // ex. stmdb r13!, {r1-r3}
+            pos = skip_minus_sign(str, pos);
+
+            pos = parse_register(str, pos, &reg);
+            if (pos == PARSE_FAIL) { return pos; }
+
+
+            for (int i = stack_reg_list[s_reg_pos - 1] + 1; i <= reg; ++i) {
+                stack_reg_list[s_reg_pos++] = i;
+            }
+
+            if (is_right_cbracket(str, pos)) { break; }
+        }
+
+        pos = skip_comma(str, pos);
+        if (pos == PARSE_FAIL) { return pos; }
+    }
+
+
+    // stack_reg_listから、対応する数字に変換する
+    for (int i = 0; i < s_reg_pos; ++i) {
+        reg_list_bin += 0b1 << stack_reg_list[i];
+    }
+
+    // Make binary
+
+    oneword += base_reg << 16;
+    oneword += reg_list_bin;
+
+    // Emit binary
+    emit_word(emitter, oneword);
+
+    return pos;
+}
 
 
 
@@ -765,6 +847,10 @@ int asm_one(char *buf, struct Emitter *emitter) {
     } else if (mnemonic_symbol == STMDB) {
 
         res = asm_stmdb_op(buf, start, emitter);
+
+    } else if (mnemonic_symbol == LDMIA) {
+
+        res = asm_ldmia_op(buf, start, emitter);
 
     } else {
 
@@ -1513,7 +1599,6 @@ static void test_asm_one_when_symbol_is_stmdb_with_many_registers(){
     // Exercise
     asm_one(input, &emitter);
     unsigned int actual = emitter.array[0];
-    printf("%x", actual);
 
     // Verify
     assert(expect == actual);
@@ -1541,6 +1626,50 @@ static void test_asm_one_when_symbol_is_stmdb_with_two_notations(){
     // TearDown
     initialize_when_test();
 }
+
+
+static void test_asm_one_when_symbol_is_ldmia(){
+
+    // SetUp
+    char *input = "ldmia r13!, {r0}";
+    unsigned int expect = 0xE8BD0001;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+
+    printf("%x", actual);
+
+    // Verify
+    assert(expect == actual);
+
+    // TearDown
+    initialize_when_test();
+}
+
+static void test_asm_one_when_symbol_is_ldmia_with_two_notations(){
+
+    // SetUp
+    char *input = "ldmia r13!, {r0, r1-r5}";
+    unsigned int expect = 0xE8BD003f;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+
+    // Verify
+    assert(expect == actual);
+
+    // TearDown
+    initialize_when_test();
+}
+
 
 static void unit_tests() {
 
@@ -1606,11 +1735,15 @@ static void unit_tests() {
     test_asm_one_when_symbol_is_and();
 
     //// stmdb
-//    test_asm_one_when_symbol_is_stmdb();
-//    test_asm_one_when_symbol_is_stmdb_with_two_registers();
-//    test_asm_one_when_symbol_is_stmdb_with_two_registers_different_notation();
-//    test_asm_one_when_symbol_is_stmdb_with_many_registers();
+    test_asm_one_when_symbol_is_stmdb();
+    test_asm_one_when_symbol_is_stmdb_with_two_registers();
+    test_asm_one_when_symbol_is_stmdb_with_two_registers_different_notation();
+    test_asm_one_when_symbol_is_stmdb_with_many_registers();
     test_asm_one_when_symbol_is_stmdb_with_two_notations();
+
+    //// ldmia
+    test_asm_one_when_symbol_is_ldmia();
+    test_asm_one_when_symbol_is_ldmia_with_two_notations();
 
 }
 

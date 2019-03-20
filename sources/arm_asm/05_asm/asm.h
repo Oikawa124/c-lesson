@@ -34,6 +34,7 @@ int BLT;
 
 // 命令:　block data transfer
 int STMDB;
+int LDMIA;
 
 // 疑似命令　
 int RAW;
