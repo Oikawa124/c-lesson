@@ -284,12 +284,13 @@ int is_minus_sign(char *str, int start) {
 
 /********************* Block data transfer*****************************/
 
-int asm_stmdb_op(char *str, int start, struct Emitter *emitter) {
+// _XXX() はサブルーチンを想定
+static int _block_data_tansfer(char *str, int start, unsigned int oneword, struct Emitter *emitter) {
 
     // Setup
     int pos = start;
 
-    unsigned int oneword = 0xE9200000;
+    unsigned int _oneword = oneword;
     int reg_list_bin = 0;
 
     //Parse
@@ -341,7 +342,6 @@ int asm_stmdb_op(char *str, int start, struct Emitter *emitter) {
         if (pos == PARSE_FAIL) { return pos; }
     }
 
-
     // stack_reg_listから、対応する数字に変換する
     for (int i = 0; i < s_reg_pos; ++i) {
         reg_list_bin += 0b1 << stack_reg_list[i];
@@ -349,95 +349,34 @@ int asm_stmdb_op(char *str, int start, struct Emitter *emitter) {
 
     // Make binary
 
-    oneword += base_reg << 16;
-    oneword += reg_list_bin;
+    _oneword += base_reg << 16;
+    _oneword += reg_list_bin;
 
     // Emit binary
-    emit_word(emitter, oneword);
+    emit_word(emitter, _oneword);
 
     return pos;
 }
 
+int asm_stmdb_op(char *str, int start, struct Emitter *emitter) {
+
+    unsigned int oneword = 0xE9200000;
+
+    int pos = _block_data_tansfer(str, start, oneword, emitter);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    return pos;
+}
 
 int asm_ldmia_op(char *str, int start, struct Emitter *emitter) {
 
-    // Setup
-    int pos = start;
-
     unsigned int oneword = 0xE8B00000;
-    int reg_list_bin = 0;
 
-    //Parse
-    int base_reg;
-    pos = parse_register(str, pos, &base_reg);
+    int pos = _block_data_tansfer(str, start, oneword, emitter);
     if (pos == PARSE_FAIL) { return pos; }
-
-    pos = skip_exclamation_mark(str, pos);
-    if (pos == PARSE_FAIL) { return pos; }
-
-    pos = skip_comma(str, pos);
-    if (pos == PARSE_FAIL) { return pos; }
-
-    pos = parse_left_cbracket(str, pos);
-    if (pos == PARSE_FAIL) { return pos; }
-
-
-    // スタックに積むレジスタのパース
-
-    int stack_reg_list[16];
-    int s_reg_pos = 0;
-
-    while (1) {
-        int reg;
-        pos = parse_register(str, pos, &reg);
-        if (pos == PARSE_FAIL) { return pos; }
-
-        stack_reg_list[s_reg_pos++] = reg;
-
-        if (is_right_cbracket(str, pos)) {
-            break;
-        }
-
-        if (is_minus_sign(str, pos)) { // ex. stmdb r13!, {r1-r3}
-            pos = skip_minus_sign(str, pos);
-
-            pos = parse_register(str, pos, &reg);
-            if (pos == PARSE_FAIL) { return pos; }
-
-
-            for (int i = stack_reg_list[s_reg_pos - 1] + 1; i <= reg; ++i) {
-                stack_reg_list[s_reg_pos++] = i;
-            }
-
-            if (is_right_cbracket(str, pos)) { break; }
-        }
-
-        pos = skip_comma(str, pos);
-        if (pos == PARSE_FAIL) { return pos; }
-    }
-
-
-    // stack_reg_listから、対応する数字に変換する
-    for (int i = 0; i < s_reg_pos; ++i) {
-        reg_list_bin += 0b1 << stack_reg_list[i];
-    }
-
-    // Make binary
-
-    oneword += base_reg << 16;
-    oneword += reg_list_bin;
-
-    // Emit binary
-    emit_word(emitter, oneword);
 
     return pos;
 }
-
-
-
-
-
-
 
 
 
@@ -1641,8 +1580,6 @@ static void test_asm_one_when_symbol_is_ldmia(){
     asm_one(input, &emitter);
     unsigned int actual = emitter.array[0];
 
-    printf("%x", actual);
-
     // Verify
     assert(expect == actual);
 
@@ -1814,5 +1751,3 @@ int main(int argc, char **argv) {
 
     return 0;
 }
-
-//todo putchar_memに関する命令を実装 stmfd, ldmfd
