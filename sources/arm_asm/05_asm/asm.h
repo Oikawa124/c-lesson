@@ -32,6 +32,9 @@ int BL;
 int BGE;
 int BLT;
 
+// 命令:　block data transfer
+int STMDB;
+
 // 疑似命令　
 int RAW;
 

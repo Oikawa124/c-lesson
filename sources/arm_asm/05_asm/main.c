@@ -213,12 +213,93 @@ static int asm_cmp_op(char *str, int start, struct Emitter *emitter){
 }
 
 
+int skip_exclamation_mark(char *str, int start){
+    int pos = start;
+
+    // !読み飛ばし
+    while (str[pos] == '!') { pos++;}
+
+    return pos;
+}
+
+int parse_left_cbracket(char *str, int start){
+    int pos = start;
+
+    pos = skip_space(str, pos);
+
+    // 左中括弧読み飛ばし
+    if (str[pos] != '{') { return PARSE_FAIL; }
+    pos++;
+
+    return pos;
+}
+
+int parse_right_cbracket(char *str, int start){
+    int pos = start;
+
+    pos = skip_space(str, pos);
+
+    // 右中括弧読み飛ばし
+    if (str[pos] != '}') { return PARSE_FAIL; }
+    pos++;
+
+    return pos;
+}
+
 
 
 /********************* Block data transfer*****************************/
 
 int asm_stmdb_op(char *str, int start, struct Emitter *emitter) {
+
+    // setup
     int pos = start;
+    unsigned int oneword = 0xE9200000;
+
+    //parse
+    int base_reg;
+    pos = parse_register(str, pos, &base_reg);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = skip_exclamation_mark(str, pos);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = skip_comma(str, pos);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = parse_left_cbracket(str, pos);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    int reg;
+    pos = parse_register(str, pos, &reg);
+    if (pos == PARSE_FAIL) { return pos; }
+
+    pos = parse_right_cbracket(str, pos);
+    if (pos == PARSE_FAIL) { return pos; }
+
+
+    // make binary
+
+    //パースしたスタックするレジスタのリスト(今は一個の変数)
+    // から、対応するバイナリを作る
+
+    unsigned int reg_list_bin = 0;
+
+    for (int i = 0; i < 15; ++i) {
+
+        if (i == reg) {
+            reg_list_bin += 0b1;
+        } else {
+            reg_list_bin += 0b0;
+        }
+    }
+
+    oneword += base_reg << 16;
+    oneword += reg_list_bin;
+
+
+    // emit binary
+    emit_word(emitter, oneword);
 
     return pos;
 }
@@ -636,9 +717,14 @@ int asm_one(char *buf, struct Emitter *emitter) {
 
         res = asm_sub_op(buf, start, emitter);
 
+    } else if (mnemonic_symbol == STMDB) {
+
+        res = asm_stmdb_op(buf, start, emitter);
+
     } else {
 
         printf("Not Implemented");
+
     }
 
     return res;
@@ -1444,7 +1530,7 @@ int main(int argc, char **argv) {
 
     set_up();
 
-    //unit_tests();
+    unit_tests();
 
     // アセンブル結果を渡す配列を準備
     struct Emitter emitter;

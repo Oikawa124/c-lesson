@@ -1135,6 +1135,8 @@ msg2:
 
 ### stmdb r13!, {r0}
 
+
+#### 最初の方針
 r0をスタックにつむ。  
 
 stmdbは二モニック  
@@ -1145,14 +1147,117 @@ r13はレジスタ。
 {をパース  
 レジスタを}までパース？  
 
-とりあえず一つのレジスタをパースする。  
+とりあえずスタックに一個のレジスタ積む場合を実装してみる。  
 
 ```
 int asm_stmdb_op(char *str, int start, struct Emitter *emitter);  
 ```
 
+### 仕様を調べる
+
+#### 入力
+
+stmdb r13!, {r0}
+
+#### objdump結果
+```
+   0:   e92d0001        stmfd   sp!, {r0}
+```
 
 
+#### 入力
+
+stmdb r13!, {r0, r1}
+
+#### objdump結果
+```
+   0:   e92d0003        push    {r0, r1}
+```
+
+
+#### 入力
+
+stmdb r13!, {r0-r10}
+
+#### objdump結果
+```
+0:   e92d07ff  push {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, sl}
+```
+
+
+#### 入力
+
+stmdb r13!, {r0, r1, r2, r3, r4, r5}
+
+#### objdump結果
+```
+   0:   e92d003f        push    {r0, r1, r2, r3, r4, r5}
+```
+
+
+#### 入力
+
+stmdb r13!, {r0, r1-r5}
+
+#### objdump結果
+```
+   0:   e92d003f        push    {r0, r1, r2, r3, r4, r5}
+```
+
+
+#### 入力
+
+stmdb r13!, {r0, r1-r5}
+
+#### objdump結果
+```
+   0:   e92d003f        push    {r0, r1, r2, r3, r4, r5}
+```
+
+
+#### 入力
+
+stmdb r13!, {r1-r5, r0}
+
+#### objdump結果
+```
+   0:   e92d003f        push    {r0, r1, r2, r3, r4, r5}
+```
+ 
+
+#### 警告メッセージ
+```
+gaku@DESKTOP-IB1OCGR:~$ arm-none-eabi-as hello.s -o hello.o;
+hello.s: Assembler messages:
+hello.s:4: Warning: register range not in ascending order
+```
+レジスタは昇順で書かないと警告がでる。  
+
+
+#### 入力
+
+stmdb r13!, {r0-r15}
+
+#### objdump結果
+```
+  0:   e92dffff        push    {r0, r1, r2, r3, r4, r5, r6, r7, r8, r9, sl, fp, ip, sp, lr, pc}
+```
+
+#### 警告メッセージ
+```
+gaku@DESKTOP-IB1OCGR:~$ arm-none-eabi-as hello.s -o hello.o;
+hello.s: Assembler messages:
+hello.s:4: Warning: if writeback register is in list, it must be the lowest reg in the list
+```
+
+r13(write back register)がスタックに積まれている。  
+
+
+
+
+### メモ
+[,]と[-]で処理を分けるステートマシンにする？  
+それとも、省略をサポートしないか。
 
 
 
