@@ -254,7 +254,9 @@ int asm_stmdb_op(char *str, int start, struct Emitter *emitter) {
 
     // setup
     int pos = start;
+
     unsigned int oneword = 0xE9200000;
+    int reg_list_bin = 0;
 
     //parse
     int base_reg;
@@ -274,29 +276,15 @@ int asm_stmdb_op(char *str, int start, struct Emitter *emitter) {
     pos = parse_register(str, pos, &reg);
     if (pos == PARSE_FAIL) { return pos; }
 
+    reg_list_bin = 0b1 << reg;
     pos = parse_right_cbracket(str, pos);
     if (pos == PARSE_FAIL) { return pos; }
 
 
     // make binary
 
-    //パースしたスタックするレジスタのリスト(今は一個の変数)
-    // から、対応するバイナリを作る
-
-    unsigned int reg_list_bin = 0;
-
-    for (int i = 0; i < 15; ++i) {
-
-        if (i == reg) {
-            reg_list_bin += 0b1;
-        } else {
-            reg_list_bin += 0b0;
-        }
-    }
-
     oneword += base_reg << 16;
     oneword += reg_list_bin;
-
 
     // emit binary
     emit_word(emitter, oneword);
