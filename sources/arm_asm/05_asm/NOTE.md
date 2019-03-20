@@ -1132,6 +1132,7 @@ msg2:
 ```
 
 
+### stmdbの実装
 
 ### stmdb r13!, {r0}
 
@@ -1256,8 +1257,279 @@ r13(write back register)がスタックに積まれている。
 
 
 ### メモ
-[,]と[-]で処理を分けるステートマシンにする？  
-それとも、省略をサポートしないか。
+
+~~,と-で処理を分けるステートマシンにする？~~ 
+
+~~それとも、省略をサポートしないか。~~
+
+ステートマシンは使わない。
+省略する記法はサポートする。
+昇順にレジスタを書く
+
+
+### ldmiaの実装
+
+
+### ldmia r13!, {r0}
+#### 入力
+
+ldmia r13!, {r0}
+
+#### objdump結果
+```
+   0:   e8bd0001        ldmfd   sp!, {r0}
+```
+
+
+### putchar_mem.ksの実行
+
+#### 入力
+```
+  ldr r13,=0x08000000
+  ldr r0,=msg1
+  bl print
+  ldr r0,=msg2
+  bl print
+end:
+  b end
+putchar:
+  stmdb r13!, {r1, r14}
+  ldr r1,=0x101f1000
+  str r0, [r1]
+  ldmia r13!, {r1, r14}
+  mov r15, r14
+print:
+  stmdb r13!, {r1, r2, r14}
+  mov r2, r0
+  ldrb r1,[r2]
+_loop:
+  mov r0, r1
+  bl putchar
+  add r2, r2, #0x1
+  ldrb r1,[r2]
+  cmp r1,#0x0
+  bne _loop
+  ldmia r13!, {r1, r2, r14}
+  mov r15, r14
+msg1: 
+  .raw "First text.\n"
+msg2:
+  .raw "Second text!\n"
+```
+
+#### objdump結果
+```
+   0:   e59fd070        ldr     sp, [pc, #112]  ; 0x78
+   4:   e59f0070        ldr     r0, [pc, #112]  ; 0x7c
+   8:   eb000007        bl      0x2c
+   c:   e59f006c        ldr     r0, [pc, #108]  ; 0x80
+  10:   eb000005        bl      0x2c
+  14:   eafffffe        b       0x14
+  18:   e92d4002        push    {r1, lr}
+  1c:   e59f1060        ldr     r1, [pc, #96]   ; 0x84
+  20:   e5810000        str     r0, [r1]
+  24:   e8bd4002        pop     {r1, lr}
+  28:   e1a0f00e        mov     pc, lr
+  2c:   e92d4006        push    {r1, r2, lr}
+  30:   e1a02000        mov     r2, r0
+  34:   e5d21000        ldrb    r1, [r2]
+  38:   e1a00001        mov     r0, r1
+  3c:   ebfffff5        bl      0x18
+  40:   e2822001        add     r2, r2, #1
+  44:   e5d21000        ldrb    r1, [r2]
+  48:   e3510000        cmp     r1, #0
+  4c:   1afffff9        bne     0x38
+  50:   e8bd4006        pop     {r1, r2, lr}
+  54:   e1a0f00e        mov     pc, lr
+  58:   73726946        cmnvc   r2, #1146880    ; 0x118000
+  5c:   65742074        ldrbvs  r2, [r4, #-116]!        ; 0xffffff8c
+  60:   0a2e7478        beq     0xb9d248
+  64:   00000000        andeq   r0, r0, r0
+  68:   6f636553        svcvs   0x00636553
+  6c:   7420646e        strtvc  r6, [r0], #-1134        ; 0xfffffb92
+  70:   21747865        cmncs   r4, r5, ror #16
+  74:   0000000a        andeq   r0, r0, sl
+  78:   08000000        stmdaeq r0, {}  ; <UNPREDICTABLE>
+  7c:   00010058        andeq   r0, r1, r8, asr r0
+  80:   00010068        andeq   r0, r1, r8, rrx
+  84:   101f1000        andsne  r1, pc, r0
+```
+
+
+### print_hex_mem.ksの実行
+
+#### 入力
+```
+  ldr r13,=0x08000000
+  mov r0,r15
+  bl print_hex
+  mov r0, #0x68
+  bl print_hex
+end:
+  b end
+putchar:
+  stmdb r13!, {r1, r14}
+  ldr r1,=0x101f1000
+  str r0, [r1]
+  ldmia r13!, {r1, r14}
+  mov r15, r14
+print_hex:
+  stmdb r13!, {r1, r2, r14}
+  stmdb r13!, {r0}
+  mov r0, #0x30
+  bl putchar
+  mov r0, #0x78
+  bl putchar
+  ldmia r13!, {r0}
+  mov r2, #0x1c
+  mov r1, r0
+_loop:
+  lsr r0, r1, r2
+  and r0, r0, #0x0f
+  cmp r0, #0x0a
+  blt _under_ten
+  add r0, r0, #0x07
+_under_ten:
+  add r0, r0, #0x30
+  bl putchar
+  sub r2, r2, #0x4
+  cmp r2, #0x0
+  bge _loop
+  mov r0, #0x0a
+  bl putchar
+  ldmia r13!, {r1, r2, r14}
+  mov r15, r14
+```
+
+#### objdump結果
+```
+   0:   e59fd080        ldr     sp, [pc, #128]  ; 0x88
+   4:   e1a0000f        mov     r0, pc
+   8:   eb000007        bl      0x2c
+   c:   e3a00068        mov     r0, #104        ; 0x68
+  10:   eb000005        bl      0x2c
+  14:   eafffffe        b       0x14
+  18:   e92d4002        push    {r1, lr}
+  1c:   e59f1068        ldr     r1, [pc, #104]  ; 0x8c
+  20:   e5810000        str     r0, [r1]
+  24:   e8bd4002        pop     {r1, lr}
+  28:   e1a0f00e        mov     pc, lr
+  2c:   e92d4006        push    {r1, r2, lr}
+  30:   e92d0001        stmfd   sp!, {r0}
+  34:   e3a00030        mov     r0, #48 ; 0x30
+  38:   ebfffff6        bl      0x18
+  3c:   e3a00078        mov     r0, #120        ; 0x78
+  40:   ebfffff4        bl      0x18
+  44:   e8bd0001        ldmfd   sp!, {r0}
+  48:   e3a0201c        mov     r2, #28
+  4c:   e1a01000        mov     r1, r0
+  50:   e1a00231        lsr     r0, r1, r2
+  54:   e200000f        and     r0, r0, #15
+  58:   e350000a        cmp     r0, #10
+  5c:   ba000000        blt     0x64
+  60:   e2800007        add     r0, r0, #7
+  64:   e2800030        add     r0, r0, #48     ; 0x30
+  68:   ebffffea        bl      0x18
+  6c:   e2422004        sub     r2, r2, #4
+  70:   e3520000        cmp     r2, #0
+  74:   aafffff5        bge     0x50
+  78:   e3a0000a        mov     r0, #10
+  7c:   ebffffe5        bl      0x18
+  80:   e8bd4006        pop     {r1, r2, lr}
+  84:   e1a0f00e        mov     pc, lr
+  88:   08000000        stmdaeq r0, {}  ; <UNPREDICTABLE>
+  8c:   101f1000        andsne  r1, pc, r0
+```
+
+### print_hex_r14_r15.ksの実行
+
+#### 入力
+```
+  ldr r13,=0x08000000
+  mov r0,r15
+  bl print_hex
+  bl test
+end:
+  b end
+test:
+  mov r0, r14
+  bl print_hex
+  mov r15, r14
+putchar:
+  stmdb r13!, {r1, r14}
+  ldr r1,=0x101f1000
+  str r0, [r1]
+  ldmia r13!, {r1, r14}
+  mov r15, r14
+print_hex:
+  stmdb r13!, {r1, r2, r14}
+  stmdb r13!, {r0}
+  mov r0, #0x30
+  bl putchar
+  mov r0, #0x78
+  bl putchar
+  ldmia r13!, {r0}
+  mov r2, #0x1c
+  mov r1, r0
+_loop:
+  lsr r0, r1, r2
+  and r0, r0, #0x0f
+  cmp r0, #0x0a
+  blt _under_ten
+  add r0, r0, #0x07
+_under_ten:
+  add r0, r0, #0x30
+  bl putchar
+  sub r2, r2, #0x4
+  cmp r2, #0x0
+  bge _loop
+  mov r0, #0x0a
+  bl putchar
+  ldmia r13!, {r1, r2, r14}
+  mov r15, r14
+```
+
+#### objdump結果
+```
+   0:   e59fd088        ldr     sp, [pc, #136]  ; 0x90
+   4:   e1a0000f        mov     r0, pc
+   8:   eb000009        bl      0x34
+   c:   eb000000        bl      0x14
+  10:   eafffffe        b       0x10
+  14:   e1a0000e        mov     r0, lr
+  18:   eb000005        bl      0x34
+  1c:   e1a0f00e        mov     pc, lr
+  20:   e92d4002        push    {r1, lr}
+  24:   e59f1068        ldr     r1, [pc, #104]  ; 0x94
+  28:   e5810000        str     r0, [r1]
+  2c:   e8bd4002        pop     {r1, lr}
+  30:   e1a0f00e        mov     pc, lr
+  34:   e92d4006        push    {r1, r2, lr}
+  38:   e92d0001        stmfd   sp!, {r0}
+  3c:   e3a00030        mov     r0, #48 ; 0x30
+  40:   ebfffff6        bl      0x20
+  44:   e3a00078        mov     r0, #120        ; 0x78
+  48:   ebfffff4        bl      0x20
+  4c:   e8bd0001        ldmfd   sp!, {r0}
+  50:   e3a0201c        mov     r2, #28
+  54:   e1a01000        mov     r1, r0
+  58:   e1a00231        lsr     r0, r1, r2
+  5c:   e200000f        and     r0, r0, #15
+  60:   e350000a        cmp     r0, #10
+  64:   ba000000        blt     0x6c
+  68:   e2800007        add     r0, r0, #7
+  6c:   e2800030        add     r0, r0, #48     ; 0x30
+  70:   ebffffea        bl      0x20
+  74:   e2422004        sub     r2, r2, #4
+  78:   e3520000        cmp     r2, #0
+  7c:   aafffff5        bge     0x58
+  80:   e3a0000a        mov     r0, #10
+  84:   ebffffe5        bl      0x20
+  88:   e8bd4006        pop     {r1, r2, lr}
+  8c:   e1a0f00e        mov     pc, lr
+  90:   08000000        stmdaeq r0, {}  ; <UNPREDICTABLE>
+  94:   101f1000        andsne  r1, pc, r0
+```
 
 
 
