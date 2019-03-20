@@ -7,7 +7,8 @@ import os
 filenames = ["test", "hello_asm", "hello_msg",
              "print_loop", "putchar_bad",
              "print_hex_bl", "print_hex",
-             "putchar_mem"]
+             "putchar_mem", "print_hex_mem",
+             "print_hex_r14_r15"]
 
 compile_utils = "gcc -c cl_utils.c".split()
 compile_main = "gcc -c main.c".split()
