@@ -1404,6 +1404,25 @@ static void test_asm_one_when_symbol_is_stmdb(){
     initialize_when_test();
 }
 
+static void test_asm_one_when_symbol_is_stmdb_with_two_registers(){
+
+    // SetUp
+    char *input = "stmdb r13!, {r0, r1}";
+    unsigned int expect = 0xE92D0003;
+
+    struct Emitter emitter;
+    initialize_result_arr(&emitter);
+
+    // Exercise
+    asm_one(input, &emitter);
+    unsigned int actual = emitter.array[0];
+
+    // Verify
+    assert(expect == actual);
+
+    // TearDown
+    initialize_when_test();
+}
 
 static void unit_tests() {
 
@@ -1470,6 +1489,7 @@ static void unit_tests() {
 
     //// stmdb
     test_asm_one_when_symbol_is_stmdb();
+    test_asm_one_when_symbol_is_stmdb_with_two_registers();
 }
 
 
