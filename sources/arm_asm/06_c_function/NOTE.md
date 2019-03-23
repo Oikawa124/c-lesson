@@ -291,3 +291,317 @@ gaku@DESKTOP-IB1OCGR:~$
 ```
 
 ## リンク入門
+
+(DONE)C言語と三つ（+一つ）のセクション
+
+
+
+(DONE)宣言と定義
+
+#### ソースコードの実行
+```
+gaku@DESKTOP-IB1OCGR:~$ arm-linux-gnueabi-gcc many_symbols.c main.c
+gaku@DESKTOP-IB1OCGR:~$ qemu-arm -L /usr/arm-linux-gnueabi ./a.out
+abc
+```
+
+(DONE)Cのコードと三つのセクションの対応
+
+
+#### many_symbols.cをコンパイルしてみてnmで見てみましょう
+
+```
+gaku@DESKTOP-IB1OCGR:~$ arm-linux-gnueabi-gcc -c many_symbols.c
+gaku@DESKTOP-IB1OCGR:~$ nm many_symbols.o
+00000000 t $a
+00000000 d $d
+00000000 b $d
+00000000 r $d
+0000002c t $d
+         U func_in_main
+00000000 D g_in_hello
+00000004 C g_in_hello_uninit
+         U g_in_main
+00000004 d g_static_in_hello
+00000000 b g_static_uninit
+00000008 D g_text
+0000000c D g_text_arr
+00000004 C g_text_uninit
+00000000 T print_something
+```
+
+#### main.cとリンクしてみて、a.outをnmで見てみましょう。
+
+```
+gaku@DESKTOP-IB1OCGR:~$ arm-linux-gnueabi-gcc -c many_symbols.c
+gaku@DESKTOP-IB1OCGR:~$ nm many_symbols.o
+00000000 t $a
+00000000 d $d
+00000000 b $d
+00000000 r $d
+0000002c t $d
+         U func_in_main
+00000000 D g_in_hello
+00000004 C g_in_hello_uninit
+         U g_in_main
+00000004 d g_static_in_hello
+00000000 b g_static_uninit
+00000008 D g_text
+0000000c D g_text_arr
+00000004 C g_text_uninit
+00000000 T print_something
+gaku@DESKTOP-IB1OCGR:~$ arm-linux-gnueabi-gcc many_symbols.c main.c
+gaku@DESKTOP-IB1OCGR:~$ nm a.out
+0001030c t $a
+00010348 t $a
+000102bc t $a
+00010514 t $a
+000102c4 t $a
+00010518 t $a
+0001036c t $a
+0001039c t $a
+000103d4 t $a
+000103fc t $a
+00010434 t $a
+00010464 t $a
+000104b0 t $a
+00010510 t $a
+000102c8 t $a
+000102dc t $a
+         U abort@@GLIBC_2.4
+0002104c B __bss_end__
+0002104c B _bss_end__
+0002103c B __bss_start
+0002103c B __bss_start__
+00010348 t call_weak_fn
+0002103c b completed.9905
+00010168 r $d
+00010524 r $d
+0001033c t $d
+0001051c r $d
+00021020 d $d
+00010364 t $d
+00010390 t $d
+000103c8 t $d
+00021024 d $d
+000103f8 t $d
+00020f10 t $d
+0001042c t $d
+00020f0c t $d
+0002103c b $d
+00021028 d $d
+00021040 b $d
+00010520 r $d
+00010460 t $d
+00021038 d $d
+000104ac t $d
+00010508 t $d
+0001052c r $d
+00020f14 d $d
+000102d8 t $d
+00021020 D __data_start
+00021020 W data_start
+0001036c t deregister_tm_clones
+000103d4 t __do_global_dtors_aux
+00020f10 t __do_global_dtors_aux_fini_array_entry
+00021024 D __dso_handle
+00020f18 d _DYNAMIC
+0002103c D _edata
+0002104c B _end
+0002104c B __end__
+00010514 T _fini
+000103fc t frame_dummy
+00020f0c t __frame_dummy_init_array_entry
+0001052c r __FRAME_END__
+00010464 T func_in_main
+00021028 D g_in_hello
+00021048 B g_in_hello_uninit
+00021038 D g_in_main
+00021000 d _GLOBAL_OFFSET_TABLE_
+         w __gmon_start__
+0002102c d g_static_in_hello
+00021040 b g_static_uninit
+00021030 D g_text
+00021034 D g_text_arr
+00021044 B g_text_uninit
+000102bc T _init
+00020f10 t __init_array_end
+00020f0c t __init_array_start
+0001051c R _IO_stdin_used
+         w _ITM_deregisterTMCloneTable
+         w _ITM_registerTMCloneTable
+00020f14 d __JCR_END__
+00020f14 d __JCR_LIST__
+         w _Jv_RegisterClasses
+00010510 T __libc_csu_fini
+000104b0 T __libc_csu_init
+         U __libc_start_main@@GLIBC_2.4
+00010488 T main
+00010434 T print_something
+         U puts@@GLIBC_2.4
+0001039c t register_tm_clones
+0001030c T _start
+0002103c D __TMC_END__
+```
+未初期化のグローバル変数がBになっていることを確認
+
+
+## elfとリンク
+
+
+(DONE)elfとは？
+
+
+(DONE)readelfでオブジェクトファイルを調べる
+
+#### readelf -S many_symbols.o
+```
+gaku@DESKTOP-IB1OCGR:~$ readelf -S many_symbols.o
+There are 13 section headers, starting at offset 0x37c:
+
+Section Headers:
+  [Nr] Name              Type            Addr     Off    Size   ES Flg Lk Inf Al
+  [ 0]                   NULL            00000000 000000 000000 00      0   0  0
+  [ 1] .text             PROGBITS        00000000 000034 000030 00  AX  0   0  4
+  [ 2] .rel.text         REL             00000000 0002fc 000010 08   I 11   1  4
+  [ 3] .data             PROGBITS        00000000 000064 000010 00  WA  0   0  4
+  [ 4] .rel.data         REL             00000000 00030c 000008 08   I 11   3  4
+  [ 5] .bss              NOBITS          00000000 000074 000004 00  WA  0   0  4
+  [ 6] .rodata           PROGBITS        00000000 000074 000004 00   A  0   0  4
+  [ 7] .comment          PROGBITS        00000000 000078 00003c 01  MS  0   0  1
+  [ 8] .note.GNU-stack   PROGBITS        00000000 0000b4 000000 00      0   0  1
+  [ 9] .ARM.attributes   ARM_ATTRIBUTES  00000000 0000b4 00002a 00      0   0  1
+  [10] .shstrtab         STRTAB          00000000 000314 000065 00      0   0  1
+  [11] .symtab           SYMTAB          00000000 0000e0 000180 10     12  16  4
+  [12] .strtab           STRTAB          00000000 000260 00009c 00      0   0  1
+Key to Flags:
+  W (write), A (alloc), X (execute), M (merge), S (strings)
+  I (info), L (link order), G (group), T (TLS), E (exclude), x (unknown)
+  O (extra OS processing required) o (OS specific), p (processor specific)
+```
+
+#### 例えば.rodataの中を見てみましょう。
+```
+gaku@DESKTOP-IB1OCGR:~$  readelf -x .rodata many_symbols.o
+
+Hex dump of section '.rodata':
+  0x00000000 61626300                            abc.
+```
+
+#### .textも観てみましょう。
+```
+gaku@DESKTOP-IB1OCGR:~$  readelf -x .text many_symbols.o
+
+Hex dump of section '.text':
+ NOTE: This section has relocations against it, but these have NOT been applied to this dump.
+  0x00000000 00482de9 04b08de2 08d04de2 08000be5 .H-.......M.....
+  0x00000010 08001be5 feffffeb 0c309fe5 003093e5 .........0...0..
+  0x00000020 0300a0e1 04d04be2 0088bde8 00000000 ......K.........
+```
+
+#### この中身は見覚えがありますか？ objdump -Sと並べるとよりはっきりするでしょう。
+```
+gaku@DESKTOP-IB1OCGR:~$ arm-linux-gnueabi-objdump -S many_symbols.o
+
+many_symbols.o:     file format elf32-littlearm
+
+
+Disassembly of section .text:
+
+00000000 <print_something>:
+   0:   e92d4800        push    {fp, lr}
+   4:   e28db004        add     fp, sp, #4
+   8:   e24dd008        sub     sp, sp, #8
+   c:   e50b0008        str     r0, [fp, #-8]
+  10:   e51b0008        ldr     r0, [fp, #-8]
+  14:   ebfffffe        bl      0 <func_in_main>
+  18:   e59f300c        ldr     r3, [pc, #12]   ; 2c <print_something+0x2c>
+  1c:   e5933000        ldr     r3, [r3]
+  20:   e1a00003        mov     r0, r3
+  24:   e24bd004        sub     sp, fp, #4
+  28:   e8bd8800        pop     {fp, pc}
+  2c:   00000000        .word   0x00000000
+```
+このように、オブジェクトファイルはelfというフォーマットで保存されていて、 ARMのバイナリ（コード）は.textというセクションに入っています。
+
+#### シンボルの情報を表示する専用のオプションがあります。それが-sです（小文字です）。
+
+```
+gaku@DESKTOP-IB1OCGR:~$ readelf -s many_symbols.o
+
+Symbol table '.symtab' contains 24 entries:
+   Num:    Value  Size Type    Bind   Vis      Ndx Name
+     0: 00000000     0 NOTYPE  LOCAL  DEFAULT  UND
+     1: 00000000     0 FILE    LOCAL  DEFAULT  ABS many_symbols.c
+     2: 00000000     0 SECTION LOCAL  DEFAULT    1
+     3: 00000000     0 SECTION LOCAL  DEFAULT    3
+     4: 00000000     0 SECTION LOCAL  DEFAULT    5
+     5: 00000000     0 NOTYPE  LOCAL  DEFAULT    3 $d
+     6: 00000004     4 OBJECT  LOCAL  DEFAULT    3 g_static_in_hello
+     7: 00000000     4 OBJECT  LOCAL  DEFAULT    5 g_static_uninit
+     8: 00000000     0 NOTYPE  LOCAL  DEFAULT    5 $d
+     9: 00000000     0 SECTION LOCAL  DEFAULT    6
+    10: 00000000     0 NOTYPE  LOCAL  DEFAULT    6 $d
+    11: 00000000     0 NOTYPE  LOCAL  DEFAULT    1 $a
+    12: 0000002c     0 NOTYPE  LOCAL  DEFAULT    1 $d
+    13: 00000000     0 SECTION LOCAL  DEFAULT    8
+    14: 00000000     0 SECTION LOCAL  DEFAULT    7
+    15: 00000000     0 SECTION LOCAL  DEFAULT    9
+    16: 00000004     4 OBJECT  GLOBAL DEFAULT  COM g_in_hello_uninit
+    17: 00000000     4 OBJECT  GLOBAL DEFAULT    3 g_in_hello
+    18: 00000008     4 OBJECT  GLOBAL DEFAULT    3 g_text
+    19: 00000004     4 OBJECT  GLOBAL DEFAULT  COM g_text_uninit
+    20: 0000000c     4 OBJECT  GLOBAL DEFAULT    3 g_text_arr
+    21: 00000000    48 FUNC    GLOBAL DEFAULT    1 print_something
+    22: 00000000     0 NOTYPE  GLOBAL DEFAULT  UND func_in_main
+    23: 00000000     0 NOTYPE  GLOBAL DEFAULT  UND g_in_main
+```
+
+(DONE)readelfで実行バイナリを調べる
+
+
+#### さらにa.outでは、readelf -lで少し違った情報を得る事が出来ます。
+```
+  Type           Offset   VirtAddr   PhysAddr   FileSiz MemSiz  Flg Align
+  EXIDX          0x000524 0x00010524 0x00010524 0x00008 0x00008 R   0x4
+  PHDR           0x000034 0x00010034 0x00010034 0x00120 0x00120 R E 0x4
+  INTERP         0x000154 0x00010154 0x00010154 0x00013 0x00013 R   0x1
+      [Requesting program interpreter: /lib/ld-linux.so.3]
+  LOAD           0x000000 0x00010000 0x00010000 0x00530 0x00530 R E 0x10000
+  LOAD           0x000f0c 0x00020f0c 0x00020f0c 0x00130 0x00140 RW  0x10000
+  DYNAMIC        0x000f18 0x00020f18 0x00020f18 0x000e8 0x000e8 RW  0x4
+  NOTE           0x000168 0x00010168 0x00010168 0x00044 0x00044 R   0x4
+  GNU_STACK      0x000000 0x00000000 0x00000000 0x00000 0x00000 RW  0x10
+  GNU_RELRO      0x000f0c 0x00020f0c 0x00020f0c 0x000f4 0x000f4 R   0x1
+
+ Section to Segment mapping:
+  Segment Sections...
+   00     .ARM.exidx
+   01
+   02     .interp
+   03     .interp .note.ABI-tag .note.gnu.build-id .gnu.hash .dynsym .dynstr .gnu.version .gnu.version_r .rel.dyn .rel.plt .init .plt .text .fini .rodata .ARM.exidx .eh_frame
+   04     .init_array .fini_array .jcr .dynamic .got .data .bss
+   05     .dynamic
+   06     .note.ABI-tag .note.gnu.build-id
+   07
+   08     .init_array .fini_array .jcr .dynamic
+```
+
+(DONE)リンカとロードを合わせて考える
+
+
+(DONE)hello_arm.elfとhello_arm.binの違いを見る
+
+
+
+
+
+
+
+
+
+
+
+
+
+
