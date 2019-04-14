@@ -16,6 +16,8 @@ A. i, res, end, begin
 
 ## 引数がいっぱいある場合
 
+
+#### clang 3.8
 ```clang 3.8
         .text
         .syntax unified
@@ -154,8 +156,8 @@ main:                                   @ @main
 
 ```
 
-
-``` clang 6.0
+#### clang 6.0
+``` 
         .text
         .syntax unified
         .eabi_attribute 67, "2.09"      @ Tag_conformance
@@ -287,6 +289,22 @@ main:
         .section        ".note.GNU-stack","",%progbits
 
 ```
+
+#### ubuntuにclang-6.0をインストール
+```
+wget -O – https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add –
+sudo apt-add-repository “deb http://apt.llvm.org/xenial/ llvm-toolchain-xenial-6.0 main”
+sudo apt-get update
+sudo apt-get install -y clang-6.0
+```
+をして
+```
+sudo apt install llvm
+```
+とする。
+[How to install latest clang (6.0) on Ubuntu 16.04 (xenial) / WSL](https://blog.kowalczyk.info/article/k/how-to-install-latest-clang-6.0-on-ubuntu-16.04-xenial-wsl.html)
+
+
 
 ## doubleを渡すとどうなるか？
 
