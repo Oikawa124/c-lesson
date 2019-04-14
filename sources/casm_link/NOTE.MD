@@ -323,6 +323,45 @@ sudo apt install llvm
 で表せられる。
 r1には、3FE00000が入っている。
 
+```
+double res = double_add(1.2345, 3);
+```
+の場合は、
+
+```
+main_double_add:
+        .fnstart
+@ %bb.0:
+        push    {r11, lr}
+        mov     r11, sp
+        sub     sp, sp, #8
+        ldr     r0, .LCPI3_0
+        ldr     r1, .LCPI3_1
+        mov     r2, #3
+        bl      double_add
+        str     r1, [sp, #4]
+        str     r0, [sp]
+        ldr     r2, [sp]
+        ldr     r3, [sp, #4]
+        ldr     r0, .LCPI3_2
+        bl      printf
+        mov     sp, r11
+        pop     {r11, lr}
+        mov     pc, lr
+        .p2align        2
+@ %bb.1:
+.LCPI3_0:
+        .long   309237645               @ 0x126e978d
+.LCPI3_1:
+        .long   1072939139              @ 0x3ff3c083
+.LCPI3_2:
+        .long   .L.
+```
+r0, r1にラベルのアドレスを代入するようになった。
+
+floatの場合は、intと同じように一個のレジスタに即値で渡す。
+
+
 
 ## 構造体の実体を渡すとどうなるか
 
