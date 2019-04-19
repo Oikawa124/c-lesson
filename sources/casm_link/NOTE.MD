@@ -374,6 +374,22 @@ floatの場合は、intと同じように一個のレジスタに即値で渡す
 itera_arrayとitera_array_ptrは同じバイナリ。
 配列に、添え字でアクセスする方法とポインタでアクセスする方法は、同じバイナリになる？
 
+単にintの配列では、
+```
+iterate_array_ptr:
+	.fnstart
+@ %bb.0:
+	push	{r11, lr}
+	mov	r11, sp
+	sub	sp, sp, #8
+	str	r0, [sp]
+	ldr	r0, [sp]
+	add	r1, r0, #4
+	str	r1, [sp]
+	ldr	r0, [r0]
+	bl	print_one
+```
+
 構造体では、
 ```
 iterate_struct_array_ptr:
