@@ -422,6 +422,109 @@ int型の変数が4つあるため、
 
 ## sizeofがどうなるか
 
+array_size:では、
+```
+array_size:
+	.fnstart
+@ %bb.0:
+	push	{r4, r5, r11, lr}
+	add	r11, sp, #8
+	sub	sp, sp, #16
+	sub	sp, sp, #4096
+	bic	sp, sp, #15
+	mov	r0, #4096
+	str	r0, [sp, #12]
+	ldr	r0, [sp, #12]
+	bl	print_size
+```
+sub	sp, sp, #4096  
+intの4byte * 1024の分だけスタックを確保している。
+
+mov r0, #4096
+とsizeofでは、確保したスタックの領域のバイト数を取得している。
+
+ptr_size:では、
+```
+ptr_size:
+	.fnstart
+@ %bb.0:
+	push	{r11, lr}
+	mov	r11, sp
+	sub	sp, sp, #16
+	mov	r0, #1024
+	mov	r1, #0
+	bl	malloc
+	str	r0, [sp, #8]
+	mov	r0, #8
+	str	r0, [sp, #4]
+	ldr	r0, [sp, #4]
+	bl	print_size
+```
+r0に1024（関数の引数に1024を渡す）  
+bl malloc後に、r0に確保した領域のメモリを指すポインタが入っている。
+mallocした後の変数にsizeofすると、そのポインタの型のsizeが分かる。
+
+*分からないところ*
+sizeof(res)は、"4"のはず・・・  
+しかし、r0には8を代入している・・・    
+
+struct_size:では、
+```
+struct_size:
+	.fnstart
+@ %bb.0:
+	push	{r4, r10, r11, lr}
+	add	r11, sp, #8
+	sub	sp, sp, #32
+	mov	r4, #24
+	str	r4, [sp, #4]
+	ldr	r0, [sp, #4]
+	bl	print_size
+	str	r4, [sp, #4]
+	ldr	r0, [sp, #4]
+	bl	print_size
+```
+sizeofの値は、  
+mov	r4, #24  
+より、24であることが分かる。  
+
+var_array:の場合、
+```
+var_array:
+	.fnstart
+@ %bb.0:
+	push	{r4, r5, r6, r7, r11, lr}
+	add	r11, sp, #16
+	sub	sp, sp, #24
+	bic	sp, sp, #15
+	mov	r6, sp
+	add	r4, r6, #4
+	str	r0, [r4, #8]
+	ldr	r0, [r4, #8]
+	str	sp, [r4, #4]
+	mov	r1, #7
+	add	r1, r1, r0, lsl #2
+	bic	r1, r1, #7
+	sub	r1, sp, r1
+	bic	sp, r1, #15
+	lsl	r0, r0, #2
+	str	r0, [r4]
+	ldr	r0, [r4]
+	bl	print_size
+```
+
+から、
+
+```
+	lsl	r0, r0, #2
+	str	r0, [r4]
+	ldr	r0, [r4]
+	bl	print_size
+```
+渡された引数である、r0を2bit左シフトした値が、print_sizeの引数r0になっている。
+
+
+
 
 
 ## 文字列の配列とポインタの違い
