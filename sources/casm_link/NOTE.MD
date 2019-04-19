@@ -371,6 +371,37 @@ floatの場合は、intと同じように一個のレジスタに即値で渡す
 
 ## ポインタのプラプラについて
 
+itera_arrayとitera_array_ptrは同じバイナリ。
+配列に、添え字でアクセスする方法とポインタでアクセスする方法は、同じバイナリになる？
+
+構造体では、
+```
+iterate_struct_array_ptr:
+	.fnstart
+@ %bb.0:
+	push	{r11, lr}
+	mov	r11, sp
+	sub	sp, sp, #8
+	str	r0, [sp]
+	ldr	r0, [sp]
+	add	r1, r0, #16
+	str	r1, [sp]
+	bl	print_one_struct
+
+```
+
+add r1, r0, #16
+と16の分だけアドレスに足している。
+```
+struct FourStruct {
+    int a1;
+    int a2;
+    int a3;
+    int a4;
+};
+```
+int型の変数が4つあるため、
+4 * 4 すると、次の配列の要素になる？（structArray[0]　から　structArray[1]のように添え字が一つ進む）
 
 
 ## sizeofがどうなるか
