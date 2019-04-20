@@ -21,7 +21,7 @@ int sum_till_inline(int a) {
     asm("cmp r0, r1");
     asm("beq end");
     asm("add r2, r2, r1"); // sum+=i
-    asm("add r1, r1, #1"); // i++    
+    asm("add r1, r1, #1"); // i++
     asm("b loop");
     asm("end:");
     asm("mov %0, r2" :"=r"(res));
@@ -36,8 +36,8 @@ int *binary_buf;
 
 int* allocate_executable_buf(int size) {
     return (int*)mmap(0, size,
-                 PROT_READ | PROT_WRITE | PROT_EXEC,
-                 MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
+                      PROT_READ | PROT_WRITE | PROT_EXEC,
+                      MAP_PRIVATE | MAP_ANONYMOUS, -1, 0);
 }
 
 
@@ -47,8 +47,16 @@ void jit_sum_till() {
     Hint: put almost the same binary as sum_till_inline.
     Compile and use arm-linux-gnueabi-objdump -S ./a.out to check binary.
     */
-    // dummy implementation 
-    binary_buf[0] = 0xe1a0f00e; // mov r15, r14
+    // dummy implementation
+    binary_buf[0] = 0xe3a01000;  // mov r1, #0 // loop counter
+    binary_buf[1] = 0xe3a02000;  // mov r2, #0 // tmp
+    binary_buf[2] = 0xe1500001;  // cmp r0, r1
+    binary_buf[3] = 0x0a000002;  // beq end:
+    binary_buf[4] = 0xe0822001;  // add r2, r2, r1
+    binary_buf[5] = 0xe2811001;  // add r1, r1,
+    binary_buf[6] = 0xeafffffa;  // b   loop:
+    binary_buf[7] = 0xe1a00002;  // mov r0, r2 // 返り値
+    binary_buf[8] = 0xe1a0f00e;  // mov pc, lr
 }
 
 
@@ -82,9 +90,11 @@ int main() {
 
     funcvar = (int(*)(int))binary_buf;
     res = funcvar(10);
+
     assert_true(res == 45);
 
     res = funcvar(11);
+
     assert_true(res == 55);
 
     return 0;
