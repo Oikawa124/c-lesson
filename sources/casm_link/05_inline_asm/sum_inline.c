@@ -1,29 +1,34 @@
 #include <stdio.h>
 
-int sum_till(int a) {
+int sum_range(int beg, int end) {
     int sum=0;
-    for(int i = 0; i < a; i++) {
+    for(int i = beg; i <= end; i++) {
         sum+=i;
     }
     return sum;
 }
 
-int sum_till_inline(int a) {
+int sum_range_inline(int beg, int end) {
     int res;
     /*
-    Use r1 as loop counter.
-    Use r2 to store temp result.
+    TODO: Fix code below to pass test.
     */
-    asm("mov r1, #0");
+
+    // r0 : beg (loop counter)
+    // r1 : end
+    // r2 : tmp result
+
     asm("mov r2, #0");
     asm("loop:");
     asm("cmp r0, r1");
-    asm("beq end");
-    asm("add r2, r2, r1"); // sum+=i
-    asm("add r1, r1, #1"); // i++    
+    asm("bgt end");
+    asm("add r2, r2, r0"); // sum+=i
+    asm("add r0, r0, #1"); // i++
     asm("b loop");
     asm("end:");
+
     asm("mov %0, r2" :"=r"(res));
+
     return res;
 }
 
@@ -42,16 +47,15 @@ void assert_true(int boolflag) {
 
 int main() {
     int res;
-    
-    res = sum_till(10);
-    assert_true(res == 45);
 
-    res = sum_till_inline(10);
-    assert_true(res == 45);
+    res = sum_range(3, 10);
+    assert_true(res == 52);
 
-    /* TODO: Pass below code.
-    */
+    // TODO: fix sum_range_inline to pass test.
+    res = sum_range_inline(3, 10);
+    printf("%d", res);
 
+    assert_true(res == 52);
 
     return 0;
 }
