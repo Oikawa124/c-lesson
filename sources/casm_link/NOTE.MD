@@ -526,9 +526,74 @@ var_array:
 
 
 
-
 ## 文字列の配列とポインタの違い
+
+まずはstring_arrayが実際にascizのラベルになっているのに対し、 
+string_ptrが.L.strへのアドレスのポインタになっている事を確認してください。
+
+- 確認した。
+```
+	.type	string_array,%object    @ @string_array
+	.data
+	.globl	string_array
+string_array:
+	.asciz	"This is array"
+	.size	string_array, 14
+
+
+
+	.type	.L.str,%object          @ @.str
+	.section	.rodata.str1.1,"aMS",%progbits,1
+.L.str:
+	.asciz	"This is pointer"
+	.size	.L.str, 16
+
+
+	.type	string_ptr,%object      @ @string_ptr
+	.data
+	.globl	string_ptr
+	.p2align	3
+string_ptr:
+	.long	.L.str
+	.size	string_ptr, 4
+
+```
+
+また、string_arrayのascizがdataセクションなのに対し、.L.strはrodataになっている事も確認してください。
+
+- 確認した。（上のコードを参照）
+
+
+次に、一見同じ結果を返しているprint_string_arrayとprint_string_ptrですが、アセンブリでは一回ldrが多い事を確認してください。 どうしてこの違いが生まれるか、分かりますか？
+
+
+```
+print_string_ptr:
+	.fnstart
+@ %bb.0:
+	push	{r11, lr}
+	mov	r11, sp
+	ldr	r0, .LCPI1_0
+	ldr	r1, [r0]
+	ldr	r0, .LCPI1_1
+	bl	printf
+	pop	{r11, lr}
+	mov	pc, lr
+	.p2align	2
+@ %bb.1:
+.LCPI1_0:
+	.long	string_ptr
+.LCPI1_1:
+	.long	.L.str.1
+```
+
+string_ptrは、文字列(.L.str)がある場所へのアドレスを示しているため、
+文字列の先頭のアドレスをldrする必要（	ldr	r1, [r0]）がある。
 
 
 
 # スタックウォークしてみよう
+
+
+
+
