@@ -78,6 +78,33 @@ func3:
 	sub	sp, sp, #8
 	ldr	r0, .LCPI2_0
 	bl	printf
+	add	r0, sp, #4
+	add	r0, r0, #4
+	bl	print_address
+	ldr	r0, [sp, #8]
+	bl	print_address
+	ldr	r0, [sp, #8]
+	ldr	r0, [r0]
+	bl	print_address
+	ldr	r0, [sp, #8]
+	ldr	r0, [r0]
+	ldr	r0, [r0]
+	bl	print_address
+	ldr	r0, [sp, #8]
+	ldr	r0, [r0]
+	ldr	r0, [r0]
+	sub	r0, r0, #8
+	bl	print_address
+	ldr	r0, [sp, #8]
+	ldr	r0, [r0]
+	ldr	r0, [r0]
+	ldr	r0, [r0, #-8]
+	bl	print_address
+	ldr	r0, [sp, #8]
+	ldr	r0, [r0]
+	ldr	r0, [r0]
+	ldr	r0, [r0, #-8]
+	bl	print_msg
 	mov	sp, r11
 	pop	{r11, lr}
 	mov	pc, lr

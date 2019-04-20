@@ -720,3 +720,45 @@ printf("func3's a4 address_1 = %x\n", (int) &a4);
 
 stack_walk2.cのfunc3を書き直して、func3の中でmain_msgを出力してください。
 
+
+## c言語のコード
+```
+void func3 () {
+    // TODO: get main_msg from here as target someway.
+    char *target;
+
+    printf("We are in func3\n");
+
+
+    print_address(((int) &target) + 4); //func2のr11をstrしたアドレス
+
+    print_address(*(int *) ((int) &target + 4)); // func2のr11の中身
+
+    print_address(*(int *) (*(int *) ((int) &target + 4))); // func2のr11の中身の中身 (func1でpushしたr11)
+
+    print_address(*(int *) (*(int *) (*(int *) ((int) &target + 4)))); // mainでpushしたr11
+
+    print_address(*(int *) (*(int *) (*(int *) ((int) &target + 4))) - 8); // .LCP_15_0のアドレス
+
+    print_address(*(int *) (*(int *) (*(int *) (*(int *) ((int) &target + 4))) - 8)); // .LCP15_0のアドレスの中身
+
+    print_msg((char *) (*(int *)(*(int *)(*(int *)(*(int *)((int)&target + 4))) - 8)));
+}
+
+```
+
+## 実行結果
+```
+gaku@DESKTOP-IB1OCGR:~$ qemu-arm -L /usr/arm-linux-gnueabi ./a.out
+We are in main, We are in main.
+We are in func1, func1 msg
+We are in func2, func2 message.
+We are in func3
+address: fffef830
+address: fffef840
+address: fffef850
+address: fffef860
+address: fffef858
+address: 1067a
+We get (We are in main.)
+```

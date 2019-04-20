@@ -13,11 +13,14 @@ void func3 () {
     char *target;
 
     printf("We are in func3\n");
+
+
 }
 
 void func2() {
     char *msg = "func2 message.";
     printf("We are in func2, %s\n", msg);
+    func3();
 }
 
 void func1() {
