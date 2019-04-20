@@ -667,4 +667,56 @@ address: 2d
 result is 507
 ```
 
+上で書いたやつは勘違い。
+
+*修正版*
+
+### c言語のコード
+
+```
+int func3 (int a4) {
+    // TODO: print func2's local avriable a3 here.
+    printf("func3's a4 address_1 = %x\n", (int) &a4);
+
+
+    print_address(((int)&a4) + 12); //r11をstrしたアドレス
+
+    print_address(*(int *)((int)&a4 + 12)); // r11の中身
+
+
+    print_address(
+            (int) ((*(int *) ((int) &a4 + 12)) - 16)
+    ); // r11から -16したアドレス
+
+    print_address(
+            *(int*)(int) ((*(int *) ((int)&a4 + 12)) - 16)
+    ); // a3の値
+
+
+    return a4*3;
+}
+```
+
+### 実行結果
+```
+gaku@DESKTOP-IB1OCGR:~$ qemu-arm -L /usr/arm-linux-gnueabi ./a.out
+func2's a3 address_1 = fffef830
+func3's a4 address_1 = fffef814
+address: fffef820
+address: fffef840
+address: fffef830
+address: 2d
+result is 507
+```
+
+回答例とオフセットが違うのは、
+```
+printf("func3's a4 address_1 = %x\n", (int) &a4);
+```
+が入っているため。
+
+
+# 最終課題: stack_walk2.cでmain_msgを出力せよ
+
+stack_walk2.cのfunc3を書き直して、func3の中でmain_msgを出力してください。
 
