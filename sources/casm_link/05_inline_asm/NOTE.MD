@@ -61,8 +61,3 @@ sum_range_inline.cのsum_range_inlineの実装を埋めて、
 - 完了。
 第2回で作った簡易アセンブラを使って、bgeやbのオフセットを調べた。
 .ksファイルとsum_till_jit.oをobjdumpして、課題に必要なバイナリを集めた。
-
-
-# 超簡易PostScriptもどきをJITしよう
-
-最後の課題として、VMのJITに相当する物を実装してみましょう。
