@@ -595,5 +595,76 @@ string_ptrは、文字列(.L.str)がある場所へのアドレスを示して�
 # スタックウォークしてみよう
 
 
+## r11のアドレスを取り出す
+
+### c言語のコード
+```
+int func3 (int a4) {
+    // TODO: print func2's local avriable a3 here.
+    printf("func3's a4 address_1 = %x\n", (int) &a4);
+
+    //print_address((int) &a4 - 12); //r11をstrしたアドレス
+    print_address(*((int*)((int)&a4)-12));
+
+    return a4*3;
+}
+
+int func2(int a2) {
+    int a3 = 0;
+    printf("func2's a3 address_1 = %x\n", (int) &a3);
+    for(int i = 0; i < 10; i++) {
+        a3+=i;
+    }
+
+    return func3(a2+a3)+2;
+}
+```
+
+### 実行結果
+```
+gaku@DESKTOP-IB1OCGR:~$ qemu-arm -L /usr/arm-linux-gnueabi ./a.out
+func2's a3 address_1 = fffef830
+func3's a4 address_1 = fffef81c
+address: ff7ee000
+result is 507
+```
+
+## func2のr11からa3のポインタを取り出し、値を取り出す
+
+### c言語のコード
+```
+int func3 (int a4) {
+    // TODO: print func2's local avriable a3 here.
+    printf("func3's a4 address_1 = %x\n", (int) &a4);
+    
+    
+    print_address(((int)&a4) - 12); //r11をstrしたアドレス
+
+    print_address(*(int *)((int)&a4 - 12));
+
+    print_address(
+            (int) ((*(int *) ((int)&a4 - 12)) + 16)
+    ); // r11から -12したアドレス
+
+    print_address(
+            *(int*)(int) ((*(int *) ((int)&a4 - 12)) + 16)
+    ); // a3の値
+
+
+    return a4*3;
+}
+```
+
+### 実行結果
+```
+gaku@DESKTOP-IB1OCGR:~$ qemu-arm -L /usr/arm-linux-gnueabi ./a.out
+func2's a3 address_1 = fffef830
+func3's a4 address_1 = fffef814
+address: fffef808
+address: fffef820
+address: fffef830
+address: 2d
+result is 507
+```
 
 
