@@ -34,7 +34,7 @@ int* jit_script(char *input) {
 
     // emit binary in hard code
 
-    binary_buf[0] = 0xe1a00001; // mov r0, r1
+    binary_buf[0] = 0xe3a00005; // mov r0, #5
     binary_buf[1] = 0xe1a0f00e; // mov r15, r14
 
     return binary_buf;
@@ -43,10 +43,10 @@ int* jit_script(char *input) {
 
 // My Unit test
 
-static void return_num_of_5(){
+static void test_jit_script_input_number_5(){
 
     // SetUp
-    char *input = "r1"; // r1だけスタックに残るを想定
+    char *input = "5"; // r1だけスタックに残るを想定
 
     int expect = 5;
 
@@ -54,7 +54,7 @@ static void return_num_of_5(){
     funcvar = (int(*)(int, int))jit_script(input);
 
     // Execute
-    int actual = funcvar(1, 5); // 1の引数がr0, 5の引数がr1となる。
+    int actual = funcvar(0, 0); // 引数は使われない
 
     // Verify
     assert(expect == actual);
@@ -62,19 +62,48 @@ static void return_num_of_5(){
 };
 
 
+
+
+
+// まだ、レジスタを使う実装がされていない。
+//static void test_jit_script_using_register1(){
+//
+//    // SetUp
+//    char *input = "r1"; // r1だけスタックに残るを想定
+//
+//    int expect = 5;
+//
+//    int (*funcvar)();
+//    funcvar = (int(*)(int, int))jit_script(input);
+//
+//    // Execute
+//    int actual = funcvar(1, 5); // 1の引数がr0, 5の引数がr1となる。
+//
+//    // Verify
+//    assert(expect == actual);
+//
+//};
+
+
 static void unit_tests(){
 
-    return_num_of_5();
+    test_jit_script_input_number_5();
+
+
+    // まだ、実装されていない。
+    //test_jit_script_using_register_r1()
 
     printf("all test done\n");
 }
 
 
 int main() {
-    //int res;
-    //int (*funcvar)(int, int);
 
     unit_tests();
+
+
+    //int res;
+    //int (*funcvar)(int, int);
 
 //    res = eval(1, 5, "3 7 add r1 sub 4 mul");
 //    printf("res=%d\n", res);
