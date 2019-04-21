@@ -46,17 +46,15 @@ int* jit_script(char *input) {
 static void return_num_of_5(){
 
     // SetUp
-
-    char *input = "dummy";
+    char *input = "r1"; // r1だけスタックに残るを想定
 
     int expect = 5;
 
     int (*funcvar)();
-
-    // Execute
     funcvar = (int(*)(int, int))jit_script(input);
 
-    int actual = funcvar(1, 5);
+    // Execute
+    int actual = funcvar(1, 5); // 1の引数がr0, 5の引数がr1となる。
 
     // Verify
     assert(expect == actual);
