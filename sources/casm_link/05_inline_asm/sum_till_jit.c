@@ -50,11 +50,13 @@ void jit_sum_till() {
     // dummy implementation
     binary_buf[0] = 0xe3a01000;  // mov r1, #0 // loop counter
     binary_buf[1] = 0xe3a02000;  // mov r2, #0 // tmp
+    // loop:
     binary_buf[2] = 0xe1500001;  // cmp r0, r1
     binary_buf[3] = 0x0a000002;  // beq end:
     binary_buf[4] = 0xe0822001;  // add r2, r2, r1
     binary_buf[5] = 0xe2811001;  // add r1, r1,
     binary_buf[6] = 0xeafffffa;  // b   loop:
+    // end:
     binary_buf[7] = 0xe1a00002;  // mov r0, r2 // 返り値
     binary_buf[8] = 0xe1a0f00e;  // mov pc, lr
 }
