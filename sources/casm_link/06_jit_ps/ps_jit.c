@@ -26,12 +26,15 @@ void ensure_jit_buf() {
     }
 }
 
+
+// ここに実装していく
+
 int* jit_script(char *input) {
     ensure_jit_buf();
 
     // emit binary in hard code
 
-    binary_buf[0] = 0xe3a00005; // mov r0, #5
+    binary_buf[0] = 0xe1a00001; // mov r0, r1
     binary_buf[1] = 0xe1a0f00e; // mov r15, r14
 
     return binary_buf;
@@ -51,9 +54,9 @@ static void return_num_of_5(){
     int (*funcvar)();
 
     // Execute
-    funcvar = (int(*)())jit_script(input);
+    funcvar = (int(*)(int, int))jit_script(input);
 
-    int actual = funcvar();
+    int actual = funcvar(1, 5);
 
     // Verify
     assert(expect == actual);
@@ -62,7 +65,10 @@ static void return_num_of_5(){
 
 
 static void unit_tests(){
+
     return_num_of_5();
+
+    printf("all test done\n");
 }
 
 
