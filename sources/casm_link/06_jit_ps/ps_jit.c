@@ -63,8 +63,6 @@ static void test_jit_script_input_number_5(){
 
 
 
-
-
 // まだ、レジスタを使う実装がされていない。
 //static void test_jit_script_using_register1(){
 //
