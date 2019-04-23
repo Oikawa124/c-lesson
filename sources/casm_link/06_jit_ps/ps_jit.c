@@ -12,6 +12,10 @@ JIT
 */
 int *binary_buf = NULL;
 
+static int initialize_binary_buf(){
+    binary_buf = NULL;
+}
+
 int* allocate_executable_buf(int size) {
     return (int*)mmap(0, size,
                  PROT_READ | PROT_WRITE | PROT_EXEC,
@@ -28,7 +32,7 @@ void ensure_jit_buf() {
 /* ここに実装していく */
 
 
-// emitter バイナリをarrayに送るようにする。
+// emitter : バイナリをarrayに送るようにする。
 struct Emitter {
     int *array;
     int pos;
@@ -46,37 +50,19 @@ void emit_word(struct Emitter* emitter, unsigned int oneword){
 
 
 
-// eval
-// ここを変えてバイナリを返すようにしていく。
-
-static int stack_pos = 0;
-static int stack[1024];
-void stack_push(int val) {
-    stack[stack_pos++] = val;
-}
-int stack_pop() {
-    if(stack_pos == 0) {
-        fprintf(stderr, "stack pop while stack is empty, exit.\n");
-        exit(1);
-    }
-    return stack[--stack_pos];
-}
-
+// eval : 文字列をパースしてバイナリをemitする
 int eval(struct Emitter emitter, char *str) {
     struct Substr remain={str, strlen(str)};
     int val;
-
-    stack_pos = 0;
 
     while(!is_end(&remain)) {
         skip_space(&remain);
         if(is_number(remain.ptr)) {
 
-            //stack_push(parse_number(remain.ptr));
-            // スタックにpushするバイナリ
+            // スタックに即値をpushするバイナリ
             int oneword_imm = 0xe3a02000 + parse_number(remain.ptr);
 
-            emit_word(&emitter, oneword_imm); // mov r2, #5
+            emit_word(&emitter, oneword_imm); // mov r2, #5  レジスタをr2で決め打ちする
             emit_word(&emitter, 0xe52d2004); // push {r2}
 
             skip_token(&remain);
@@ -94,28 +80,29 @@ int eval(struct Emitter emitter, char *str) {
 //
         } else {
             // must be op.
-            int arg1, arg2;
-
             val = parse_word(&remain);
             skip_token(&remain);
 
-            arg2 = stack_pop();
-            arg1 = stack_pop();
+            emit_word(&emitter, 0xe8bd000c);  // pop {r2, r3} 　　r3がarg2, r2がarg1となる
 
             switch(val) {
                 case OP_ADD:
-                    stack_push(arg1+arg2);
+                    emit_word(&emitter, 0xe0822003);  // add     r2, r2, r3
                     break;
+
                 case OP_SUB:
-                    stack_push(arg1-arg2);
+                    emit_word(&emitter, 0xe2422003);  // sub     r2, r2, r3
                     break;
+
                 case OP_MUL:
-                    stack_push(arg1*arg2);
+                    //stack_push(arg1*arg2);
                     break;
                 case OP_DIV:
-                    stack_push(arg1/arg2);
+                    //stack_push(arg1/arg2);
                     break;
             }
+
+            emit_word(&emitter, 0xe52d2004);  // push    {r2}
             continue;
         }
     }
@@ -144,10 +131,7 @@ int* jit_script(char *input) {
     struct Emitter emitter;
     initialize_result_arr(&emitter);
 
-
     int res = eval(emitter, input);
-
-
 
 
     /* emit binary in hard code */
@@ -162,15 +146,28 @@ int* jit_script(char *input) {
 
     // "5 4 add" .sファイルを作ってバイナリを考える
 
-    binary_buf[0] = 0xe3a02005;  // mov     r2, #5
-    binary_buf[1] = 0xe52d2004;  // push    {r2}
-    binary_buf[2] = 0xe3a02004;  // mov     r2, #4
-    binary_buf[3] = 0xe52d2004;  // push    {r2}
-    binary_buf[4] = 0xe8bd000c;  // pop     {r2, r3}
-    binary_buf[5] = 0xe0822003;  // add     r2, r2, r3
-    binary_buf[6] = 0xe52d2004;  // push    {r2}
-    binary_buf[7] = 0xe49d0004;  // pop    {r0}
-    binary_buf[8] = 0xe1a0f00e;  // mov     r15, r14
+//    binary_buf[0] = 0xe3a02005;  // mov     r2, #5
+//    binary_buf[1] = 0xe52d2004;  // push    {r2}
+//    binary_buf[2] = 0xe3a02004;  // mov     r2, #4
+//    binary_buf[3] = 0xe52d2004;  // push    {r2}
+//    binary_buf[4] = 0xe8bd000c;  // pop     {r2, r3}
+//    binary_buf[5] = 0xe0822003;  // add     r2, r2, r3
+//    binary_buf[6] = 0xe52d2004;  // push    {r2}
+//    binary_buf[7] = 0xe49d0004;  // pop    {r0}
+//    binary_buf[8] = 0xe1a0f00e;  // mov     r15, r14
+
+    // "5 4 sub" .sファイルを作ってバイナリを考える
+
+//    binary_buf[0] = 0xe3a02005;  // mov     r2, #5
+//    binary_buf[1] = 0xe52d2004;  // push    {r2}
+//    binary_buf[2] = 0xe3a02004;  // mov     r2, #4
+//    binary_buf[3] = 0xe52d2004;  // push    {r2}
+//    binary_buf[4] = 0xe8bd000c;  // pop     {r2, r3}
+//    binary_buf[5] = 0xe2422003;  // sub     r2, r2, r3
+//    binary_buf[6] = 0xe52d2004;  // push    {r2}
+//    binary_buf[7] = 0xe49d0004;  // pop    {r0}
+//    binary_buf[8] = 0xe1a0f00e;  // mov     r15, r14
+
 
     return binary_buf;
 }
@@ -193,6 +190,9 @@ static void test_jit_script_input_number_5(){
 
     // Verify
     assert(expect == actual);
+
+    // TearDown
+    initialize_binary_buf();
 };
 
 
@@ -211,8 +211,31 @@ static void test_jit_script_input_add_op(){
 
     // Verify
     assert(expect == actual);
+
+    // TearDown
+    initialize_binary_buf();
+
 };
 
+static void test_jit_script_input_sub_op(){
+
+    // SetUp
+    char *input = "5 4 sub";
+
+    int expect = 1;
+
+    int (*funcvar)(int, int);
+    funcvar = (int(*)(int, int))jit_script(input);
+
+    // Exercise
+    int actual = funcvar(0, 0); // 引数は使われない
+
+    // Verify
+    assert(expect == actual);
+
+    // TearDown
+    initialize_binary_buf();
+};
 
 
 
@@ -240,7 +263,8 @@ static void test_jit_script_input_add_op(){
 static void unit_tests(){
 
     test_jit_script_input_number_5();
-    //test_jit_script_input_add_op();
+    test_jit_script_input_add_op();
+    test_jit_script_input_sub_op();
 
     // まだ、実装されていない。
     //test_jit_script_using_register_r1()

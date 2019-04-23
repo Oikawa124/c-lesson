@@ -129,3 +129,31 @@ mov r15, r14
 ```
 
 これでいく。
+
+### "5 4 sub"
+
+####objdump
+```
+   0:   e3a02005        mov     r2, #5
+   4:   e52d2004        push    {r2}            ; (str r2, [sp, #-4]!)
+   8:   e3a02004        mov     r2, #4
+   c:   e52d2004        push    {r2}            ; (str r2, [sp, #-4]!)
+  10:   e8bd000c        pop     {r2, r3}
+  14:   e2422003        sub     r2, r2, r3
+  18:   e52d2004        push    {r2}            ; (str r2, [sp, #-4]!)
+  1c:   e49d0004        pop     {r0}            ; (ldr r0, [sp], #4)
+  20:   e1a0f00e        mov     pc, lr
+```
+
+### "5 4 mul"
+```
+   0:   e3a02005        mov     r2, #5
+   4:   e52d2004        push    {r2}            ; (str r2, [sp, #-4]!)
+   8:   e3a02004        mov     r2, #4
+   c:   e52d2004        push    {r2}            ; (str r2, [sp, #-4]!)
+  10:   e8bd000c        pop     {r2, r3}
+  14:   e0020392        mul     r2, r2, r3
+  18:   e52d2004        push    {r2}            ; (str r2, [sp, #-4]!)
+  1c:   e49d0004        pop     {r0}            ; (ldr r0, [sp], #4)
+  20:   e1a0f00e        mov     pc, lr
+```
