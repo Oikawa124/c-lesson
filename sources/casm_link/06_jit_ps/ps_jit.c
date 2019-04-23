@@ -53,7 +53,6 @@ void emit_word(struct Emitter* emitter, unsigned int oneword){
 // eval : 文字列をパースしてバイナリをemitする
 int eval(struct Emitter emitter, char *str) {
     struct Substr remain={str, strlen(str)};
-    int val;
 
     while(!is_end(&remain)) {
         skip_space(&remain);
@@ -68,19 +67,19 @@ int eval(struct Emitter emitter, char *str) {
             skip_token(&remain);
             continue;
 
-//        }else if(is_register(remain.ptr)) {
-//            if(remain.ptr[1] == '1') {
-//                val = r1;
-//            } else {
-//                val = r0;
-//            }
-//            stack_push(val);
-//            skip_token(&remain);
-//            continue;
-//
+        }else if(is_register(remain.ptr)) {
+            if(remain.ptr[1] == '1') {
+                emit_word(&emitter, 0xe52d1004);
+            } else {
+                emit_word(&emitter, 0xe52d0004);
+            }
+
+            skip_token(&remain);
+            continue;
+
         } else {
             // must be op.
-            val = parse_word(&remain);
+            int val = parse_word(&remain);
             skip_token(&remain);
 
             emit_word(&emitter, 0xe8bd000c);  // pop {r2, r3} 　　r3がarg2, r2がarg1となる
@@ -95,9 +94,11 @@ int eval(struct Emitter emitter, char *str) {
                     break;
 
                 case OP_MUL:
+                    emit_word(&emitter, 0xe0020392);  // mul     r2, r2, r3
                     //stack_push(arg1*arg2);
                     break;
                 case OP_DIV:
+                    fprintf(stderr, "Not Implemented\n");
                     //stack_push(arg1/arg2);
                     break;
             }
@@ -168,6 +169,17 @@ int* jit_script(char *input) {
 //    binary_buf[7] = 0xe49d0004;  // pop    {r0}
 //    binary_buf[8] = 0xe1a0f00e;  // mov     r15, r14
 
+    // "5 4 mul" .sファイルを作ってバイナリを考える
+
+//    binary_buf[0] = 0xe3a02005;  // mov     r2, #5
+//    binary_buf[1] = 0xe52d2004;  // push    {r2}
+//    binary_buf[2] = 0xe3a02004;  // mov     r2, #4
+//    binary_buf[3] = 0xe52d2004;  // push    {r2}
+//    binary_buf[4] = 0xe8bd000c;  // pop     {r2, r3}
+//    binary_buf[5] = 0xe0020392;  // mul     r2, r2, r3
+//    binary_buf[6] = 0xe52d2004;  // push    {r2}
+//    binary_buf[7] = 0xe49d0004;  // pop    {r0}
+//    binary_buf[8] = 0xe1a0f00e;  // mov     r15, r14　
 
     return binary_buf;
 }
@@ -237,27 +249,67 @@ static void test_jit_script_input_sub_op(){
     initialize_binary_buf();
 };
 
+static void test_jit_script_input_mul_op(){
+
+    // SetUp
+    char *input = "5 4 mul";
+
+    int expect = 20;
+
+    int (*funcvar)(int, int);
+    funcvar = (int(*)(int, int))jit_script(input);
+
+    // Exercise
+    int actual = funcvar(0, 0); // 引数は使われない
+
+    // Verify
+    assert(expect == actual);
+
+    // TearDown
+    initialize_binary_buf();
+};
 
 
+static void test_jit_script_using_register1(){
 
-// まだ、レジスタを使う実装がされていない。
-//static void test_jit_script_using_register1(){
-//
-//    // SetUp
-//    char *input = "r1"; // r1だけスタックに残るを想定
-//
-//    int expect = 5;
-//
-//    int (*funcvar)();
-//    funcvar = (int(*)(int, int))jit_script(input);
-//
-//    // Execute
-//    int actual = funcvar(1, 5); // 1の引数がr0, 5の引数がr1となる。
-//
-//    // Verify
-//    assert(expect == actual);
-//
-//};
+    // SetUp
+    char *input = "r1"; // r1だけスタックに残るを想定
+
+    int expect = 5;
+
+    int (*funcvar)();
+    funcvar = (int(*)(int, int))jit_script(input);
+
+    // Execute
+    int actual = funcvar(1, 5); // 1の引数がr0, 5の引数がr1となる。
+
+    // Verify
+    assert(expect == actual);
+
+    // TearDown
+    initialize_binary_buf();
+};
+
+static void test_jit_script_using_register0(){
+
+    // SetUp
+    char *input = "r0"; // r0だけスタックに残るを想定
+
+    int expect = 5;
+
+    int (*funcvar)();
+    funcvar = (int(*)(int, int))jit_script(input);
+
+    // Execute
+    int actual = funcvar(5, 1);
+
+    // Verify
+    assert(expect == actual);
+
+    // TearDown
+    initialize_binary_buf();
+
+};
 
 
 static void unit_tests(){
@@ -265,9 +317,10 @@ static void unit_tests(){
     test_jit_script_input_number_5();
     test_jit_script_input_add_op();
     test_jit_script_input_sub_op();
+    test_jit_script_input_mul_op();
 
-    // まだ、実装されていない。
-    //test_jit_script_using_register_r1()
+    test_jit_script_using_register1();
+    test_jit_script_using_register0();
 
     printf("all test done\n");
 }
