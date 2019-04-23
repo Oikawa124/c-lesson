@@ -122,11 +122,8 @@ int eval(struct Emitter emitter, char *str) {
 
     /* return stack_pop()　に相当する処理 */
 
-    // スタック (r2)をpopするバイナリ
-    emit_word(&emitter, 0xe49d2004);
-
-    // mov r0, r2するバイナリ
-    emit_word(&emitter, 0xe1a00002);
+    // スタック (r0)をpopするバイナリ
+    emit_word(&emitter, 0xe49d0004);
 
     // mov, pc, lrするバイナリ
     emit_word(&emitter, 0xe1a0f00e);
@@ -148,7 +145,7 @@ int* jit_script(char *input) {
     initialize_result_arr(&emitter);
 
 
-    //int res = eval(emitter, input);
+    int res = eval(emitter, input);
 
 
 
@@ -242,8 +239,8 @@ static void test_jit_script_input_add_op(){
 
 static void unit_tests(){
 
-    //test_jit_script_input_number_5();
-    test_jit_script_input_add_op();
+    test_jit_script_input_number_5();
+    //test_jit_script_input_add_op();
 
     // まだ、実装されていない。
     //test_jit_script_using_register_r1()
