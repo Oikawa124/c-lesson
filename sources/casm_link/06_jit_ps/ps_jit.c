@@ -64,9 +64,9 @@ int eval(struct Emitter emitter, char *str) {
 
         }else if(is_register(remain.ptr)) {
             if(remain.ptr[1] == '1') {
-                emit_word(&emitter, 0xe52d1004);
+                emit_word(&emitter, 0xe52d1004); // push {r1}
             } else {
-                emit_word(&emitter, 0xe52d0004);
+                emit_word(&emitter, 0xe52d0004); // push {r0}
             }
 
             skip_token(&remain);
@@ -85,7 +85,7 @@ int eval(struct Emitter emitter, char *str) {
                     break;
 
                 case OP_SUB:
-                    emit_word(&emitter, 0xe2422003);  // sub     r2, r2, r3
+                    emit_word(&emitter, 0xe0432002);  // sub     r2, r2, r3
                     break;
 
                 case OP_MUL:
@@ -119,10 +119,11 @@ int eval(struct Emitter emitter, char *str) {
 int* jit_script(char *input) {
     ensure_jit_buf();
 
-    //　onewordを詰める配列を準備
+    //　バイナリを詰める配列を準備
     struct Emitter emitter;
     initialize_result_arr(&emitter);
 
+    // バイナリを配列に詰める
     int res = eval(emitter, input);
 
     return binary_buf;
@@ -255,6 +256,51 @@ static void test_jit_script_using_register0(){
 
 };
 
+static void test_jit_script_input_add_op_long(){
+
+    // SetUp
+    char *input = "5 4 add 1 add";
+
+    int expect = 10;
+
+    int (*funcvar)(int, int);
+    funcvar = (int(*)(int, int))jit_script(input);
+
+    // Exercise
+    int actual = funcvar(0, 0); // 引数は使われない
+
+    // Verify
+    assert(expect == actual);
+
+    // TearDown
+    initialize_binary_buf();
+
+};
+
+static void test_jit_script_input_long(){
+
+    // SetUp
+    char *input = "3 7 add 1 sub 5 mul";
+
+    int expect = 45;
+
+    int (*funcvar)(int, int);
+    funcvar = (int(*)(int, int))jit_script(input);
+
+    // Exercise
+    int actual = funcvar(0, 0);
+
+    printf("%d\n", actual);
+
+    // Verify
+    assert(expect == actual);
+
+    // TearDown
+    initialize_binary_buf();
+
+};
+
+
 
 static void unit_tests(){
 
@@ -266,31 +312,31 @@ static void unit_tests(){
     test_jit_script_using_register1();
     test_jit_script_using_register0();
 
+    test_jit_script_input_add_op_long();
+    test_jit_script_input_long();
+
     printf("all test done\n");
 }
 
 
 int main() {
 
-    unit_tests();
+    // unit_tests();
 
 
-    //int res;
-    //int (*funcvar)(int, int);
+    int res;
+    int (*funcvar)(int, int);
 
-//    res = eval(1, 5, "3 7 add r1 sub 4 mul");
-//    printf("res=%d\n", res);
-//
-//    /*
-//     TODO: Make below test pass.
-//    */
-//    funcvar = (int(*)(int, int))jit_script("3 7 add r1 sub 4 mul");
-//
-//    res = funcvar(1, 5);
-//    assert_int_eq(20, res);
-//
-//    res = funcvar(1, 4);
-//    assert_int_eq(24, res);
+    /*
+     TODO: Make below test pass.
+    */
+    funcvar = (int(*)(int, int))jit_script("3 7 add r1 sub 4 mul");
+
+    res = funcvar(1, 5);
+    assert_int_eq(20, res);
+
+    res = funcvar(1, 4);
+    assert_int_eq(24, res);
 
     return 0;
 }
