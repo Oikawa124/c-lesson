@@ -7,8 +7,6 @@
 #include "parser.h"
 #include "test_util.h"
 
-///extern int eval(int r0, int r1, char *str);
-
 /*
 JIT
 */
@@ -76,12 +74,13 @@ int eval(struct Emitter emitter, char *str) {
 
             //stack_push(parse_number(remain.ptr));
             // スタックにpushするバイナリ
-            emit_word(&emitter, 0xe3a02005); // mov r2, #5
+            int oneword_imm = 0xe3a02000 + parse_number(remain.ptr);
+
+            emit_word(&emitter, oneword_imm); // mov r2, #5
             emit_word(&emitter, 0xe52d2004); // push {r2}
 
             skip_token(&remain);
-            //continue;
-        }
+            continue;
 
 //        }else if(is_register(remain.ptr)) {
 //            if(remain.ptr[1] == '1') {
@@ -93,37 +92,37 @@ int eval(struct Emitter emitter, char *str) {
 //            skip_token(&remain);
 //            continue;
 //
-//        } else {
-//            // must be op.
-//            int arg1, arg2;
-//
-//            val = parse_word(&remain);
-//            skip_token(&remain);
-//
-//            arg2 = stack_pop();
-//            arg1 = stack_pop();
-//
-//            switch(val) {
-//                case OP_ADD:
-//                    stack_push(arg1+arg2);
-//                    break;
-//                case OP_SUB:
-//                    stack_push(arg1-arg2);
-//                    break;
-//                case OP_MUL:
-//                    stack_push(arg1*arg2);
-//                    break;
-//                case OP_DIV:
-//                    stack_push(arg1/arg2);
-//                    break;
-//            }
-//            continue;
-//        }
+        } else {
+            // must be op.
+            int arg1, arg2;
+
+            val = parse_word(&remain);
+            skip_token(&remain);
+
+            arg2 = stack_pop();
+            arg1 = stack_pop();
+
+            switch(val) {
+                case OP_ADD:
+                    stack_push(arg1+arg2);
+                    break;
+                case OP_SUB:
+                    stack_push(arg1-arg2);
+                    break;
+                case OP_MUL:
+                    stack_push(arg1*arg2);
+                    break;
+                case OP_DIV:
+                    stack_push(arg1/arg2);
+                    break;
+            }
+            continue;
+        }
     }
 
-    // return stack_pop();
+    /* return stack_pop()　に相当する処理 */
 
-    // スタック(r2)をpopするバイナリ
+    // スタック (r2)をpopするバイナリ
     emit_word(&emitter, 0xe49d2004);
 
     // mov r0, r2するバイナリ
@@ -131,7 +130,6 @@ int eval(struct Emitter emitter, char *str) {
 
     // mov, pc, lrするバイナリ
     emit_word(&emitter, 0xe1a0f00e);
-
 
     return 1;
 }
@@ -150,21 +148,32 @@ int* jit_script(char *input) {
     initialize_result_arr(&emitter);
 
 
-    int res = eval(emitter, input);
+    //int res = eval(emitter, input);
 
-    // emit binary in hard code
-//
-//    emit_word(&emitter, 0xe3a02005);
-//    emit_word(&emitter, 0xe52d2004);
-//    emit_word(&emitter, 0xe49d2004);
-//    emit_word(&emitter, 0xe1a00002);
-//    emit_word(&emitter, 0xe1a0f00e);
 
-//    binary_buf[0] = 0xe3a02005;
-//    binary_buf[1] = 0xe52d2004;
-//    binary_buf[2] = 0xe49d2004;
+
+
+    /* emit binary in hard code */
+
+    // "5"　.sファイルを作ってバイナリを考える
+
+//    binary_buf[0] = 0xe3a02005;　// mov     r2, #5
+//    binary_buf[1] = 0xe52d2004;　// push    {r2}
+//    binary_buf[2] = 0xe49d2004;  pop    {r0}
 //    binary_buf[3] = 0xe1a00002;
 //    binary_buf[4] = 0xe1a0f00e;
+
+    // "5 4 add" .sファイルを作ってバイナリを考える
+
+    binary_buf[0] = 0xe3a02005;  // mov     r2, #5
+    binary_buf[1] = 0xe52d2004;  // push    {r2}
+    binary_buf[2] = 0xe3a02004;  // mov     r2, #4
+    binary_buf[3] = 0xe52d2004;  // push    {r2}
+    binary_buf[4] = 0xe8bd000c;  // pop     {r2, r3}
+    binary_buf[5] = 0xe0822003;  // add     r2, r2, r3
+    binary_buf[6] = 0xe52d2004;  // push    {r2}
+    binary_buf[7] = 0xe49d0004;  // pop    {r0}
+    binary_buf[8] = 0xe1a0f00e;  // mov     r15, r14
 
     return binary_buf;
 }
@@ -182,7 +191,25 @@ static void test_jit_script_input_number_5(){
     int (*funcvar)(int, int);
     funcvar = (int(*)(int, int))jit_script(input);
 
-    // Execute
+    // Exercise
+    int actual = funcvar(0, 0); // 引数は使われない
+
+    // Verify
+    assert(expect == actual);
+};
+
+
+static void test_jit_script_input_add_op(){
+
+    // SetUp
+    char *input = "5 4 add";
+
+    int expect = 9;
+
+    int (*funcvar)(int, int);
+    funcvar = (int(*)(int, int))jit_script(input);
+
+    // Exercise
     int actual = funcvar(0, 0); // 引数は使われない
 
     // Verify
@@ -215,8 +242,8 @@ static void test_jit_script_input_number_5(){
 
 static void unit_tests(){
 
-    test_jit_script_input_number_5();
-
+    //test_jit_script_input_number_5();
+    test_jit_script_input_add_op();
 
     // まだ、実装されていない。
     //test_jit_script_using_register_r1()
