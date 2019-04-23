@@ -29,9 +29,6 @@ void ensure_jit_buf() {
 }
 
 
-/* ここに実装していく */
-
-
 // emitter : バイナリをarrayに送るようにする。
 struct Emitter {
     int *array;
@@ -47,8 +44,6 @@ void emit_word(struct Emitter* emitter, unsigned int oneword){
     emitter->array[emitter->pos] = oneword;
     emitter->pos++;
 }
-
-
 
 // eval : 文字列をパースしてバイナリをemitする
 int eval(struct Emitter emitter, char *str) {
@@ -95,8 +90,8 @@ int eval(struct Emitter emitter, char *str) {
 
                 case OP_MUL:
                     emit_word(&emitter, 0xe0020392);  // mul     r2, r2, r3
-                    //stack_push(arg1*arg2);
                     break;
+
                 case OP_DIV:
                     fprintf(stderr, "Not Implemented\n");
                     //stack_push(arg1/arg2);
@@ -120,10 +115,6 @@ int eval(struct Emitter emitter, char *str) {
 }
 
 
-
-
-
-
 // JITスクリプト
 int* jit_script(char *input) {
     ensure_jit_buf();
@@ -133,53 +124,6 @@ int* jit_script(char *input) {
     initialize_result_arr(&emitter);
 
     int res = eval(emitter, input);
-
-
-    /* emit binary in hard code */
-
-    // "5"　.sファイルを作ってバイナリを考える
-
-//    binary_buf[0] = 0xe3a02005;　// mov     r2, #5
-//    binary_buf[1] = 0xe52d2004;　// push    {r2}
-//    binary_buf[2] = 0xe49d2004;  pop    {r0}
-//    binary_buf[3] = 0xe1a00002;
-//    binary_buf[4] = 0xe1a0f00e;
-
-    // "5 4 add" .sファイルを作ってバイナリを考える
-
-//    binary_buf[0] = 0xe3a02005;  // mov     r2, #5
-//    binary_buf[1] = 0xe52d2004;  // push    {r2}
-//    binary_buf[2] = 0xe3a02004;  // mov     r2, #4
-//    binary_buf[3] = 0xe52d2004;  // push    {r2}
-//    binary_buf[4] = 0xe8bd000c;  // pop     {r2, r3}
-//    binary_buf[5] = 0xe0822003;  // add     r2, r2, r3
-//    binary_buf[6] = 0xe52d2004;  // push    {r2}
-//    binary_buf[7] = 0xe49d0004;  // pop    {r0}
-//    binary_buf[8] = 0xe1a0f00e;  // mov     r15, r14
-
-    // "5 4 sub" .sファイルを作ってバイナリを考える
-
-//    binary_buf[0] = 0xe3a02005;  // mov     r2, #5
-//    binary_buf[1] = 0xe52d2004;  // push    {r2}
-//    binary_buf[2] = 0xe3a02004;  // mov     r2, #4
-//    binary_buf[3] = 0xe52d2004;  // push    {r2}
-//    binary_buf[4] = 0xe8bd000c;  // pop     {r2, r3}
-//    binary_buf[5] = 0xe2422003;  // sub     r2, r2, r3
-//    binary_buf[6] = 0xe52d2004;  // push    {r2}
-//    binary_buf[7] = 0xe49d0004;  // pop    {r0}
-//    binary_buf[8] = 0xe1a0f00e;  // mov     r15, r14
-
-    // "5 4 mul" .sファイルを作ってバイナリを考える
-
-//    binary_buf[0] = 0xe3a02005;  // mov     r2, #5
-//    binary_buf[1] = 0xe52d2004;  // push    {r2}
-//    binary_buf[2] = 0xe3a02004;  // mov     r2, #4
-//    binary_buf[3] = 0xe52d2004;  // push    {r2}
-//    binary_buf[4] = 0xe8bd000c;  // pop     {r2, r3}
-//    binary_buf[5] = 0xe0020392;  // mul     r2, r2, r3
-//    binary_buf[6] = 0xe52d2004;  // push    {r2}
-//    binary_buf[7] = 0xe49d0004;  // pop    {r0}
-//    binary_buf[8] = 0xe1a0f00e;  // mov     r15, r14　
 
     return binary_buf;
 }

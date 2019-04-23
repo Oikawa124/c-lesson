@@ -171,3 +171,52 @@ mov r15, r14
    0:   e52d0004        push    {r0}            ; (str r0, [sp, #-4]!)
    4:   e52d1004        push    {r1}            ; (str r1, [sp, #-4]!)
 ```
+
+## ハードコードした処理
+```
+    /* emit binary in hard code */
+
+    // "5"　.sファイルを作ってバイナリを考える
+
+//    binary_buf[0] = 0xe3a02005;　// mov     r2, #5
+//    binary_buf[1] = 0xe52d2004;　// push    {r2}
+//    binary_buf[2] = 0xe49d2004;  pop    {r0}
+//    binary_buf[3] = 0xe1a00002;
+//    binary_buf[4] = 0xe1a0f00e;
+
+    // "5 4 add" .sファイルを作ってバイナリを考える
+
+//    binary_buf[0] = 0xe3a02005;  // mov     r2, #5
+//    binary_buf[1] = 0xe52d2004;  // push    {r2}
+//    binary_buf[2] = 0xe3a02004;  // mov     r2, #4
+//    binary_buf[3] = 0xe52d2004;  // push    {r2}
+//    binary_buf[4] = 0xe8bd000c;  // pop     {r2, r3}
+//    binary_buf[5] = 0xe0822003;  // add     r2, r2, r3
+//    binary_buf[6] = 0xe52d2004;  // push    {r2}
+//    binary_buf[7] = 0xe49d0004;  // pop    {r0}
+//    binary_buf[8] = 0xe1a0f00e;  // mov     r15, r14
+
+    // "5 4 sub" .sファイルを作ってバイナリを考える
+
+//    binary_buf[0] = 0xe3a02005;  // mov     r2, #5
+//    binary_buf[1] = 0xe52d2004;  // push    {r2}
+//    binary_buf[2] = 0xe3a02004;  // mov     r2, #4
+//    binary_buf[3] = 0xe52d2004;  // push    {r2}
+//    binary_buf[4] = 0xe8bd000c;  // pop     {r2, r3}
+//    binary_buf[5] = 0xe2422003;  // sub     r2, r2, r3
+//    binary_buf[6] = 0xe52d2004;  // push    {r2}
+//    binary_buf[7] = 0xe49d0004;  // pop    {r0}
+//    binary_buf[8] = 0xe1a0f00e;  // mov     r15, r14
+
+    // "5 4 mul" .sファイルを作ってバイナリを考える
+
+//    binary_buf[0] = 0xe3a02005;  // mov     r2, #5
+//    binary_buf[1] = 0xe52d2004;  // push    {r2}
+//    binary_buf[2] = 0xe3a02004;  // mov     r2, #4
+//    binary_buf[3] = 0xe52d2004;  // push    {r2}
+//    binary_buf[4] = 0xe8bd000c;  // pop     {r2, r3}
+//    binary_buf[5] = 0xe0020392;  // mul     r2, r2, r3
+//    binary_buf[6] = 0xe52d2004;  // push    {r2}
+//    binary_buf[7] = 0xe49d0004;  // pop    {r0}
+//    binary_buf[8] = 0xe1a0f00e;  // mov     r15, r14　
+```
