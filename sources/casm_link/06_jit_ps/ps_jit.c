@@ -303,9 +303,9 @@ static void test_jit_script_input_long(){
 
 static void unit_tests(){
 
-//    test_jit_script_input_number_5();
+    test_jit_script_input_number_5();
     test_jit_script_input_add_op();
-//    test_jit_script_input_sub_op();
+    test_jit_script_input_sub_op();
 //    test_jit_script_input_mul_op();
 //
 //    test_jit_script_using_register1();

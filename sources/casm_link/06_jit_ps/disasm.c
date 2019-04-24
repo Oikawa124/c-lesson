@@ -27,7 +27,8 @@ int print_asm(int word) {
         print_data_process("mov", word);
         return 1;
 
-    } else if (0xE2800000 == (word & 0xFFF00000)) {
+    } else if (0xE2800000 == (word & 0xFFF00000) ||
+               0xE0800000 == (word & 0xFFF00000)) {
 
         print_data_process("add", word);
         return 1;
@@ -42,7 +43,8 @@ int print_asm(int word) {
         print_data_process("and", word);
         return 1;
 
-    } else if (0xE2400000 == (word & 0xFFF00000)) {
+    } else if (0xE2400000 == (word & 0xFFF00000) ||
+               0xE0400000 == (word & 0xFFF00000)) {
 
         print_data_process("sub", word);
         return 1;
@@ -221,10 +223,23 @@ void print_data_process(char *mnemonic, int word){
         int shift_type = (word >> 5) & 0b11;
         int shift_reg =  (word >> 8) & 0xf;
 
-        if (shift_type == 0x01) {
-            printf("lsr r%d, r%d, r%d", destination_reg, operand_2nd_reg, shift_reg);
-        } else {
+        if (op_code == 0x4){ // 0x4: add,
+
+            printf("%s r%d, r%d, r%d", mnemonic, destination_reg, operand_1st_reg, operand_2nd_reg);
+
+        } else if (op_code == 0x0D) { // 0xD: mov
+
             printf("%s r%d, r%d", mnemonic, destination_reg, operand_2nd_reg);
+
+        } else if (op_code == 0x02) { // 0x02: sub
+
+            printf("%s r%d, r%d, r%d", mnemonic, destination_reg, operand_2nd_reg, operand_1st_reg);
+
+        }
+
+
+        if (shift_type == 0x01) { // lsr
+            printf("%s r%d, r%d, r%d",mnemonic, destination_reg, operand_2nd_reg, shift_reg);
         }
     }
 }
