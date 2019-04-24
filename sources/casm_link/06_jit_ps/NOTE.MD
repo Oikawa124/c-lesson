@@ -220,3 +220,8 @@ mov r15, r14
 //    binary_buf[7] = 0xe49d0004;  // pop    {r0}
 //    binary_buf[8] = 0xe1a0f00e;  // mov     r15, r14　
 ```
+
+### 実行方法
+```
+arm-linux-gnueabi-gcc parser.c ps_jit.c && qemu-arm -L /usr/arm-linux-gnueabi ./a.out
+```
