@@ -15,6 +15,7 @@ void print_data_transfer(char *mnemonic, int word);
 void print_branch_and_branch_with_link(char *mnemonic, int word);
 void print_block_data_transfer(char *mnemonic, int word);
 void print_data_process(char *mnemonic, int word);
+void multiply_and_mutiply_accumulate(char *mnemonic, int word);
 
 
 int print_asm(int word) {
@@ -90,7 +91,6 @@ int print_asm(int word) {
         print_data_transfer("str", word);
         return 1;
 
-
     } else if (0xE92D0000 == (word & 0xE92D0000)) {
 
         print_block_data_transfer("push", word);
@@ -101,8 +101,11 @@ int print_asm(int word) {
         print_block_data_transfer("pop", word);
         return 1;
 
-    } else {
+    } else if (0xE0000000 == (word & 0xFFF00000)) {
+        multiply_and_mutiply_accumulate("mul", word);
+        return 1;
 
+    } else {
         // 実装なし
     }
 
@@ -223,7 +226,7 @@ void print_data_process(char *mnemonic, int word){
         int shift_type = (word >> 5) & 0b11;
         int shift_reg =  (word >> 8) & 0xf;
 
-        if (op_code == 0x4){ // 0x4: add,
+        if (op_code == 0x4 || op_code == 0x02){ // 0x4: add, 0x2: sub
 
             printf("%s r%d, r%d, r%d", mnemonic, destination_reg, operand_1st_reg, operand_2nd_reg);
 
@@ -231,17 +234,23 @@ void print_data_process(char *mnemonic, int word){
 
             printf("%s r%d, r%d", mnemonic, destination_reg, operand_2nd_reg);
 
-        } else if (op_code == 0x02) { // 0x02: sub
-
-            printf("%s r%d, r%d, r%d", mnemonic, destination_reg, operand_2nd_reg, operand_1st_reg);
-
         }
-
 
         if (shift_type == 0x01) { // lsr
             printf("%s r%d, r%d, r%d",mnemonic, destination_reg, operand_2nd_reg, shift_reg);
         }
     }
+}
+
+
+void multiply_and_mutiply_accumulate(char *mnemonic, int word) {
+
+    // 0xe0020392
+    int destination_reg = (word >> 16) & 0xF;
+    int operand_reg_rn = (word >> 8) & 0xF;
+    int operand_reg_rs = word & 0xF;
+
+    printf("%s r%d, r%d, r%d", mnemonic, destination_reg, operand_reg_rs, operand_reg_rn);
 }
 
 

@@ -82,7 +82,7 @@ int eval(struct Emitter *emitter, char *str) {
                     break;
 
                 case OP_SUB:
-                    emit_word(emitter, 0xe0432002);  // sub     r2, r2, r3
+                    emit_word(emitter, 0xe0432002);  // sub     r2, r3, r2
                     break;
 
                 case OP_MUL:
@@ -306,13 +306,13 @@ static void unit_tests(){
     test_jit_script_input_number_5();
     test_jit_script_input_add_op();
     test_jit_script_input_sub_op();
-//    test_jit_script_input_mul_op();
-//
-//    test_jit_script_using_register1();
-//    test_jit_script_using_register0();
-//
-//    test_jit_script_input_add_op_long();
-//    test_jit_script_input_long();
+    test_jit_script_input_mul_op();
+
+    test_jit_script_using_register1();
+    test_jit_script_using_register0();
+
+    test_jit_script_input_add_op_long();
+    test_jit_script_input_long();
 
     printf("all test done\n");
 }
