@@ -42,28 +42,133 @@ void emit_word(struct Emitter* emitter, unsigned int oneword){
     emitter->pos++;
 }
 
+
+// asm_XXX: 引数の値を使って、onewordを生成して返す
+
+int asm_mov_register(int reg_1st, int reg_2nd){
+
+    int oneword = 0xE1A00000;
+
+    oneword += reg_1st << 12;
+    oneword += reg_2nd;
+
+    return oneword;
+}
+
+int asm_mov_immediate(int reg_1st, int imm_value){
+
+    int oneword = 0xE3A00000;
+
+    oneword += reg_1st << 12;
+    oneword += imm_value;
+
+    return oneword;
+}
+
+int asm_push_single(int reg_1){
+
+    int oneword = 0xe92d0000;
+
+    int push_register = 0b1 << reg_1;
+
+    oneword += push_register;
+
+    return oneword;
+}
+
+
+int asm_pop_single(int reg_1){
+
+    int oneword = 0xe8bd0000;
+
+    int pop_register = 0b1 << reg_1;
+
+    oneword += pop_register;
+
+    return oneword;
+}
+
+int asm_pop_double(int reg_1, int reg_2){
+
+    int oneword = 0xe8bd0000;
+
+    int pop_registers = 0b1 << reg_1;
+    pop_registers += 0b1 << reg_2;
+
+    oneword += pop_registers;
+
+    return oneword;
+}
+
+int asm_add(int destination_reg, int reg_1st, int reg_2nd){
+
+    int oneword = 0xe0800000;
+
+    oneword += reg_1st << 16;
+    oneword += destination_reg << 12;
+    oneword += reg_2nd;
+
+    return oneword;
+}
+
+int asm_sub(int destination_reg, int reg_1st, int reg_2nd) {
+
+    int oneword = 0xe0400000;
+
+    oneword += reg_1st << 16;
+    oneword += destination_reg << 12;
+    oneword += reg_2nd;
+
+    return oneword;
+}
+
+int asm_mul(int destination_reg, int reg_rn, int reg_rs){
+
+    int oneword = 0xe0000090;
+
+    oneword += destination_reg << 16;
+    oneword += reg_rn << 8;
+    oneword += reg_rs;
+
+    return oneword;
+}
+
+
+
+
 // eval : 文字列をパースしてバイナリをemitする
 int eval(struct Emitter *emitter, char *str) {
     struct Substr remain={str, strlen(str)};
+    int oneword;
 
     while(!is_end(&remain)) {
         skip_space(&remain);
         if(is_number(remain.ptr)) {
 
             // スタックに即値をpushするバイナリ
-            int oneword_imm = 0xe3a02000 + parse_number(remain.ptr);
+            int imm_value = parse_number(remain.ptr);
 
-            emit_word(emitter, oneword_imm); // mov r2, #5  レジスタをr2で決め打ちする
-            emit_word(emitter, 0xe92d0004); // push {r2}
+
+            oneword = asm_mov_immediate(2, imm_value);
+            emit_word(emitter, oneword); // mov r2, #5  レジスタをr2で決め打ちする
+
+            oneword = asm_push_single(2);
+            emit_word(emitter, oneword); // push {r2}
 
             skip_token(&remain);
             continue;
 
         }else if(is_register(remain.ptr)) {
             if(remain.ptr[1] == '1') {
-                emit_word(emitter, 0xe92d0002); // push {r1}
+
+                oneword = asm_push_single(1);
+                emit_word(emitter, oneword); // push {r1}
+
             } else {
-                emit_word(emitter, 0xe92d0001); // push {r0}
+
+                oneword = asm_push_single(0);
+                emit_word(emitter, oneword); // push {r0}
+
             }
 
             skip_token(&remain);
@@ -74,19 +179,24 @@ int eval(struct Emitter *emitter, char *str) {
             int val = parse_word(&remain);
             skip_token(&remain);
 
-            emit_word(emitter, 0xe8bd000c);  // pop {r2, r3} 　　r3がarg2, r2がarg1となる
+            oneword = asm_pop_double(2, 3);
+
+            emit_word(emitter, oneword);  // pop {r2, r3} 　　r3がarg2, r2がarg1となる
 
             switch(val) {
                 case OP_ADD:
-                    emit_word(emitter, 0xe0822003);  // add     r2, r2, r3
+                    oneword = asm_add(2, 2, 3);
+                    emit_word(emitter, oneword);  // add     r2, r2, r3
                     break;
 
                 case OP_SUB:
-                    emit_word(emitter, 0xe0432002);  // sub     r2, r3, r2
+                    oneword = asm_sub(2, 3, 2);
+                    emit_word(emitter, oneword);  // sub     r2, r3, r2
                     break;
 
                 case OP_MUL:
-                    emit_word(emitter, 0xe0020392);  // mul     r2, r2, r3
+                    oneword = asm_mul(2, 2, 3);
+                    emit_word(emitter, oneword);  // mul     r2, r2, r3
                     break;
 
                 case OP_DIV:
@@ -95,7 +205,8 @@ int eval(struct Emitter *emitter, char *str) {
                     break;
             }
 
-            emit_word(emitter, 0xe92d0004);  // push    {r2}
+            oneword = asm_push_single(2);
+            emit_word(emitter, oneword);  // push    {r2}
             continue;
         }
     }
@@ -289,8 +400,6 @@ static void test_jit_script_input_long(){
     // Exercise
     int actual = funcvar(0, 0);
 
-    printf("%d\n", actual);
-
     // Verify
     assert(expect == actual);
 
@@ -322,25 +431,19 @@ int main() {
 
     unit_tests();
 
-//    int res;
-//    int (*funcvar)(int, int);
-//
-//    /*
-//     TODO: Make below test pass.
-//    */
-//    funcvar = (int(*)(int, int))jit_script("3 7 add r1 sub 4 mul");
-//
-//    res = funcvar(1, 5);
-//    assert_int_eq(20, res);
-//
-//    res = funcvar(1, 4);
-//    assert_int_eq(24, res);
+    int res;
+    int (*funcvar)(int, int);
+
+    /*
+     TODO: Make below test pass.
+    */
+    funcvar = (int(*)(int, int))jit_script("3 7 add r1 sub 4 mul");
+
+    res = funcvar(1, 5);
+    assert_int_eq(20, res);
+
+    res = funcvar(1, 4);
+    assert_int_eq(24, res);
 
     return 0;
 }
-
-
-// todo disasmのaddの実装を修正する。
-// レジスタ同士の足し算をできるようにする。
-//  mulもか？
-// 全体的にdisasmを見直してみたほうがよいかも
