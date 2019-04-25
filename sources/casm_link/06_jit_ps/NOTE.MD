@@ -225,3 +225,125 @@ mov r15, r14
 ```
 arm-linux-gnueabi-gcc parser.c ps_jit.c && qemu-arm -L /usr/arm-linux-gnueabi ./a.out
 ```
+
+
+### disasmの出力
+
+```
+/* ユニットテスト */
+
+// char *input = "5";
+0x00010000  mov r2, #0x5
+0x00010004  push {r2}
+0x00010008  pop {r0}
+0x0001000c  mov r15, r14
+
+// char *input = "5 4 add";
+0x00010000  mov r2, #0x5
+0x00010004  push {r2}
+0x00010008  mov r2, #0x4
+0x0001000c  push {r2}
+0x00010010  pop {r2, r3}
+0x00010014  add r2, r2, r3
+0x00010018  push {r2}
+0x0001001c  pop {r0}
+0x00010020  mov r15, r14
+
+// char *input = "5 4 sub";
+0x00010000  mov r2, #0x5
+0x00010004  push {r2}
+0x00010008  mov r2, #0x4
+0x0001000c  push {r2}
+0x00010010  pop {r2, r3}
+0x00010014  sub r2, r3, r2
+0x00010018  push {r2}
+0x0001001c  pop {r0}
+0x00010020  mov r15, r14
+
+// char *input = "5 4 mul";
+0x00010000  mov r2, #0x5
+0x00010004  push {r2}
+0x00010008  mov r2, #0x4
+0x0001000c  push {r2}
+0x00010010  pop {r2, r3}
+0x00010014  mul r2, r3, r2
+0x00010018  push {r2}
+0x0001001c  pop {r0}
+0x00010020  mov r15, r14
+
+// char *input = "r1"; 
+// funcvar(1, 5)
+
+0x00010000  push {r1}
+0x00010004  pop {r0}
+0x00010008  mov r15, r14
+
+// char *input = "r0"; 
+// funcvar(1, 5)
+0x00010000  push {r0}
+0x00010004  pop {r0}
+0x00010008  mov r15, r14
+
+// char *input = "5 4 add 1 add";
+0x00010000  mov r2, #0x5
+0x00010004  push {r2}
+0x00010008  mov r2, #0x4
+0x0001000c  push {r2}
+0x00010010  pop {r2, r3}
+0x00010014  add r2, r2, r3
+0x00010018  push {r2}
+0x0001001c  mov r2, #0x1
+0x00010020  push {r2}
+0x00010024  pop {r2, r3}
+0x00010028  add r2, r2, r3
+0x0001002c  push {r2}
+0x00010030  pop {r0}
+0x00010034  mov r15, r14
+
+// char *input = "3 7 add 1 sub 5 mul";
+0x00010000  mov r2, #0x3
+0x00010004  push {r2}
+0x00010008  mov r2, #0x7
+0x0001000c  push {r2}
+0x00010010  pop {r2, r3}
+0x00010014  add r2, r2, r3
+0x00010018  push {r2}
+0x0001001c  mov r2, #0x1
+0x00010020  push {r2}
+0x00010024  pop {r2, r3}
+0x00010028  sub r2, r3, r2
+0x0001002c  push {r2}
+0x00010030  mov r2, #0x5
+0x00010034  push {r2}
+0x00010038  pop {r2, r3}
+0x0001003c  mul r2, r3, r2
+0x00010040  push {r2}
+0x00010044  pop {r0}
+0x00010048  mov r15, r14
+
+
+all test done
+
+// funcvar = (int(*)(int, int))jit_script("3 7 add r1 sub 4 mul");
+
+0x00010000  mov r2, #0x3
+0x00010004  push {r2}
+0x00010008  mov r2, #0x7
+0x0001000c  push {r2}
+0x00010010  pop {r2, r3}
+0x00010014  add r2, r2, r3
+0x00010018  push {r2}
+0x0001001c  push {r1}
+0x00010020  pop {r2, r3}
+0x00010024  sub r2, r3, r2
+0x00010028  push {r2}
+0x0001002c  mov r2, #0x4
+0x00010030  push {r2}
+0x00010034  pop {r2, r3}
+0x00010038  mul r2, r3, r2
+0x0001003c  push {r2}
+0x00010040  pop {r0}
+0x00010044  mov r15, r14
+
+
+```
